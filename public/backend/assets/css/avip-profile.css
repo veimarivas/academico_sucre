@@ -1,0 +1,448 @@
+/* =====================================================================
+   AVIP · Mi Perfil — Capa de diseño
+   Se carga DESPUÉS de avip-ui.css. Unifica y pule la pantalla de perfil
+   y el contenido de todas sus pestañas (Mis Programas, Información,
+   Ofertas, Inscripciones, Publicidad, Contraseña):
+   espaciado, héroe, stats, pestañas, tarjetas, tablas, gráficas y dark mode.
+   Paleta institucional: navy #163b6b + gold #cba135.
+   ===================================================================== */
+
+.prof-page,
+.prof-page * {
+    --prof-navy: var(--avip-navy-700, #163b6b);
+    --prof-navy-2: var(--avip-navy-500, #2a5d97);
+    --prof-navy-soft: var(--avip-navy-50, #f1f5fa);
+    --prof-gold: var(--avip-gold-500, #cba135);
+    --prof-gold-soft: var(--avip-gold-100, #faf3df);
+    --prof-teal: var(--avip-teal-600, #0d8574);
+    --prof-teal-soft: var(--avip-teal-100, #e2f4f0);
+    --prof-red: var(--avip-red-600, #b3243a);
+    --prof-red-soft: var(--avip-red-100, #fbe9ec);
+    --prof-amber: var(--avip-amber-600, #b7791f);
+    --prof-amber-soft: var(--avip-amber-100, #fbf0da);
+    --prof-blue: var(--avip-blue-600, #1f6fbf);
+    --prof-blue-soft: var(--avip-blue-100, #e7f1fb);
+    --prof-line: var(--ui-line, #e6e9f0);
+    --prof-line-strong: var(--ui-line-strong, #d4dae5);
+    --prof-surface: var(--ui-surface, #fff);
+    --prof-surface-2: var(--ui-surface-2, #f7f9fc);
+    --prof-ink: var(--ui-ink, #101828);
+    --prof-ink-2: var(--ui-ink-2, #475467);
+    --prof-muted: var(--ui-muted, #667085);
+    --prof-grad: linear-gradient(135deg, var(--avip-navy-700, #163b6b) 0%, var(--avip-navy-500, #2a5d97) 100%);
+    --prof-grad-soft: linear-gradient(135deg, rgba(22, 59, 107, 0.05) 0%, rgba(22, 59, 107, 0) 60%);
+    --prof-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+    --prof-shadow-hover: 0 18px 38px -22px rgba(10, 26, 58, 0.38);
+}
+
+/* =====================================================================
+   1. Ritmo vertical
+   ===================================================================== */
+.prof-page > :last-child { margin-bottom: 0 !important; }
+.prof-page > .container-fluid { padding-left: 0 !important; padding-right: 0 !important; }
+.prof-page .mb-4 { margin-bottom: 1.15rem !important; }
+.prof-page .mb-3 { margin-bottom: 1rem !important; }
+.prof-page .card { border-radius: 15px; }
+.prof-page :is(.info-card, .oferta-card, .prog-card, .chart-card, .pwd-card, .kpi) {
+    border-color: var(--prof-line) !important;
+    box-shadow: var(--prof-shadow);
+}
+
+/* =====================================================================
+   2. Héroe de perfil
+   ===================================================================== */
+.prof-page .prof-hero {
+    border-radius: 16px !important;
+    padding: 1.4rem 1.5rem !important;
+    margin-bottom: 1.15rem !important;
+}
+
+.prof-page .prof-hero .breadcrumb {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    border-radius: 999px !important;
+    padding: 0.38rem 0.9rem !important;
+    margin: 0 !important;
+    font-size: 0.75rem;
+}
+
+.prof-page .prof-avatar {
+    box-shadow: 0 12px 26px -12px rgba(0, 0, 0, 0.5) !important;
+}
+
+.prof-page :is(.meta-pill, .role-pill) {
+    backdrop-filter: blur(4px);
+}
+
+/* =====================================================================
+   3. KPIs
+   ===================================================================== */
+.prof-page .kpi {
+    position: relative;
+    background: var(--prof-surface) !important;
+    border: 1px solid var(--prof-line) !important;
+    border-top: 3px solid var(--k-accent, var(--prof-navy)) !important;
+    border-radius: 15px !important;
+    box-shadow: var(--prof-shadow) !important;
+    padding: 1rem 1.1rem !important;
+    height: 100%;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.prof-page .kpi::before { display: none !important; }
+
+.prof-page .kpi:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--prof-shadow-hover) !important;
+}
+
+.prof-page .kpi .k-lbl {
+    font-size: 0.65rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 800 !important;
+    color: var(--prof-muted) !important;
+}
+
+.prof-page .kpi .k-val {
+    font-size: 1.45rem !important;
+    font-weight: 800 !important;
+    color: var(--prof-ink) !important;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+}
+
+.prof-page .kpi .k-sub { color: var(--prof-muted) !important; }
+
+.prof-page .kpi .k-ic {
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    background: var(--k-bg, var(--prof-navy-soft)) !important;
+    color: var(--k-color, var(--prof-navy)) !important;
+}
+
+/* Mapeo de acentos heredados */
+.prof-page .kpi[style*="#0ab39c"] { --k-accent: var(--prof-teal) !important; }
+.prof-page .kpi[style*="#299cdb"] { --k-accent: var(--prof-blue) !important; }
+.prof-page .kpi[style*="#405189"] { --k-accent: var(--prof-navy) !important; }
+.prof-page .kpi[style*="#f7b84b"] { --k-accent: var(--prof-amber) !important; }
+.prof-page .kpi[style*="#f06548"] { --k-accent: var(--prof-red) !important; }
+
+/* =====================================================================
+   4. Pestañas
+   ===================================================================== */
+.prof-page .profile-tabs {
+    border: 1px solid var(--prof-line) !important;
+    background: var(--prof-surface-2) !important;
+    border-radius: 14px !important;
+    padding: 0.35rem !important;
+    gap: 0.3rem !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    margin-bottom: 1.15rem !important;
+}
+
+.prof-page .profile-tabs .nav-item { margin: 0; }
+
+.prof-page .profile-tabs .nav-link {
+    border: 0 !important;
+    border-radius: 10px !important;
+    color: var(--prof-ink-2) !important;
+    font-weight: 700 !important;
+    font-size: 0.8rem !important;
+    padding: 0.5rem 0.9rem !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.prof-page .profile-tabs .nav-link:hover {
+    background: rgba(22, 59, 107, 0.07) !important;
+    color: var(--prof-navy) !important;
+}
+
+.prof-page .profile-tabs .nav-link.active {
+    background: var(--prof-grad) !important;
+    color: #fff !important;
+    border-bottom: 0 !important;
+    box-shadow: 0 10px 20px -12px rgba(16, 46, 84, 0.9), inset 0 -2px 0 var(--prof-gold) !important;
+}
+
+.prof-page .profile-tabs .nav-link .badge {
+    background: var(--prof-navy-soft) !important;
+    color: var(--prof-navy) !important;
+    font-weight: 800;
+}
+
+.prof-page .profile-tabs .nav-link.active .badge {
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: #fff !important;
+}
+
+/* =====================================================================
+   5. Tarjetas de información
+   ===================================================================== */
+.prof-page .info-card,
+.prof-page .pwd-card {
+    background: var(--prof-surface) !important;
+    border: 1px solid var(--prof-line) !important;
+    border-radius: 15px !important;
+    box-shadow: var(--prof-shadow) !important;
+}
+
+.prof-page .info-card .card-header { border-bottom: 1px dashed var(--prof-line) !important; }
+
+.prof-page .info-card .card-header h5 {
+    color: var(--prof-navy) !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.05em;
+}
+
+.prof-page .info-row { border-bottom: 1px dashed var(--prof-line) !important; }
+.prof-page .info-row .lbl { color: var(--prof-muted) !important; }
+.prof-page .info-row .val { color: var(--prof-ink) !important; }
+
+.prof-page .section-title {
+    color: var(--prof-navy) !important;
+    border-bottom-color: var(--prof-line) !important;
+    font-weight: 800 !important;
+}
+
+/* =====================================================================
+   6. Ofertas / programas
+   ===================================================================== */
+.prof-page .oferta-card {
+    border: 1px solid var(--prof-line) !important;
+    border-radius: 15px !important;
+    background: var(--prof-surface) !important;
+    box-shadow: var(--prof-shadow);
+}
+
+.prof-page .oferta-card:hover { box-shadow: var(--prof-shadow-hover) !important; }
+
+.prof-page .oferta-header { background: var(--prof-grad) !important; }
+.prof-page .oferta-header.disabled { background: linear-gradient(135deg, #98a2b3, #667085) !important; }
+.prof-page .oferta-footer {
+    background: var(--prof-surface-2) !important;
+    border-top: 1px solid var(--prof-line) !important;
+}
+.prof-page .oferta-footer .insc-count { color: var(--prof-navy) !important; }
+.prof-page .oferta-body .o-row { border-bottom: 1px dashed var(--prof-line) !important; }
+.prof-page .oferta-body .o-row .l { color: var(--prof-muted) !important; }
+.prof-page .oferta-body .o-row .v { color: var(--prof-ink) !important; }
+
+.prof-page .prog-card {
+    border: 1px solid var(--prof-line) !important;
+    border-radius: 15px !important;
+    background: var(--prof-surface) !important;
+}
+.prof-page .prog-card:hover { box-shadow: var(--prof-shadow-hover) !important; }
+.prof-page .prog-card-icon,
+.prof-page .insc-avatar { background: var(--prof-grad) !important; }
+.prof-page .prog-card-name,
+.prof-page .insc-name { color: var(--prof-ink) !important; }
+.prof-page .prog-card-meta,
+.prof-page .insc-meta { color: var(--prof-muted) !important; }
+.prof-page .prog-card-count .num { color: var(--prof-navy) !important; font-variant-numeric: tabular-nums; }
+.prof-page .prog-card-count .lbl { color: var(--prof-muted) !important; }
+.prof-page .prog-card-footer {
+    background: var(--prof-surface-2) !important;
+    border-top: 1px solid var(--prof-line) !important;
+}
+.prof-page .btn-ver-inscritos {
+    background: var(--prof-surface) !important;
+    color: var(--prof-navy) !important;
+    border: 1px solid var(--prof-line) !important;
+}
+.prof-page .btn-ver-inscritos:hover { background: var(--prof-grad) !important; color: #fff !important; }
+
+.prof-page .insc-row { background: var(--prof-surface) !important; border: 1px solid var(--prof-line) !important; }
+.prof-page .insc-row:hover { border-color: var(--prof-navy-2) !important; }
+
+/* Pills semánticas */
+.prof-page .status-on,
+.prof-page .est-act,
+.prof-page .pp-act { background: var(--prof-teal-soft) !important; color: var(--prof-teal) !important; border-color: rgba(13, 133, 116, 0.25) !important; }
+.prof-page .status-off { background: var(--prof-amber-soft) !important; color: var(--prof-amber) !important; border-color: rgba(183, 121, 31, 0.3) !important; }
+.prof-page .est-ret,
+.prof-page .pp-ret { background: var(--prof-red-soft) !important; color: var(--prof-red) !important; border-color: rgba(179, 36, 58, 0.25) !important; }
+.prof-page .plan-con,
+.prof-page .pp-con { background: var(--prof-blue-soft) !important; color: var(--prof-blue) !important; border-color: rgba(31, 111, 191, 0.25) !important; }
+.prof-page .plan-reg,
+.prof-page .pp-reg { background: var(--prof-surface-2) !important; color: var(--prof-ink-2) !important; border-color: var(--prof-line) !important; }
+
+/* =====================================================================
+   7. Gráficas
+   ===================================================================== */
+.prof-page .chart-card {
+    background: var(--prof-surface) !important;
+    border: 1px solid var(--prof-line) !important;
+    border-radius: 15px !important;
+    box-shadow: var(--prof-shadow) !important;
+    padding: 1.1rem 1.2rem !important;
+    margin-bottom: 1rem;
+}
+
+.prof-page .chart-card-title {
+    color: var(--prof-navy) !important;
+    border-bottom: 1px dashed var(--prof-line) !important;
+    font-weight: 800 !important;
+}
+
+.prof-page .chart-card-title i { color: var(--prof-gold) !important; }
+
+.prof-page .apexcharts-canvas,
+.prof-page .apexcharts-canvas text {
+    font-family: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif !important;
+}
+.prof-page .apexcharts-legend-text { color: var(--prof-ink-2) !important; font-weight: 600 !important; }
+.prof-page :is(.apexcharts-xaxis-label, .apexcharts-yaxis-label) { fill: var(--prof-muted) !important; }
+.prof-page .apexcharts-gridline { stroke: var(--prof-line) !important; }
+.prof-page .apexcharts-tooltip {
+    border: 1px solid var(--prof-line) !important;
+    border-radius: 10px !important;
+    box-shadow: var(--prof-shadow-hover) !important;
+    background: var(--prof-surface) !important;
+    color: var(--prof-ink) !important;
+}
+.prof-page .apexcharts-tooltip-title {
+    background: var(--prof-surface-2) !important;
+    border-bottom: 1px solid var(--prof-line) !important;
+    font-weight: 700 !important;
+}
+
+/* =====================================================================
+   8. Tablas
+   ===================================================================== */
+.prof-page .table { --bs-table-bg: transparent; width: 100%; margin-bottom: 0; }
+
+.prof-page .table thead th {
+    background: var(--prof-surface-2) !important;
+    color: var(--prof-navy) !important;
+    font-size: 0.66rem !important;
+    font-weight: 800 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--prof-line) !important;
+    padding: 0.62rem 0.55rem !important;
+    vertical-align: middle;
+}
+
+.prof-page .table tbody td {
+    border-bottom: 1px solid var(--prof-line) !important;
+    color: var(--prof-ink-2);
+    padding: 0.55rem 0.55rem !important;
+    vertical-align: middle;
+}
+
+.prof-page .table tbody tr:hover { background: var(--prof-surface-2) !important; }
+.prof-page .table-responsive { border-radius: 12px; }
+
+.prof-page .programas-table { table-layout: fixed; width: 100%; }
+.prof-page .programas-table th,
+.prof-page .programas-table td { vertical-align: middle; }
+.prof-page .programas-table tbody tr { border-bottom: 1px solid var(--prof-line) !important; }
+.prof-page .programas-table tbody tr:hover { background: var(--prof-surface-2) !important; }
+.prof-page .programas-table .btn-icon { border-radius: 10px; }
+
+/* =====================================================================
+   9. Formularios y botones
+   ===================================================================== */
+.prof-page .form-label {
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--prof-muted);
+}
+
+.prof-page :is(.form-control, .form-select) { border-color: var(--prof-line-strong); border-radius: 9px; }
+.prof-page :is(.form-control, .form-select):focus {
+    border-color: var(--prof-navy-2);
+    box-shadow: 0 0 0 0.18rem rgba(22, 59, 107, 0.12);
+}
+
+.prof-page .pwd-card label { color: var(--prof-navy) !important; }
+.prof-page .pwd-card .btn-save { background: var(--prof-grad) !important; border: 0; }
+.prof-page .pwd-card .btn-save:hover { box-shadow: 0 12px 24px -12px rgba(16, 46, 84, 0.7) !important; }
+
+.prof-page .btn { border-radius: 9px; font-weight: 700; }
+.prof-page .btn-light { background: var(--prof-surface-2); border-color: var(--prof-line); color: var(--prof-ink-2); }
+
+.prof-page .badge.bg-soft-primary { background: var(--prof-navy-soft) !important; color: var(--prof-navy) !important; }
+.prof-page .badge.bg-soft-success,
+.prof-page .badge.bg-soft-info { background: var(--prof-teal-soft) !important; color: var(--prof-teal) !important; }
+.prof-page .badge.bg-soft-warning { background: var(--prof-amber-soft) !important; color: var(--prof-amber) !important; }
+.prof-page .badge.bg-soft-danger { background: var(--prof-red-soft) !important; color: var(--prof-red) !important; }
+
+/* =====================================================================
+   10. Estados vacíos
+   ===================================================================== */
+.prof-page .empty-state {
+    background: var(--prof-surface-2) !important;
+    border: 1px dashed var(--prof-line-strong) !important;
+    border-radius: 16px !important;
+}
+.prof-page .empty-state .empty-icon { background: var(--prof-navy-soft) !important; color: var(--prof-navy) !important; }
+
+/* =====================================================================
+   11. Seguimiento dentro del perfil (sd-*)
+   ===================================================================== */
+.prof-page :is(.sd-stat-card, .sd-day, .sd-obs-box, .sd-modal-info-grid) {
+    background: var(--prof-surface) !important;
+    border: 1px solid var(--prof-line) !important;
+}
+.prof-page .sd-stat-card::before { background: var(--sd-accent, var(--prof-navy)) !important; }
+.prof-page :is(.sd-stat-value, .sd-h-title, .sd-day-pill, .sd-info-value) { color: var(--prof-ink) !important; }
+.prof-page :is(.sd-stat-label, .sd-h-modulo, .sd-h-meta, .sd-info-label) { color: var(--prof-muted) !important; }
+.prof-page .sd-h-row { background: var(--prof-surface-2) !important; border: 1px solid var(--prof-line) !important; }
+.prof-page .sd-h-time { background: var(--prof-surface) !important; border: 1px solid var(--prof-line) !important; }
+.prof-page .sd-h-time .h-i { color: var(--prof-ink) !important; }
+.prof-page .sd-asist-table thead th { background: var(--prof-surface-2) !important; color: var(--prof-navy) !important; }
+.prof-page .sd-asist-table tbody td { border-top: 1px solid var(--prof-line) !important; }
+.prof-page .a-Presente { background: var(--prof-teal-soft) !important; color: var(--prof-teal) !important; }
+.prof-page .a-Atraso { background: var(--prof-amber-soft) !important; color: var(--prof-amber) !important; }
+.prof-page .a-Falta { background: var(--prof-red-soft) !important; color: var(--prof-red) !important; }
+.prof-page .a-Justificado { background: var(--prof-blue-soft) !important; color: var(--prof-blue) !important; }
+
+/* =====================================================================
+   12. Modo oscuro
+   ===================================================================== */
+:is([data-bs-theme="dark"], [data-layout-mode="dark"]) .prof-page :is(
+    .info-card, .oferta-card, .prog-card, .chart-card, .pwd-card, .kpi,
+    .oferta-body, .insc-row, .sd-stat-card, .sd-day
+) {
+    background: var(--prof-surface) !important;
+}
+
+:is([data-bs-theme="dark"], [data-layout-mode="dark"]) .prof-page :is(
+    .info-row, .oferta-body .o-row, .programas-table tbody tr
+) {
+    border-color: var(--prof-line) !important;
+}
+
+:is([data-bs-theme="dark"], [data-layout-mode="dark"]) .prof-page :is(
+    .k-val, .info-row .val, .oferta-body .o-row .v, .prog-card-name, .insc-name,
+    .sd-stat-value, .sd-h-title
+) {
+    color: var(--prof-ink) !important;
+}
+
+/* =====================================================================
+   13. Responsive
+   ===================================================================== */
+@media (max-width: 991.98px) {
+    .prof-page .profile-tabs .nav-link { padding: 0.45rem 0.7rem !important; font-size: 0.76rem !important; }
+}
+
+@media (max-width: 767.98px) {
+    .prof-page .prof-hero { padding: 1.1rem 1.15rem !important; }
+    .prof-page .info-row { flex-direction: column; gap: 0.15rem; }
+    .prof-page .info-row .val { text-align: left; }
+}

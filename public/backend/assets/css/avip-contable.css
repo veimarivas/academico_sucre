@@ -1,0 +1,1336 @@
+/* =====================================================================
+   AVIP · Módulo Contable — Capa de diseño
+   Se carga DESPUÉS de avip-ui.css, por lo que define la identidad visual
+   de seguimiento, asignaciones, cuotas y comprobantes:
+   cabeceras, KPIs, paneles, tablas, tarjetas de programa y estados.
+   Paleta institucional: navy #163b6b + gold #cba135.
+   ===================================================================== */
+
+.cont-page,
+.cont-page * {
+    --cont-navy: var(--avip-navy-700, #163b6b);
+    --cont-navy-2: var(--avip-navy-500, #2a5d97);
+    --cont-navy-soft: var(--avip-navy-50, #f1f5fa);
+    --cont-gold: var(--avip-gold-500, #cba135);
+    --cont-gold-soft: var(--avip-gold-100, #faf3df);
+    --cont-teal: var(--avip-teal-600, #0d8574);
+    --cont-teal-soft: var(--avip-teal-100, #e2f4f0);
+    --cont-red: var(--avip-red-600, #b3243a);
+    --cont-red-soft: var(--avip-red-100, #fbe9ec);
+    --cont-amber: var(--avip-amber-600, #b7791f);
+    --cont-amber-soft: var(--avip-amber-100, #fbf0da);
+    --cont-blue: var(--avip-blue-600, #1f6fbf);
+    --cont-blue-soft: var(--avip-blue-100, #e7f1fb);
+    --cont-line: var(--ui-line, #e6e9f0);
+    --cont-line-strong: var(--ui-line-strong, #d4dae5);
+    --cont-surface: var(--ui-surface, #fff);
+    --cont-surface-2: var(--ui-surface-2, #f7f9fc);
+    --cont-ink: var(--ui-ink, #101828);
+    --cont-ink-2: var(--ui-ink-2, #475467);
+    --cont-muted: var(--ui-muted, #667085);
+    --cont-grad: linear-gradient(135deg, var(--avip-navy-700, #163b6b) 0%, var(--avip-navy-500, #2a5d97) 100%);
+    --cont-grad-soft: linear-gradient(135deg, rgba(22, 59, 107, 0.06) 0%, rgba(22, 59, 107, 0) 58%);
+    --cont-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+    --cont-shadow-hover: 0 18px 38px -22px rgba(10, 26, 58, 0.4);
+}
+
+/* =====================================================================
+   1. Cabecera de página
+   ===================================================================== */
+.cont-page :is(.cont-hero, .asig-hero, .rep-hero, .comp-hero) {
+    position: relative;
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    background: var(--cont-surface) !important;
+    background-color: var(--cont-surface) !important;
+    background-image:
+        linear-gradient(90deg, var(--avip-navy-700, #163b6b) 0%, var(--avip-navy-500, #2a5d97) 52%, var(--avip-gold-500, #cba135) 100%) !important;
+    background-repeat: no-repeat !important;
+    background-position: top left !important;
+    background-size: 100% 3px !important;
+    border: 1px solid var(--cont-line) !important;
+    border-radius: 18px !important;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 18px 40px -30px rgba(10, 26, 58, 0.5) !important;
+    padding: 1.35rem 1.5rem !important;
+    margin-bottom: 1.35rem !important;
+    color: var(--cont-ink) !important;
+}
+
+.cont-page :is(.cont-hero, .asig-hero, .rep-hero, .comp-hero)::before {
+    content: "" !important;
+    display: block !important;
+    position: absolute;
+    inset: 3px 0 auto auto;
+    top: -60px;
+    right: -40px;
+    width: 280px;
+    height: 200px;
+    background: radial-gradient(circle at 70% 50%, rgba(203, 161, 53, 0.12) 0%, transparent 62%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.cont-page :is(.cont-hero, .asig-hero, .rep-hero, .comp-hero)::after {
+    content: none !important;
+    display: none !important;
+}
+
+.cont-page :is(.cont-hero, .asig-hero, .rep-hero, .comp-hero) > * {
+    position: relative;
+    z-index: 1;
+}
+
+.cont-page :is(.cont-hero, .asig-hero, .rep-hero, .comp-hero) .hero-icon {
+    width: 52px !important;
+    height: 52px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: var(--cont-grad) !important;
+    color: #fff !important;
+    border: 0 !important;
+    border-radius: 15px !important;
+    font-size: 1.5rem !important;
+    flex-shrink: 0;
+    box-shadow: 0 14px 26px -14px rgba(16, 46, 84, 0.85) !important;
+}
+
+.cont-page :is(.cont-hero, .asig-hero, .rep-hero, .comp-hero) :is(h4, .hero-title) {
+    color: var(--cont-ink) !important;
+    font-weight: 800 !important;
+    font-size: 1.22rem !important;
+    letter-spacing: -0.02em !important;
+    margin: 0 !important;
+}
+
+.cont-page :is(.cont-hero, .asig-hero, .rep-hero, .comp-hero) .hero-sub {
+    color: var(--cont-muted) !important;
+    font-size: 0.86rem !important;
+    margin: 3px 0 0 !important;
+}
+
+.cont-page :is(.cont-hero, .asig-hero, .rep-hero, .comp-hero) .breadcrumb {
+    background: transparent !important;
+    border: 1px solid var(--cont-line) !important;
+    border-radius: 999px !important;
+    padding: 0.4rem 0.9rem !important;
+    margin: 0 !important;
+    font-size: 0.76rem;
+}
+
+.cont-page :is(.cont-hero, .asig-hero, .rep-hero, .comp-hero) .breadcrumb-item,
+.cont-page :is(.cont-hero, .asig-hero, .rep-hero, .comp-hero) .breadcrumb-item a {
+    color: var(--cont-muted) !important;
+    text-decoration: none;
+}
+
+.cont-page :is(.cont-hero, .asig-hero, .rep-hero, .comp-hero) .breadcrumb-item.active {
+    color: var(--cont-navy) !important;
+    font-weight: 700 !important;
+}
+
+/* =====================================================================
+   2. Barra de filtros
+   ===================================================================== */
+.cont-page .filter-card {
+    background: var(--cont-surface) !important;
+    border: 1px solid var(--cont-line) !important;
+    border-radius: 16px !important;
+    box-shadow: var(--cont-shadow) !important;
+    margin-bottom: 1.15rem !important;
+    overflow: hidden;
+}
+
+.cont-page .filter-card .card-body {
+    padding: 0.95rem 1.25rem !important;
+}
+
+.cont-page .filter-card label {
+    font-size: 0.63rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 800 !important;
+    color: var(--cont-muted) !important;
+    margin-bottom: 3px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.cont-page .filter-card :is(select, input):not([type="checkbox"]):not([type="radio"]) {
+    border: 1px solid var(--cont-line-strong) !important;
+    border-radius: 10px !important;
+    padding: 0.44rem 0.8rem !important;
+    font-size: 0.84rem !important;
+    font-weight: 700 !important;
+    color: var(--cont-navy) !important;
+    background-color: var(--cont-surface) !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cont-page .filter-card :is(select, input):focus {
+    outline: 0 !important;
+    border-color: var(--cont-navy-2) !important;
+    box-shadow: 0 0 0 0.18rem rgba(22, 59, 107, 0.12) !important;
+}
+
+/* =====================================================================
+   3. KPIs / tarjetas de estadística
+   ===================================================================== */
+.cont-page :is(.kpi, .comp-stat) {
+    position: relative;
+    background: var(--cont-surface) !important;
+    border: 1px solid var(--cont-line) !important;
+    border-top: 3px solid var(--k-accent, var(--cont-navy)) !important;
+    border-radius: 15px !important;
+    box-shadow: var(--cont-shadow) !important;
+    padding: 1rem 1.15rem !important;
+    height: 100%;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cont-page .comp-stat {
+    border-top: 1px solid var(--cont-line) !important;
+    border-left: 3px solid var(--k-accent, var(--cont-navy)) !important;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.cont-page :is(.kpi, .comp-stat):hover {
+    transform: translateY(-2px);
+    box-shadow: var(--cont-shadow-hover) !important;
+}
+
+.cont-page .kpi::before,
+.cont-page .comp-stat::before {
+    display: none !important;
+}
+
+.cont-page .kpi .k-lbl {
+    font-size: 0.65rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--cont-muted) !important;
+    font-weight: 800 !important;
+}
+
+.cont-page .kpi .k-val {
+    font-size: 1.45rem !important;
+    font-weight: 800 !important;
+    line-height: 1.15;
+    color: var(--k-accent, var(--cont-ink)) !important;
+    font-variant-numeric: tabular-nums;
+}
+
+.cont-page .kpi .k-sub {
+    font-size: 0.7rem !important;
+    color: var(--cont-muted) !important;
+    margin-top: 2px;
+}
+
+.cont-page .kpi .k-ic {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 13px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.25rem !important;
+    background: var(--k-bg, var(--cont-navy-soft)) !important;
+    color: var(--k-color, var(--cont-navy)) !important;
+    flex-shrink: 0;
+}
+
+.cont-page .comp-stat .cs-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.cont-page .comp-stat .cs-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 800;
+    color: var(--cont-muted);
+}
+
+.cont-page .comp-stat .cs-value {
+    font-size: 1.3rem;
+    font-weight: 800;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+}
+
+.cont-page .comp-stat .cs-sub {
+    font-size: 0.7rem;
+    color: var(--cont-muted);
+}
+
+/* Mapeo de acentos heredados (inline) a la paleta institucional */
+.cont-page .kpi[style*="#299cdb"] { --k-accent: var(--cont-blue) !important; }
+.cont-page .kpi[style*="#405189"] { --k-accent: var(--cont-navy) !important; }
+.cont-page .kpi[style*="#0ab39c"] { --k-accent: var(--cont-teal) !important; }
+.cont-page .kpi[style*="#f06548"] { --k-accent: var(--cont-red) !important; }
+
+.cont-page .kpi .k-ic[style*="#299cdb"] { --k-color: var(--cont-blue) !important; --k-bg: var(--cont-blue-soft) !important; }
+.cont-page .kpi .k-ic[style*="#405189"] { --k-color: var(--cont-navy) !important; --k-bg: var(--cont-navy-soft) !important; }
+.cont-page .kpi .k-ic[style*="#0ab39c"] { --k-color: var(--cont-teal) !important; --k-bg: var(--cont-teal-soft) !important; }
+.cont-page .kpi .k-ic[style*="#f06548"] { --k-color: var(--cont-red) !important; --k-bg: var(--cont-red-soft) !important; }
+
+.cont-page .comp-stat[style*="#f7b84b"] { --k-accent: var(--cont-amber) !important; }
+.cont-page .comp-stat[style*="#0ab39c"] { --k-accent: var(--cont-teal) !important; }
+.cont-page .comp-stat[style*="#f06548"] { --k-accent: var(--cont-red) !important; }
+.cont-page .comp-stat[style*="#405189"] { --k-accent: var(--cont-navy) !important; }
+
+/* =====================================================================
+   4. Tarjetas resumen (seguimiento)
+   ===================================================================== */
+.cont-page .cont-summary-card {
+    background: var(--cont-surface) !important;
+    border: 1px solid var(--cont-line) !important;
+    border-radius: 16px !important;
+    box-shadow: var(--cont-shadow) !important;
+    padding: 1.15rem 1.3rem !important;
+    height: 100%;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cont-page .cont-summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--cont-shadow-hover) !important;
+}
+
+.cont-page :is(.cont-card-mat, .cont-card-col) {
+    border-left: 0 !important;
+}
+
+.cont-page .cont-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 0.9rem;
+    padding-bottom: 0.7rem;
+    border-bottom: 1px dashed var(--cont-line);
+}
+
+.cont-page .cont-card-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.cont-page .cont-card-title {
+    font-weight: 800;
+    color: var(--cont-ink);
+    font-size: 0.95rem;
+    line-height: 1.1;
+}
+
+.cont-page .cont-card-sub {
+    font-size: 0.7rem;
+    color: var(--cont-muted);
+    margin-top: 2px;
+}
+
+.cont-page .cont-card-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.cont-page .cont-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--cont-ink-2);
+    padding: 0.18rem 0;
+}
+
+.cont-page .cont-row > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 600;
+}
+
+.cont-page .cont-row strong {
+    font-size: 1rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+.cont-page .cont-row.saldo-row {
+    border-top: 1px dashed var(--cont-line);
+    padding-top: 0.45rem;
+    margin-top: 0.25rem;
+}
+
+.cont-page .cont-card-total {
+    background: var(--cont-grad) !important;
+    background-color: var(--cont-navy) !important;
+    border: 0 !important;
+    color: #fff !important;
+    box-shadow: 0 18px 38px -22px rgba(16, 46, 84, 0.9) !important;
+}
+
+.cont-page .cont-card-total .cont-card-header {
+    border-bottom-color: rgba(255, 255, 255, 0.2);
+}
+
+.cont-page .cont-card-total .cont-card-title,
+.cont-page .cont-card-total .cont-card-sub,
+.cont-page .cont-card-total .cont-row {
+    color: #fff !important;
+}
+
+.cont-page .cont-card-total .cont-card-sub,
+.cont-page .cont-card-total .cont-row span {
+    color: rgba(255, 255, 255, 0.82) !important;
+}
+
+.cont-page .cont-progress {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.cont-page .cont-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--cont-gold) 0%, #fff 100%);
+    border-radius: 999px;
+    transition: width 0.5s ease;
+}
+
+/* =====================================================================
+   5. Paneles y secciones
+   ===================================================================== */
+.cont-page .cont-panel {
+    background: var(--cont-surface) !important;
+    border: 1px solid var(--cont-line) !important;
+    border-radius: 16px !important;
+    box-shadow: var(--cont-shadow) !important;
+    overflow: hidden;
+    margin-bottom: 1.15rem;
+}
+
+.cont-page .cont-panel-head {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.95rem 1.25rem;
+    background: var(--cont-grad-soft), var(--cont-surface-2) !important;
+    border-bottom: 1px solid var(--cont-line);
+    flex-wrap: wrap;
+}
+
+.cont-page .cont-panel-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    background: var(--cont-navy-soft);
+    color: var(--cont-navy);
+    flex-shrink: 0;
+}
+
+.cont-page .cont-panel-title {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--cont-ink);
+    margin: 0;
+    line-height: 1.2;
+}
+
+.cont-page .cont-panel-sub {
+    font-size: 0.72rem;
+    color: var(--cont-muted);
+    margin: 2px 0 0;
+}
+
+.cont-page .cont-panel-body {
+    padding: 1.1rem 1.25rem;
+}
+
+/* =====================================================================
+   6. Tabs por tipo
+   ===================================================================== */
+.cont-page .tipo-tabs {
+    border: 0 !important;
+    gap: 0.3rem !important;
+    background: var(--cont-surface-2) !important;
+    padding: 0.35rem !important;
+    border-radius: 13px !important;
+    display: inline-flex !important;
+    flex-wrap: wrap;
+    margin-bottom: 1rem !important;
+}
+
+.cont-page .tipo-tabs .tipo-tab {
+    border: 0 !important;
+    background: transparent !important;
+    border-radius: 10px !important;
+    color: var(--cont-ink-2) !important;
+    font-weight: 700 !important;
+    font-size: 0.82rem !important;
+    padding: 0.5rem 1rem !important;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.cont-page .tipo-tabs .tipo-tab:hover {
+    color: var(--cont-navy) !important;
+    background: rgba(22, 59, 107, 0.06) !important;
+}
+
+.cont-page .tipo-tabs .tipo-tab.active {
+    background: var(--cont-grad) !important;
+    color: #fff !important;
+    box-shadow: 0 10px 20px -12px rgba(16, 46, 84, 0.9) !important;
+}
+
+.cont-page .tipo-tabs .tipo-tab .badge {
+    background: var(--cont-navy-soft) !important;
+    color: var(--cont-navy) !important;
+    font-weight: 800;
+    font-size: 0.65rem;
+    padding: 0.2em 0.55em;
+    border-radius: 999px;
+}
+
+.cont-page .tipo-tabs .tipo-tab.active .badge {
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: #fff !important;
+}
+
+.cont-page :is(.tipo-header-title) {
+    font-weight: 800 !important;
+    color: var(--cont-ink) !important;
+    font-size: 0.95rem !important;
+}
+
+.cont-page .tipo-header-icon {
+    background: var(--cont-grad) !important;
+    color: #fff !important;
+    border-radius: 11px !important;
+}
+
+/* =====================================================================
+   7. Tablas
+   ===================================================================== */
+.cont-page .cont-table-wrap {
+    border: 1px solid var(--cont-line);
+    border-radius: 14px;
+    overflow: auto;
+    background: var(--cont-surface);
+}
+
+.cont-page :is(.tabla-prog-cont, .asig-table, .comp-table) {
+    margin: 0 !important;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.cont-page :is(.tabla-prog-cont, .asig-table, .comp-table) thead th {
+    background: var(--cont-surface-2) !important;
+    background-image: none !important;
+    color: var(--cont-navy) !important;
+    font-weight: 800 !important;
+    font-size: 0.67rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    padding: 0.72rem 0.75rem !important;
+    border-bottom: 1px solid var(--cont-line) !important;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.cont-page :is(.tabla-prog-cont, .asig-table, .comp-table) tbody td {
+    padding: 0.66rem 0.75rem !important;
+    vertical-align: middle !important;
+    font-size: 0.83rem !important;
+    border-bottom: 1px solid var(--cont-line) !important;
+    color: var(--cont-ink-2);
+}
+
+.cont-page :is(.tabla-prog-cont, .asig-table, .comp-table) tbody tr:last-child td {
+    border-bottom: 0 !important;
+}
+
+.cont-page :is(.tabla-prog-cont, .asig-table, .comp-table) tbody tr {
+    transition: background 0.15s ease;
+}
+
+.cont-page :is(.tabla-prog-cont, .asig-table, .comp-table) tbody tr:hover {
+    background: var(--cont-surface-2) !important;
+}
+
+.cont-page :is(.tabla-prog-cont, .asig-table, .comp-table) tbody tr:nth-child(even) {
+    background: rgba(22, 59, 107, 0.015);
+}
+
+.cont-page .td-num,
+.cont-page :is(.tabla-prog-cont, .asig-table, .comp-table) .text-end {
+    font-variant-numeric: tabular-nums;
+}
+
+.cont-page :is(.tabla-prog-cont, .asig-table, .comp-table) thead th a,
+.cont-page :is(.tabla-prog-cont, .asig-table, .comp-table) thead th i {
+    color: var(--cont-navy);
+}
+
+/* Celda de programa */
+.cont-page .prog-icon-sm {
+    width: 34px;
+    height: 34px;
+    background: var(--cont-grad);
+    color: #fff;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.88rem;
+    flex-shrink: 0;
+    box-shadow: 0 8px 16px -10px rgba(16, 46, 84, 0.8);
+}
+
+.cont-page .prog-name {
+    font-weight: 700;
+    color: var(--cont-ink);
+    font-size: 0.85rem;
+    line-height: 1.25;
+}
+
+.cont-page .prog-name a:hover {
+    color: var(--cont-navy-2) !important;
+}
+
+.cont-page .prog-meta {
+    font-size: 0.66rem;
+    color: var(--cont-muted);
+    margin-top: 2px;
+}
+
+/* Bloques de métricas dentro de celdas */
+.cont-page .metric-block {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    align-items: flex-end;
+    line-height: 1.2;
+}
+
+.cont-page .metric-block .deuda {
+    font-weight: 800;
+    color: var(--cont-ink);
+    font-size: 0.83rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.cont-page .metric-block .pagado {
+    font-size: 0.67rem;
+    color: var(--cont-teal);
+    font-weight: 700;
+}
+
+.cont-page .metric-block .saldo {
+    font-size: 0.67rem;
+    font-weight: 700;
+}
+
+.cont-page .metric-block .saldo.danger {
+    color: var(--cont-red);
+}
+
+.cont-page .metric-block .saldo.ok {
+    color: var(--cont-teal);
+}
+
+.cont-page .metric-reales {
+    display: block;
+    margin-top: 3px;
+    padding-top: 3px;
+    border-top: 1px dashed var(--cont-line);
+    width: 100%;
+    font-size: 0.66rem;
+    line-height: 1.2;
+    color: var(--cont-teal);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.cont-page .metric-reales-val {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.66rem;
+    color: var(--cont-teal);
+    font-weight: 700;
+}
+
+.cont-page .metric-reales-val .dot,
+.cont-page .metric-reales .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--cont-teal);
+    display: inline-block;
+}
+
+/* Barras de progreso */
+.cont-page .prog-progress-bar {
+    flex: 1;
+    height: 7px;
+    background: var(--cont-line);
+    border-radius: 999px;
+    overflow: hidden;
+    min-width: 80px;
+}
+
+.cont-page .prog-progress-fill {
+    height: 100%;
+    background: var(--cont-grad);
+    border-radius: 999px;
+    transition: width 0.5s ease;
+}
+
+.cont-page .prog-progress-pct {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: var(--cont-ink-2);
+    min-width: 32px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.cont-page .prog-bar-reales {
+    height: 4px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--cont-line);
+}
+
+.cont-page .prog-bar-reales .fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--cont-gold), var(--cont-teal));
+    border-radius: 999px;
+}
+
+/* Filas "no ejecutado" */
+.cont-page .tabla-prog-cont tbody tr.tr-no-ejecutado {
+    background: rgba(179, 36, 58, 0.05) !important;
+}
+
+.cont-page .tabla-prog-cont tbody tr.tr-no-ejecutado:hover {
+    background: rgba(179, 36, 58, 0.1) !important;
+}
+
+/* Badges de saldo */
+.cont-page .saldo-pill-big {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 800;
+    padding: 0.32em 0.8em;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    border: 1px solid;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.cont-page .saldo-pill-big.deuda {
+    background: var(--cont-red-soft);
+    color: var(--cont-red);
+    border-color: rgba(179, 36, 58, 0.25);
+}
+
+.cont-page .saldo-pill-big.ok {
+    background: var(--cont-teal-soft);
+    color: var(--cont-teal);
+    border-color: rgba(13, 133, 116, 0.25);
+}
+
+/* =====================================================================
+   8. Tarjetas de programa (asignaciones / cuotas)
+   ===================================================================== */
+.cont-page :is(.prog-card, .prog-block) {
+    border: 1px solid var(--cont-line) !important;
+    border-radius: 16px !important;
+    background: var(--cont-surface) !important;
+    box-shadow: var(--cont-shadow) !important;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.cont-page :is(.prog-card, .prog-block):hover {
+    box-shadow: var(--cont-shadow-hover) !important;
+}
+
+.cont-page :is(.prog-card-head, .prog-block-head) {
+    background: var(--cont-grad-soft), var(--cont-surface-2) !important;
+    background-image: var(--cont-grad-soft) !important;
+    border-bottom: 1px solid var(--cont-line) !important;
+}
+
+.cont-page .prog-card-icon,
+.cont-page .prog-icon-big {
+    background: var(--cont-grad) !important;
+    color: #fff !important;
+    border-radius: 13px !important;
+    box-shadow: 0 12px 22px -14px rgba(16, 46, 84, 0.9) !important;
+}
+
+.cont-page :is(.prog-card-name, .prog-info .nm) {
+    font-weight: 800 !important;
+    color: var(--cont-ink) !important;
+    letter-spacing: -0.01em;
+}
+
+.cont-page :is(.prog-card-meta, .prog-info .me) {
+    color: var(--cont-muted) !important;
+}
+
+.cont-page .prog-totales .tt {
+    color: var(--cont-navy) !important;
+    font-variant-numeric: tabular-nums;
+}
+
+.cont-page .prog-totales .ts {
+    color: var(--cont-muted) !important;
+}
+
+.cont-page .collapse-toggle {
+    background: var(--cont-navy-soft) !important;
+    color: var(--cont-navy) !important;
+}
+
+.cont-page .prog-card-head:hover .collapse-toggle {
+    background: var(--cont-navy-100, #dce7f4) !important;
+}
+
+/* =====================================================================
+   9. Pills / badges semánticos
+   ===================================================================== */
+.cont-page :is(.prog-stat-pill, .tipo-pill, .venc-pill, .badge-estado) {
+    border-radius: 999px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.01em;
+}
+
+.cont-page .psp-esp,
+.cont-page .psp-c-prox {
+    background: var(--cont-navy-soft) !important;
+    color: var(--cont-navy) !important;
+    border-color: var(--cont-navy-100, #dce7f4) !important;
+}
+
+.cont-page .psp-cob,
+.cont-page .psp-c-pag {
+    background: var(--cont-teal-soft) !important;
+    color: var(--cont-teal) !important;
+    border-color: rgba(13, 133, 116, 0.25) !important;
+}
+
+.cont-page :is(.psp-pen, .psp-c-venc) {
+    background: var(--cont-red-soft) !important;
+    color: var(--cont-red) !important;
+    border-color: rgba(179, 36, 58, 0.25) !important;
+}
+
+.cont-page .psp-c-hoy {
+    background: var(--cont-amber-soft) !important;
+    color: var(--cont-amber) !important;
+    border-color: rgba(183, 121, 31, 0.3) !important;
+}
+
+.cont-page .tipo-pill.tp-mat {
+    background: var(--cont-blue-soft) !important;
+    color: var(--cont-blue) !important;
+    border-color: rgba(31, 111, 191, 0.25) !important;
+}
+
+.cont-page .tipo-pill.tp-col {
+    background: var(--cont-surface-2) !important;
+    color: var(--cont-ink-2) !important;
+    border-color: var(--cont-line) !important;
+}
+
+.cont-page :is(.vp-venc) {
+    background: var(--cont-red-soft) !important;
+    color: var(--cont-red) !important;
+    border-color: rgba(179, 36, 58, 0.25) !important;
+}
+
+.cont-page .vp-hoy {
+    background: var(--cont-amber-soft) !important;
+    color: var(--cont-amber) !important;
+    border-color: rgba(183, 121, 31, 0.3) !important;
+}
+
+.cont-page .vp-prox {
+    background: var(--cont-blue-soft) !important;
+    color: var(--cont-blue) !important;
+    border-color: rgba(31, 111, 191, 0.25) !important;
+}
+
+.cont-page .vp-pag {
+    background: var(--cont-teal-soft) !important;
+    color: var(--cont-teal) !important;
+    border-color: rgba(13, 133, 116, 0.25) !important;
+}
+
+.cont-page .badge-estado.pendiente {
+    background: var(--cont-amber-soft) !important;
+    color: var(--cont-amber) !important;
+    border-color: rgba(183, 121, 31, 0.3) !important;
+}
+
+.cont-page .badge-estado.verificado {
+    background: var(--cont-teal-soft) !important;
+    color: var(--cont-teal) !important;
+    border-color: rgba(13, 133, 116, 0.25) !important;
+}
+
+.cont-page .badge-estado.rechazado {
+    background: var(--cont-red-soft) !important;
+    color: var(--cont-red) !important;
+    border-color: rgba(179, 36, 58, 0.25) !important;
+}
+
+/* =====================================================================
+   10. Filtros de estado (asignaciones)
+   ===================================================================== */
+.cont-page .estado-filter {
+    border: 1px solid var(--cont-line) !important;
+    background: var(--cont-surface) !important;
+    color: var(--cont-ink-2) !important;
+    border-radius: 999px !important;
+    padding: 0.42rem 0.9rem !important;
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+}
+
+.cont-page .estado-filter:hover {
+    border-color: var(--cont-navy-200, #b8cbe4) !important;
+    color: var(--cont-navy) !important;
+}
+
+.cont-page .estado-filter .bdg {
+    background: var(--cont-surface-2) !important;
+    color: var(--cont-ink-2) !important;
+    border-radius: 999px;
+    padding: 0.1em 0.55em;
+    font-size: 0.65rem;
+    font-weight: 800;
+}
+
+.cont-page .estado-filter.active {
+    color: #fff !important;
+    border-color: transparent !important;
+}
+
+.cont-page .estado-filter.active.is-all {
+    background: var(--cont-grad) !important;
+}
+
+.cont-page .estado-filter.active.is-venc {
+    background: linear-gradient(135deg, var(--cont-red), #d4566a) !important;
+}
+
+.cont-page .estado-filter.active.is-hoy {
+    background: linear-gradient(135deg, var(--cont-amber), #d99a2b) !important;
+}
+
+.cont-page .estado-filter.active.is-prox {
+    background: linear-gradient(135deg, var(--cont-blue), #2f86d6) !important;
+}
+
+.cont-page .estado-filter.active.is-pag {
+    background: linear-gradient(135deg, var(--cont-teal), #12a08c) !important;
+}
+
+.cont-page .estado-filter.active .bdg {
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: #fff !important;
+}
+
+/* =====================================================================
+   11. Filas de participante / cuotas (cuotas-reporte)
+   ===================================================================== */
+.cont-page .part-row {
+    border-bottom: 1px solid var(--cont-line) !important;
+}
+
+.cont-page .part-row:hover {
+    background: var(--cont-surface-2) !important;
+}
+
+.cont-page .part-row::before {
+    background: transparent;
+}
+
+.cont-page .part-row:hover::before {
+    background: var(--cont-gold) !important;
+}
+
+.cont-page .pr-num {
+    background: var(--cont-navy-soft) !important;
+    color: var(--cont-navy) !important;
+}
+
+.cont-page .part-row:hover .pr-num {
+    background: var(--cont-grad) !important;
+    color: #fff !important;
+}
+
+.cont-page .pr-avatar {
+    background: var(--cont-grad) !important;
+}
+
+.cont-page .deuda-total {
+    color: var(--cont-navy) !important;
+    font-variant-numeric: tabular-nums;
+}
+
+.cont-page .cuota-mini {
+    background: var(--cont-surface-2) !important;
+    border: 1px solid var(--cont-line) !important;
+    border-radius: 8px !important;
+}
+
+.cont-page .cuota-mini:hover {
+    background: var(--cont-surface) !important;
+    border-color: var(--cont-navy-200, #b8cbe4) !important;
+}
+
+.cont-page .cuota-mini .info .tag.mat {
+    background: var(--cont-blue-soft) !important;
+    color: var(--cont-blue) !important;
+}
+
+.cont-page .cuota-mini .info .tag.col {
+    background: var(--cont-surface-2) !important;
+    color: var(--cont-ink-2) !important;
+}
+
+.cont-page .cuota-mini .right .dias.venc {
+    background: var(--cont-red-soft) !important;
+    color: var(--cont-red) !important;
+}
+
+.cont-page .cuota-mini .right .dias.prox {
+    background: var(--cont-blue-soft) !important;
+    color: var(--cont-blue) !important;
+}
+
+/* =====================================================================
+   12. Botones utilitarios del módulo
+   ===================================================================== */
+.cont-page .btn-fechas {
+    border: 1px solid var(--cont-line-strong) !important;
+    background: var(--cont-surface) !important;
+    color: var(--cont-ink-2) !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+    transition: all 0.15s ease;
+}
+
+.cont-page .btn-fechas:hover {
+    border-color: var(--cont-navy-2) !important;
+    color: var(--cont-navy) !important;
+    background: var(--cont-navy-soft) !important;
+}
+
+.cont-page .btn-fechas .bdg {
+    background: var(--cont-surface-2) !important;
+    color: var(--cont-ink-2) !important;
+}
+
+.cont-page .btn-fechas.has-data {
+    border-color: var(--cont-navy-2) !important;
+    color: var(--cont-navy) !important;
+    background: var(--cont-navy-soft) !important;
+}
+
+.cont-page .btn-fechas.has-data .bdg {
+    background: var(--cont-navy) !important;
+    color: #fff !important;
+}
+
+.cont-page:is(.cuotas-reporte) .btn-wa-bulk,
+.cont-page .btn-wa-bulk {
+    background: linear-gradient(135deg, #25d366 0%, #128c7e 100%) !important;
+    border: 0 !important;
+    color: #fff !important;
+    box-shadow: 0 10px 20px -14px rgba(18, 140, 126, 0.9) !important;
+}
+
+.cont-page .wa-link {
+    background: linear-gradient(135deg, #25d366 0%, #128c7e 100%) !important;
+    color: #fff !important;
+}
+
+.cont-page .wa-link.is-disabled {
+    background: var(--cont-surface-2) !important;
+    color: var(--cont-muted) !important;
+    box-shadow: none !important;
+}
+
+.cont-page .sin-fecha-link {
+    background: var(--cont-amber-soft) !important;
+    color: var(--cont-amber) !important;
+}
+
+.cont-page .sin-fecha-link:hover {
+    background: var(--cont-amber) !important;
+    color: #fff !important;
+}
+
+/* Modales del módulo: cabecera navy coherente */
+.cont-page + .modal .modal-header,
+.modal.cont-modal .modal-header {
+    background: linear-gradient(135deg, var(--avip-navy-800, #102e54) 0%, var(--avip-navy-700, #163b6b) 100%) !important;
+}
+
+/* =====================================================================
+   12b. Toolbars, navegación de programas y avisos
+   ===================================================================== */
+.cont-page .prog-nav-wrap {
+    background: var(--cont-surface) !important;
+    border: 1px solid var(--cont-line) !important;
+    border-radius: 14px !important;
+    box-shadow: var(--cont-shadow) !important;
+}
+
+.cont-page .prog-nav-label {
+    color: var(--cont-muted) !important;
+}
+
+.cont-page .prog-nav-link {
+    border: 1px solid var(--cont-line) !important;
+    background: var(--cont-surface) !important;
+    color: var(--cont-navy) !important;
+    border-radius: 9px !important;
+}
+
+.cont-page .prog-nav-link:hover,
+.cont-page .prog-nav-link.active {
+    background: var(--cont-grad) !important;
+    color: #fff !important;
+    border-color: transparent !important;
+}
+
+.cont-page .prog-nav-link .prog-nav-bdg {
+    background: var(--cont-navy-soft) !important;
+    color: var(--cont-navy) !important;
+}
+
+.cont-page .prog-nav-link:hover .prog-nav-bdg,
+.cont-page .prog-nav-link.active .prog-nav-bdg {
+    background: rgba(255, 255, 255, 0.22) !important;
+    color: #fff !important;
+}
+
+.cont-page .btn-collapse-toggle {
+    border: 1px solid var(--cont-line) !important;
+    background: var(--cont-surface) !important;
+    color: var(--cont-ink-2) !important;
+    border-radius: 9px !important;
+}
+
+.cont-page .btn-collapse-toggle:hover {
+    background: var(--cont-grad) !important;
+    color: #fff !important;
+    border-color: transparent !important;
+}
+
+.cont-page .prog-search-input {
+    border: 1px solid var(--cont-line-strong) !important;
+    background: var(--cont-surface) !important;
+    color: var(--cont-ink-2) !important;
+    border-radius: 9px !important;
+}
+
+.cont-page .prog-search-input:focus {
+    outline: 0 !important;
+    border-color: var(--cont-navy-2) !important;
+    box-shadow: 0 0 0 0.18rem rgba(22, 59, 107, 0.12) !important;
+}
+
+.cont-page .warning-card {
+    border: 1px solid rgba(183, 121, 31, 0.28) !important;
+    background: linear-gradient(135deg, var(--cont-amber-soft) 0%, rgba(251, 240, 218, 0.4) 100%) !important;
+    border-radius: 15px !important;
+}
+
+.cont-page .warning-card-head {
+    border-bottom-color: rgba(183, 121, 31, 0.25) !important;
+}
+
+/* =====================================================================
+   12c. Selector de plan (modal fechas)
+   ===================================================================== */
+.cont-page .plan-card {
+    border-color: var(--cont-line) !important;
+    background: var(--cont-surface) !important;
+}
+
+.cont-page .plan-card:hover {
+    border-color: var(--cont-navy-200, #b8cbe4) !important;
+}
+
+.cont-page .plan-card.is-active.contado {
+    background: var(--cont-grad) !important;
+}
+
+.cont-page .plan-card.is-active.regular {
+    background: linear-gradient(135deg, var(--cont-teal) 0%, #12a08c 100%) !important;
+}
+
+.cont-page .btn-apply-gen {
+    background: var(--cont-grad) !important;
+}
+
+/* =====================================================================
+   12d. Detalle de deudas (modal comprobantes)
+   ===================================================================== */
+.cont-page .deuda-row {
+    border: 1px solid var(--cont-line) !important;
+    border-radius: 10px !important;
+}
+
+.cont-page .deuda-row.seleccionada {
+    background: var(--cont-teal-soft) !important;
+    border-color: var(--cont-teal) !important;
+    box-shadow: 0 0 0 1px rgba(13, 133, 116, 0.2) !important;
+}
+
+.cont-page .deuda-row .dr-tipo.Matricula {
+    background: var(--cont-blue-soft) !important;
+    color: var(--cont-blue) !important;
+}
+
+.cont-page .deuda-row .dr-tipo.Colegiatura {
+    background: var(--cont-teal-soft) !important;
+    color: var(--cont-teal) !important;
+}
+
+.cont-page .deuda-row .dr-badge-asesor {
+    background: var(--cont-teal-soft) !important;
+    color: var(--cont-teal) !important;
+}
+
+.cont-page .deuda-row .dr-restante.positivo,
+.cont-page .deuda-row .dr-restante.cero {
+    color: var(--cont-teal) !important;
+}
+
+.cont-page .deuda-row .dr-restante.negativo {
+    color: var(--cont-red) !important;
+}
+
+/* =====================================================================
+   13. Estados vacíos
+   ===================================================================== */
+.cont-page .empty-state {
+    text-align: center;
+    padding: 3.5rem 1.5rem;
+    background: var(--cont-surface-2) !important;
+    border: 1px dashed var(--cont-line-strong) !important;
+    border-radius: 16px !important;
+}
+
+.cont-page .empty-state .empty-icon {
+    width: 76px;
+    height: 76px;
+    margin: 0 auto 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--cont-navy-soft);
+    border-radius: 50%;
+    font-size: 2.3rem;
+    color: var(--cont-navy);
+    box-shadow: 0 12px 26px -18px rgba(16, 46, 84, 0.7);
+}
+
+.cont-page .empty-state h5 {
+    color: var(--cont-ink) !important;
+    font-weight: 800;
+}
+
+/* =====================================================================
+   14. Modo oscuro
+   ===================================================================== */
+:is([data-bs-theme="dark"], [data-layout-mode="dark"]) .cont-page :is(.cont-hero, .asig-hero, .rep-hero, .comp-hero) {
+    background-color: var(--cont-surface) !important;
+    background-image:
+        linear-gradient(90deg, var(--avip-navy-600, #1d4a80) 0%, var(--avip-navy-400, #4c7bb0) 52%, var(--avip-gold-400, #ddb84d) 100%) !important;
+    background-size: 100% 3px;
+    background-repeat: no-repeat;
+}
+
+:is([data-bs-theme="dark"], [data-layout-mode="dark"]) .cont-page .cont-grad-soft,
+:is([data-bs-theme="dark"], [data-layout-mode="dark"]) .cont-page :is(.prog-card-head, .prog-block-head, .cont-panel-head) {
+    background-image: none !important;
+}
+
+:is([data-bs-theme="dark"], [data-layout-mode="dark"]) .cont-page :is(.metric-block .deuda, .prog-name, .cont-panel-title, .tipo-header-title) {
+    color: var(--cont-ink) !important;
+}
+
+/* =====================================================================
+   15. Responsive
+   ===================================================================== */
+@media (max-width: 767.98px) {
+    .cont-page :is(.cont-hero, .asig-hero, .rep-hero, .comp-hero) {
+        padding: 1.1rem 1.15rem !important;
+    }
+
+    .cont-page :is(.cont-hero, .asig-hero, .rep-hero, .comp-hero) .hero-icon {
+        width: 46px !important;
+        height: 46px !important;
+        font-size: 1.3rem !important;
+    }
+
+    .cont-page :is(.cont-hero, .asig-hero, .rep-hero, .comp-hero) .breadcrumb {
+        border: 0 !important;
+        padding: 0 !important;
+    }
+
+    .cont-page .cont-panel-body,
+    .cont-page .filter-card .card-body {
+        padding: 0.9rem 1rem !important;
+    }
+}

@@ -1,0 +1,802 @@
+@extends('admin.layouts.master')
+
+@section('title', 'Control de Responsables - ' . config('app.name'))
+
+@push('css')
+<style>
+/* ===== Hero ===== */
+.cr-hero {
+    position: relative;
+    background: linear-gradient(135deg, #3b4a80 0%, #5e72b8 45%, #0ab39c 100%);
+    border-radius: 18px;
+    padding: 1.6rem 1.85rem;
+    color: #fff;
+    overflow: hidden;
+    box-shadow: 0 14px 34px -14px rgba(64,81,137,.5);
+    margin-bottom: 1.25rem;
+}
+.cr-hero h4 { color:#fff; font-weight:700; margin:0; }
+.cr-hero .hero-sub { color:rgba(255,255,255,.75); font-size:.82rem; margin:0; }
+.cr-hero .hero-icon {
+    width:52px; height:52px; border-radius:14px;
+    background:rgba(255,255,255,.15); display:flex; align-items:center; justify-content:center;
+    font-size:1.6rem;
+}
+.cr-hero .breadcrumb { --vz-breadcrumb-divider-color: rgba(255,255,255,.6); }
+.cr-hero .breadcrumb a, .cr-hero .breadcrumb-item.active { color:rgba(255,255,255,.85); font-size:.75rem; }
+
+/* ===== Stats ===== */
+.cr-stat-card {
+    background:#fff; border:1px solid #eef0f5; border-radius:12px;
+    padding:.8rem 1rem; display:flex; align-items:center; gap:.75rem;
+    box-shadow:0 1px 2px rgba(30,40,80,.04); height:100%;
+}
+.cr-stat-ico {
+    width:38px; height:38px; border-radius:10px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:1.15rem;
+    background: color-mix(in srgb, var(--cr-accent, #405189) 12%, #fff);
+    color: var(--cr-accent, #405189);
+}
+.cr-stat-card .num { font-size:1.25rem; font-weight:800; line-height:1.1; color:#2a2f43; }
+.cr-stat-card .lbl { font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.35px; color:#878a99; }
+
+/* ===== Toolbar ===== */
+.cr-toolbar {
+    background:#fff; border:1px solid #eef0f5; border-radius:12px;
+    padding:.7rem .9rem; display:flex; align-items:center; gap:.75rem; flex-wrap:wrap;
+    margin-bottom:1rem; box-shadow:0 1px 2px rgba(30,40,80,.04);
+}
+.cr-search { position:relative; flex:1 1 240px; max-width:340px; }
+.cr-search i { position:absolute; left:.7rem; top:50%; transform:translateY(-50%); color:#aab0c0; }
+.cr-search input {
+    width:100%; border:1px solid #e3e6ef; border-radius:9px;
+    padding:.45rem .7rem .45rem 2rem; font-size:.82rem; outline:none;
+    transition:border-color .15s, box-shadow .15s;
+}
+.cr-search input:focus { border-color:#8fa2d8; box-shadow:0 0 0 3px rgba(64,81,137,.08); }
+.cr-toolbar select {
+    border:1px solid #e3e6ef; border-radius:9px; font-size:.8rem;
+    padding:.42rem 1.9rem .42rem .7rem; color:#2a2f43; outline:none; background-color:#fff;
+}
+.cr-toolbar .lbl-filter { font-size:.68rem; font-weight:700; color:#878a99; text-transform:uppercase; letter-spacing:.35px; }
+
+/* ===== Card de responsable ===== */
+.cr-resp-card {
+    background:#fff; border:1px solid #eef0f5; border-radius:14px;
+    margin-bottom:.9rem; box-shadow:0 1px 2px rgba(30,40,80,.04); overflow:hidden;
+}
+.cr-resp-head {
+    display:flex; align-items:center; gap:.9rem; flex-wrap:wrap;
+    padding:.9rem 1.1rem; cursor:pointer; transition:background .15s;
+}
+.cr-resp-head:hover { background:#f8fafd; }
+.cr-resp-avatar {
+    width:44px; height:44px; border-radius:12px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-weight:800; font-size:.95rem; letter-spacing:.5px;
+}
+.cr-resp-nombre { font-weight:700; font-size:.92rem; color:#2a2f43; line-height:1.2; }
+.cr-resp-ci { font-size:.7rem; color:#98a0b5; }
+.cr-resp-kpis { display:flex; align-items:center; gap:.45rem; flex-wrap:wrap; margin-left:auto; }
+.cr-kpi {
+    display:inline-flex; align-items:center; gap:.3rem;
+    font-size:.7rem; font-weight:700; padding:.22rem .6rem; border-radius:999px;
+    background:#f4f6fb; color:#5d6478; white-space:nowrap;
+}
+.cr-kpi i { font-size:.85rem; }
+.cr-kpi.k-danger { background:#ffd9d3; color:#b1240f; }
+.cr-kpi.k-warn   { background:#fff4d6; color:#8a6100; }
+.cr-kpi.k-info   { background:#dde7ff; color:#1c3e9e; }
+.cr-kpi.k-ok     { background:#d4f6ee; color:#0a7059; }
+.cr-kpi.k-hoy    { background:#e8e5ff; color:#5b4bc4; }
+
+.cr-avance { display:flex; align-items:center; gap:.5rem; min-width:130px; }
+.cr-avance .bar { flex:1; height:7px; border-radius:5px; background:#eef0f5; overflow:hidden; min-width:70px; }
+.cr-avance .bar > div { height:100%; border-radius:5px; background:linear-gradient(90deg,#299cdb,#0ab39c); }
+.cr-avance .pct-txt { font-size:.72rem; font-weight:800; color:#2a2f43; width:38px; text-align:right; }
+
+.cr-chevron { color:#98a0b5; font-size:1.15rem; transition:transform .2s; }
+.cr-resp-head[aria-expanded="true"] .cr-chevron { transform:rotate(180deg); }
+
+.cr-resp-body { border-top:1px solid #eef0f5; padding:1rem 1.1rem; background:#fafbfd; }
+
+/* ===== Card de programa ===== */
+.cr-prog-card {
+    background:#fff; border:1px solid #eef0f5; border-radius:12px;
+    margin-bottom:.8rem; overflow:hidden;
+}
+.cr-prog-card:last-child { margin-bottom:0; }
+.cr-prog-head {
+    display:flex; align-items:center; gap:.75rem; flex-wrap:wrap;
+    padding:.7rem .9rem; border-bottom:1px solid #f2f4f9; background:#fff;
+}
+.cr-prog-title { font-weight:700; font-size:.84rem; color:#2a2f43; }
+.cr-prog-title a { color:inherit; text-decoration:none; }
+.cr-prog-title a:hover { color:#405189; }
+.cr-prog-meta { font-size:.7rem; color:#98a0b5; }
+.cr-prog-badges { margin-left:auto; display:flex; align-items:center; gap:.45rem; flex-wrap:wrap; }
+.cr-estado-chip {
+    font-size:.66rem; font-weight:700; padding:.18rem .55rem; border-radius:999px; white-space:nowrap;
+}
+
+.cr-mod-table { width:100%; font-size:.78rem; margin:0; border-collapse:separate; border-spacing:0; }
+.cr-mod-table thead th {
+    background:#f6f8fc; color:#5d6478; font-weight:700;
+    font-size:.63rem; text-transform:uppercase; letter-spacing:.3px;
+    padding:.45rem .7rem; border-bottom:1px solid #e8ebf3;
+}
+.cr-mod-table tbody td { padding:.5rem .7rem; border-top:1px solid #f2f4f9; vertical-align:middle; }
+.cr-mod-table tbody tr:first-child td { border-top:0; }
+.cr-mod-table tbody tr:hover { background:#f8fafd; }
+.cr-mod-nombre { font-weight:600; color:#2a2f43; line-height:1.25; }
+.cr-mod-docente { font-size:.68rem; color:#98a0b5; }
+.cr-mod-estado {
+    font-size:.66rem; font-weight:700; padding:.18rem .55rem; border-radius:999px; white-space:nowrap;
+}
+.cr-ses-mini { display:flex; align-items:center; gap:.45rem; min-width:110px; }
+.cr-ses-mini .bar { flex:1; height:6px; border-radius:4px; background:#eef0f5; overflow:hidden; min-width:50px; }
+.cr-ses-mini .bar > div { height:100%; border-radius:4px; background:linear-gradient(90deg,#299cdb,#0ab39c); }
+.cr-ses-mini .txt { font-size:.7rem; font-weight:700; color:#5d6478; white-space:nowrap; }
+.cr-alert-chip {
+    display:inline-flex; align-items:center; gap:.25rem;
+    font-size:.64rem; font-weight:700; padding:.15rem .5rem; border-radius:999px; white-space:nowrap;
+}
+.cr-alert-chip.c-danger { background:#ffd9d3; color:#b1240f; }
+.cr-alert-chip.c-warn   { background:#fff4d6; color:#8a6100; }
+.cr-alert-chip.c-info   { background:#dde7ff; color:#1c3e9e; }
+.cr-prox { font-size:.72rem; font-weight:600; color:#5d6478; white-space:nowrap; }
+.cr-prox.is-hoy { color:#5b4bc4; font-weight:800; }
+.cr-sin-alertas { font-size:.68rem; color:#0a7059; font-weight:600; }
+
+/* Botón horarios */
+.cr-btn-horarios {
+    display:inline-flex; align-items:center; gap:4px;
+    font-size:.66rem; font-weight:700; padding:.28em .65em; border-radius:7px;
+    border:1px solid #c3ddfa; background:#eef6ff; color:#0b5ed7;
+    cursor:pointer; transition:all .15s ease; white-space:nowrap;
+}
+.cr-btn-horarios:hover { background:#0b5ed7; color:#fff; border-color:#0b5ed7; }
+
+/* Empty state */
+.cr-empty {
+    background:#fff; border:1px dashed #dfe3ec; border-radius:14px;
+    padding:2.5rem 1rem; text-align:center; color:#98a0b5;
+}
+
+/* ===== Modal horarios / asistencia (mismo patrón que Responsables) ===== */
+#crHorariosModal .modal-content { border:0;border-radius:14px;overflow:hidden; }
+#crHorariosModal .modal-header { background:linear-gradient(135deg,#405189 0%,#5e72b8 100%);border:0; }
+#crHorariosModal .modal-header .btn-close { filter:brightness(0) invert(1);opacity:.9; }
+#crHorariosModal .modal-title { font-size:.95rem;font-weight:700;color:#fff; }
+#crHorariosModal .modal-body { background:#fafbfd; min-height:150px; }
+
+.resp-horario-row {
+    display:grid;grid-template-columns:1fr 110px auto auto;
+    gap:.5rem;align-items:center;
+    padding:.5rem .75rem;border:1px solid #eef0f4;border-radius:10px;
+    margin-bottom:.4rem;background:#fff;font-size:.8rem;
+}
+.resp-horario-row .h-date { font-weight:700;color:#2a2f43; }
+.resp-horario-row .h-time { color:#5d6478;font-weight:600; }
+.resp-horario-row .h-estado { font-weight:700;font-size:.7rem;padding:.15em .55em;border-radius:999px;text-align:center;white-space:nowrap; }
+.resp-ver-asistencia {
+    display:inline-flex;align-items:center;gap:3px;
+    font-size:.62rem;font-weight:700;padding:.2em .55em;border-radius:6px;
+    border:1px solid #a7f3d8;background:#d1fae5;color:#0a7059;
+    cursor:pointer;transition:all .15s ease;text-decoration:none;white-space:nowrap;
+}
+.resp-ver-asistencia:hover { background:#0a7059;color:#fff;border-color:#0a7059; }
+
+.resp-asist-back {
+    display:inline-flex; align-items:center; gap:.35rem;
+    font-size:.75rem; font-weight:700; padding:.35rem .75rem; border-radius:8px;
+    border:1px solid #e3e6ef; background:#fff; color:#405189;
+    cursor:pointer; transition:all .15s ease;
+}
+.resp-asist-back:hover { background:#405189; color:#fff; border-color:#405189; }
+.resp-asist-stats { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:.6rem; margin-bottom:.75rem; }
+.resp-stat {
+    background:#fff; border:1px solid #eef0f5; border-radius:10px;
+    padding:.55rem .7rem; display:flex; align-items:center; gap:.6rem;
+    box-shadow:0 1px 2px rgba(30,40,80,.04);
+}
+.resp-stat-ico {
+    width:32px; height:32px; border-radius:9px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:1rem;
+}
+.resp-stat .num { font-size:1.05rem; font-weight:800; line-height:1.1; color:#2a2f43; }
+.resp-stat .lbl { font-size:.6rem; font-weight:700; text-transform:uppercase; letter-spacing:.3px; color:#878a99; }
+.resp-stat .pct { font-size:.66rem; font-weight:600; color:#aab0c0; margin-left:auto; }
+@media (max-width: 640px) { .resp-asist-stats { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+
+.resp-asist-wrap { background:#fff; border:1px solid #eef0f5; border-radius:12px; overflow:hidden; box-shadow:0 1px 2px rgba(30,40,80,.04); }
+.resp-asist-toolbar {
+    display:flex; align-items:center; justify-content:space-between; gap:.75rem; flex-wrap:wrap;
+    padding:.6rem .8rem; border-bottom:1px solid #eef0f5;
+}
+.resp-asist-search { position:relative; flex:1 1 200px; max-width:280px; }
+.resp-asist-search i { position:absolute; left:.65rem; top:50%; transform:translateY(-50%); color:#aab0c0; font-size:.9rem; pointer-events:none; }
+.resp-asist-search input {
+    width:100%; border:1px solid #e3e6ef; border-radius:8px;
+    padding:.38rem .65rem .38rem 1.9rem; font-size:.78rem; outline:none;
+    transition:border-color .15s, box-shadow .15s;
+}
+.resp-asist-search input:focus { border-color:#8fa2d8; box-shadow:0 0 0 3px rgba(64,81,137,.08); }
+.resp-asist-countlbl { font-size:.7rem; color:#98a0b5; font-weight:600; white-space:nowrap; }
+.resp-asist-scroll { max-height:340px; overflow-y:auto; }
+.resp-asist-scroll::-webkit-scrollbar { width:8px; }
+.resp-asist-scroll::-webkit-scrollbar-thumb { background:#dfe3ec; border-radius:4px; }
+.resp-asist-table { width:100%; font-size:.78rem; margin:0; border-collapse:separate; border-spacing:0; }
+.resp-asist-table thead th {
+    background:#f6f8fc; color:#5d6478; font-weight:700;
+    font-size:.64rem; text-transform:uppercase; letter-spacing:.3px;
+    padding:.5rem .7rem; position:sticky; top:0; z-index:1;
+    border-bottom:1px solid #e8ebf3;
+}
+.resp-asist-table tbody td { padding:.45rem .7rem; border-top:1px solid #f2f4f9; vertical-align:middle; }
+.resp-asist-table tbody tr:first-child td { border-top:0; }
+.resp-asist-table tbody tr:hover { background:#f8fafd; }
+.resp-asist-table .a-pill {
+    display:inline-flex; align-items:center; gap:.3rem;
+    padding:.14rem .6rem; border-radius:999px; font-size:.68rem; font-weight:700; white-space:nowrap;
+}
+.a-Presente    { background:#d4f6ee; color:#0a7059; }
+.a-Atraso      { background:#fff4d6; color:#8a6100; }
+.a-Falta       { background:#ffd9d3; color:#b1240f; }
+.a-Justificado { background:#dde7ff; color:#1c3e9e; }
+.resp-avatar {
+    width:30px; height:30px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:.64rem; font-weight:700; color:#fff; letter-spacing:.3px;
+}
+.resp-part-cell { display:flex; align-items:center; gap:.6rem; min-width:0; }
+.resp-part-name { font-weight:600; font-size:.79rem; color:#2a2f43; line-height:1.25; }
+.resp-part-ci { font-size:.68rem; color:#98a0b5; }
+.resp-asist-obs { font-size:.72rem; color:#98a0b5; }
+
+@media (max-width: 768px) {
+    .cr-resp-kpis { margin-left:0; width:100%; }
+    .resp-horario-row { grid-template-columns:1fr auto; }
+}
+</style>
+@endpush
+
+@section('content')
+<div class="acad-page">
+@php
+    $mesesAbr = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    $diasAbr = ['dom','lun','mar','mié','jue','vie','sáb'];
+    $fmtFechaCorta = function ($val) use ($mesesAbr, $diasAbr) {
+        if (!$val) return null;
+        $t = strtotime((string) $val);
+        if (!$t) return $val;
+        return $diasAbr[(int) date('w', $t)] . ' ' . (int) date('d', $t) . ' ' . $mesesAbr[(int) date('n', $t) - 1];
+    };
+    $estadoModColor = [
+        'Concluido'     => ['bg' => '#d4f6ee', 'color' => '#0a7059'],
+        'En Desarrollo' => ['bg' => '#cfe7ff', 'color' => '#0b5ed7'],
+        'No Inicio'     => ['bg' => '#eef0f5', 'color' => '#5d6478'],
+        'Pendiente'     => ['bg' => '#fff4d6', 'color' => '#8a6100'],
+        'Suspendido'    => ['bg' => '#ffd9d3', 'color' => '#b1240f'],
+    ];
+    $estadoProgColor = [
+        'En desarrollo' => ['bg' => '#cfe7ff', 'color' => '#0b5ed7'],
+        'Concluido'     => ['bg' => '#d4f6ee', 'color' => '#0a7059'],
+        'No Ejecutado'  => ['bg' => '#ffd9d3', 'color' => '#b1240f'],
+        'Inscripciones' => ['bg' => '#fff4d6', 'color' => '#8a6100'],
+    ];
+@endphp
+
+{{-- Hero --}}
+<div class="row">
+    <div class="col-12">
+        <div class="cr-hero d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="hero-icon"><i class="ri-user-follow-line"></i></div>
+                <div>
+                    <h4>Control de Responsables</h4>
+                    <p class="hero-sub">Seguimiento por responsable de sus programas, módulos y sesiones</p>
+                </div>
+            </div>
+            <div class="d-flex flex-column align-items-start align-items-md-end gap-2">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}"><i class="ri-home-3-line align-bottom me-1"></i>Admin</a></li>
+                    <li class="breadcrumb-item active">Control Responsables</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Stats globales --}}
+<div class="row g-3 mb-3">
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="cr-stat-card" style="--cr-accent:#405189;">
+            <div class="cr-stat-ico"><i class="ri-team-line"></i></div>
+            <div><div class="num">{{ $resumen['responsables'] }}</div><div class="lbl">Responsables</div></div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="cr-stat-card" style="--cr-accent:#299cdb;">
+            <div class="cr-stat-ico"><i class="ri-booklet-line"></i></div>
+            <div><div class="num">{{ $resumen['programas'] }}</div><div class="lbl">Programas</div></div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="cr-stat-card" style="--cr-accent:#0ab39c;">
+            <div class="cr-stat-ico"><i class="ri-bar-chart-2-line"></i></div>
+            <div><div class="num">{{ $resumen['avance'] }}%</div><div class="lbl">Avance ({{ $resumen['desarrolladas'] }}/{{ $resumen['sesiones'] }})</div></div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="cr-stat-card" style="--cr-accent:#5b4bc4;">
+            <div class="cr-stat-ico"><i class="ri-calendar-event-line"></i></div>
+            <div><div class="num">{{ $resumen['hoy'] }}</div><div class="lbl">Sesiones hoy</div></div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="cr-stat-card" style="--cr-accent:#d63031;">
+            <div class="cr-stat-ico"><i class="ri-alarm-warning-line"></i></div>
+            <div><div class="num">{{ $resumen['atrasadas'] }}</div><div class="lbl">Sesiones atrasadas</div></div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="cr-stat-card" style="--cr-accent:#d68910;">
+            <div class="cr-stat-ico"><i class="ri-error-warning-line"></i></div>
+            <div><div class="num">{{ $resumen['conf_pasadas'] + $resumen['sin_asistencia'] }}</div><div class="lbl">Por regularizar</div></div>
+        </div>
+    </div>
+</div>
+
+{{-- Toolbar: filtros + búsqueda --}}
+<div class="cr-toolbar">
+    <div class="cr-search">
+        <i class="ri-search-line"></i>
+        <input type="text" id="crSearch" placeholder="Buscar responsable por nombre o CI..." autocomplete="off">
+    </div>
+    <form method="GET" class="d-flex align-items-center gap-2 flex-wrap ms-auto" id="crFilterForm">
+        <span class="lbl-filter">Gestión</span>
+        <select name="gestion" onchange="document.getElementById('crFilterForm').submit()">
+            <option value="">Todas</option>
+            @foreach ($gestiones as $g)
+                <option value="{{ $g }}" {{ (string) $gestionFiltro === (string) $g ? 'selected' : '' }}>{{ $g }}</option>
+            @endforeach
+        </select>
+        <span class="lbl-filter">Estado</span>
+        <select name="estado" onchange="document.getElementById('crFilterForm').submit()">
+            <option value="todos" {{ $estadoFiltro === 'todos' ? 'selected' : '' }}>Todos</option>
+            @foreach ($estados as $e)
+                <option value="{{ $e->id }}" {{ (string) $estadoFiltro === (string) $e->id ? 'selected' : '' }}>{{ $e->nombre }}</option>
+            @endforeach
+        </select>
+    </form>
+</div>
+
+{{-- Listado de responsables --}}
+@if ($responsables->isEmpty())
+    <div class="cr-empty">
+        <i class="ri-inbox-2-line fs-2"></i>
+        <p class="mt-2 mb-0">No hay responsables con programas para los filtros seleccionados.</p>
+    </div>
+@endif
+
+@foreach ($responsables as $r)
+    @php
+        $iniciales = mb_strtoupper(mb_substr($r['nombres'], 0, 1) . mb_substr($r['apellidos'], 0, 1));
+        $collapseId = 'crResp' . $r['id'];
+        $searchTxt = mb_strtolower($r['apellidos'] . ' ' . $r['nombres'] . ' ' . $r['ci']);
+    @endphp
+    <div class="cr-resp-card" data-search="{{ $searchTxt }}">
+        <div class="cr-resp-head" data-bs-toggle="collapse" data-bs-target="#{{ $collapseId }}"
+             aria-expanded="false" aria-controls="{{ $collapseId }}" role="button">
+            <span class="cr-resp-avatar" style="background: {{ $r['color'] }};">{{ $iniciales }}</span>
+            <div style="min-width:0;">
+                <div class="cr-resp-nombre">{{ $r['apellidos'] }}, {{ $r['nombres'] }}</div>
+                <div class="cr-resp-ci">CI: {{ $r['ci'] }}</div>
+            </div>
+            <div class="cr-resp-kpis">
+                <span class="cr-kpi"><i class="ri-booklet-line"></i> {{ $r['total_programas'] }} programa{{ $r['total_programas'] !== 1 ? 's' : '' }}</span>
+                <span class="cr-kpi"><i class="ri-book-2-line"></i> {{ $r['modulos_concluidos'] }}/{{ $r['total_modulos'] }} módulos</span>
+                @if ($r['sesiones_hoy'] > 0)
+                    <span class="cr-kpi k-hoy"><i class="ri-calendar-event-line"></i> Hoy: {{ $r['sesiones_hoy'] }}</span>
+                @endif
+                @if ($r['alert_atrasadas'] > 0)
+                    <span class="cr-kpi k-danger"><i class="ri-alarm-warning-line"></i> {{ $r['alert_atrasadas'] }} atrasada{{ $r['alert_atrasadas'] !== 1 ? 's' : '' }}</span>
+                @endif
+                @if ($r['alert_conf_pasadas'] > 0)
+                    <span class="cr-kpi k-warn"><i class="ri-time-line"></i> {{ $r['alert_conf_pasadas'] }} sin actualizar</span>
+                @endif
+                @if ($r['alert_sin_asistencia'] > 0)
+                    <span class="cr-kpi k-info"><i class="ri-file-list-3-line"></i> {{ $r['alert_sin_asistencia'] }} sin asistencia</span>
+                @endif
+                @if ($r['total_alertas'] === 0 && $r['total_sesiones'] > 0)
+                    <span class="cr-kpi k-ok"><i class="ri-checkbox-circle-line"></i> Al día</span>
+                @endif
+                <span class="cr-avance">
+                    <span class="bar"><div style="width: {{ $r['avance'] }}%;"></div></span>
+                    <span class="pct-txt">{{ $r['avance'] }}%</span>
+                </span>
+                <i class="ri-arrow-down-s-line cr-chevron"></i>
+            </div>
+        </div>
+        <div class="collapse" id="{{ $collapseId }}">
+            <div class="cr-resp-body">
+                @foreach ($r['programas'] as $p)
+                    @php $estP = $estadoProgColor[$p['estado_nombre']] ?? ['bg' => '#eef0f5', 'color' => '#5d6478']; @endphp
+                    <div class="cr-prog-card">
+                        <div class="cr-prog-head">
+                            <div style="min-width:0;">
+                                <div class="cr-prog-title">
+                                    <a href="{{ route('admin.programas.show', $p['id']) }}" title="Abrir programa">
+                                        <i class="ri-booklet-line text-primary"></i> {{ $p['nombre'] }}
+                                    </a>
+                                </div>
+                                <div class="cr-prog-meta">
+                                    {{ $p['tipo_nombre'] }}
+                                    @if ($p['codigo']) · {{ $p['codigo'] }} @endif
+                                    · Gestión {{ $p['gestion'] }}
+                                    · {{ $p['modulos_concluidos'] }}/{{ $p['total_modulos'] }} módulos concluidos
+                                </div>
+                            </div>
+                            <div class="cr-prog-badges">
+                                @if ($p['hoy'] > 0)
+                                    <span class="cr-alert-chip" style="background:#e8e5ff;color:#5b4bc4;"><i class="ri-calendar-event-line"></i> Hoy: {{ $p['hoy'] }}</span>
+                                @endif
+                                @if ($p['atrasadas'] > 0)
+                                    <span class="cr-alert-chip c-danger"><i class="ri-alarm-warning-line"></i> {{ $p['atrasadas'] }}</span>
+                                @endif
+                                @if ($p['conf_pasadas'] > 0)
+                                    <span class="cr-alert-chip c-warn"><i class="ri-time-line"></i> {{ $p['conf_pasadas'] }}</span>
+                                @endif
+                                @if ($p['sin_asistencia'] > 0)
+                                    <span class="cr-alert-chip c-info"><i class="ri-file-list-3-line"></i> {{ $p['sin_asistencia'] }}</span>
+                                @endif
+                                <span class="cr-estado-chip" style="background: {{ $estP['bg'] }}; color: {{ $estP['color'] }};">{{ $p['estado_nombre'] ?? '—' }}</span>
+                                <span class="cr-avance" style="min-width:120px;">
+                                    <span class="bar"><div style="width: {{ $p['avance'] }}%;"></div></span>
+                                    <span class="pct-txt">{{ $p['avance'] }}%</span>
+                                </span>
+                            </div>
+                        </div>
+                        @if (empty($p['modulos']))
+                            <div class="p-3 text-muted fst-italic" style="font-size:.78rem;">Este programa aún no tiene módulos registrados.</div>
+                        @else
+                            <div class="table-responsive">
+                                <table class="cr-mod-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:40px;" class="text-center">N°</th>
+                                            <th>Módulo</th>
+                                            <th style="width:130px;" class="text-center">Estado</th>
+                                            <th style="width:160px;">Sesiones</th>
+                                            <th style="width:130px;">Próxima sesión</th>
+                                            <th style="width:220px;">Alertas</th>
+                                            <th style="width:110px;" class="text-center">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($p['modulos'] as $idx => $m)
+                                            @php
+                                                $estM = $estadoModColor[$m['desarrollo']] ?? ['bg' => '#eef0f5', 'color' => '#5d6478'];
+                                                $pctM = $m['total_sesiones'] > 0 ? (int) round($m['desarrolladas'] * 100 / $m['total_sesiones']) : 0;
+                                                $esHoy = $m['proxima_fecha'] === $hoy;
+                                                $tieneAlertas = $m['atrasadas'] > 0 || $m['conf_pasadas'] > 0 || $m['sin_asistencia'] > 0;
+                                            @endphp
+                                            <tr>
+                                                <td class="text-center text-muted fw-semibold">{{ $idx + 1 }}</td>
+                                                <td>
+                                                    <div class="cr-mod-nombre">{{ $m['nombre'] }}</div>
+                                                    <div class="cr-mod-docente">
+                                                        @if ($m['docente'])
+                                                            <i class="ri-user-star-line"></i> {{ $m['docente'] }}
+                                                        @else
+                                                            <i class="ri-user-unfollow-line"></i> Sin docente asignado
+                                                        @endif
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="cr-mod-estado" style="background: {{ $estM['bg'] }}; color: {{ $estM['color'] }};">{{ $m['desarrollo'] ?? '—' }}</span>
+                                                </td>
+                                                <td>
+                                                    @if ($m['total_sesiones'] > 0)
+                                                        <div class="cr-ses-mini">
+                                                            <span class="bar"><div style="width: {{ $pctM }}%;"></div></span>
+                                                            <span class="txt">{{ $m['desarrolladas'] }}/{{ $m['total_sesiones'] }}</span>
+                                                        </div>
+                                                    @else
+                                                        <span class="text-muted fst-italic" style="font-size:.72rem;">Sin horarios</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @if ($esHoy)
+                                                        <span class="cr-prox is-hoy"><i class="ri-calendar-event-line"></i> Hoy</span>
+                                                    @elseif ($m['proxima_fecha'])
+                                                        <span class="cr-prox">{{ $fmtFechaCorta($m['proxima_fecha']) }}</span>
+                                                    @else
+                                                        <span class="text-muted" style="font-size:.72rem;">—</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @if ($tieneAlertas)
+                                                        <div class="d-flex flex-wrap gap-1">
+                                                            @if ($m['atrasadas'] > 0)
+                                                                <span class="cr-alert-chip c-danger" title="Sesiones pasadas en No Inicio"><i class="ri-alarm-warning-line"></i> {{ $m['atrasadas'] }} atrasada{{ $m['atrasadas'] !== 1 ? 's' : '' }}</span>
+                                                            @endif
+                                                            @if ($m['conf_pasadas'] > 0)
+                                                                <span class="cr-alert-chip c-warn" title="Sesiones pasadas que siguen en Confirmado"><i class="ri-time-line"></i> {{ $m['conf_pasadas'] }} sin actualizar</span>
+                                                            @endif
+                                                            @if ($m['sin_asistencia'] > 0)
+                                                                <span class="cr-alert-chip c-info" title="Sesiones desarrolladas sin lista de asistencia"><i class="ri-file-list-3-line"></i> {{ $m['sin_asistencia'] }} sin asistencia</span>
+                                                            @endif
+                                                        </div>
+                                                    @elseif ($m['total_sesiones'] > 0)
+                                                        <span class="cr-sin-alertas"><i class="ri-checkbox-circle-line"></i> Al día</span>
+                                                    @else
+                                                        <span class="text-muted" style="font-size:.72rem;">—</span>
+                                                    @endif
+                                                </td>
+                                                <td class="text-center">
+                                                    <button type="button" class="cr-btn-horarios"
+                                                            data-modulo-id="{{ $m['id'] }}"
+                                                            data-modulo-nombre="{{ $m['nombre'] }}">
+                                                        <i class="ri-calendar-event-line"></i> Horarios
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+@endforeach
+
+{{-- Modal Horarios / Asistencia --}}
+<div class="modal fade" id="crHorariosModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="crHorariosTitle"><i class="ri-calendar-event-line"></i> Horarios del m&oacute;dulo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body" id="crHorariosBody">
+                <div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted mb-0">Cargando horarios...</p></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="ri-close-line"></i> Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>{{-- /acad-page --}}
+@endsection
+
+@push('js')
+<script>
+(function () {
+    function escHtml(s) {
+        return (s == null ? '' : String(s))
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    // ===== Buscador de responsables =====
+    var searchInput = document.getElementById('crSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            var q = this.value.toLowerCase().trim();
+            document.querySelectorAll('.cr-resp-card').forEach(function (card) {
+                card.style.display = (!q || (card.getAttribute('data-search') || '').indexOf(q) !== -1) ? '' : 'none';
+            });
+        });
+    }
+
+    // ===== Modal de horarios =====
+    var modalEl = document.getElementById('crHorariosModal');
+    var titleEl = document.getElementById('crHorariosTitle');
+    var bodyEl = document.getElementById('crHorariosBody');
+    if (!modalEl || !bodyEl) return;
+
+    var horariosCache = { body: '', title: '' };
+
+    document.addEventListener('click', function (ev) {
+        var btn = ev.target.closest('.cr-btn-horarios');
+        if (!btn) return;
+        var moduloId = btn.dataset.moduloId;
+        var moduloNombre = btn.dataset.moduloNombre;
+
+        titleEl.innerHTML = '<i class="ri-calendar-event-line"></i> Horarios — ' + escHtml(moduloNombre);
+        bodyEl.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted mb-0">Cargando horarios...</p></div>';
+        var modal = bootstrap.Modal.getInstance(modalEl);
+        if (!modal) modal = new bootstrap.Modal(modalEl);
+        modal.show();
+
+        var url = '{{ url("admin/cronogramas/modulo") }}/' + moduloId + '/horarios';
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.horarios) {
+                bodyEl.innerHTML = renderModuloHorarios(data);
+            } else {
+                bodyEl.innerHTML = '<div class="text-center py-5 text-danger"><i class="ri-error-warning-line fs-3"></i><p class="mt-2">Error al cargar horarios</p></div>';
+            }
+        })
+        .catch(function () {
+            bodyEl.innerHTML = '<div class="text-center py-5 text-danger"><i class="ri-error-warning-line fs-3"></i><p class="mt-2">Error de conexión</p></div>';
+        });
+    });
+
+    function renderModuloHorarios(data) {
+        var horarios = data.horarios || [];
+        if (horarios.length === 0) {
+            return '<div class="text-center py-5 text-muted"><i class="ri-inbox-2-line fs-2"></i><p class="mt-2">Este módulo no tiene sesiones/horarios registrados.</p></div>';
+        }
+        var meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+        var diasSem = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+        var html = '<div style="margin-bottom:.75rem;font-size:.78rem;color:#878a99;"><i class="ri-information-line"></i> ' + horarios.length + ' sesión' + (horarios.length !== 1 ? 'es' : '') + ' programada' + (horarios.length !== 1 ? 's' : '') + '</div>';
+        horarios.forEach(function (h) {
+            var fechaTxt = '—';
+            if (h.fecha_desarrollo) {
+                var d = new Date(h.fecha_desarrollo + 'T12:00:00');
+                fechaTxt = diasSem[d.getDay()] + ' ' + d.getDate() + ' de ' + meses[d.getMonth()] + ' del ' + d.getFullYear();
+            }
+            var hInicio = h.hora_inicio ? h.hora_inicio.substring(0,5) : '—';
+            var hFin = h.hora_fin ? h.hora_fin.substring(0,5) : '—';
+            var estado = h.estado || '—';
+            var estCls = '';
+            var asistenciaBtn = '';
+            if (estado === 'Desarrollado') {
+                estCls = 'background:#d4f6ee;color:#0a7059;';
+                asistenciaBtn = '<button type="button" class="resp-ver-asistencia" data-horario-id="' + h.id + '" data-horario-fecha="' + escHtml(fechaTxt) + '" title="Ver lista de asistencia"><i class="ri-team-line"></i> Asistencia</button>';
+            } else if (estado === 'Confirmado' || estado === 'Programado') estCls = 'background:#dde7ff;color:#1c3e9e;';
+            else if (estado === 'En Desarrollo') estCls = 'background:#cfe7ff;color:#0b5ed7;';
+            else if (estado === 'No Inicio' || estado === 'Pendiente') estCls = 'background:#fff4d6;color:#8a6100;';
+            else if (estado === 'Postergado') estCls = 'background:#fff4d6;color:#8a6100;';
+            else if (estado === 'Suspendido') estCls = 'background:#ffd9d3;color:#b1240f;';
+            else estCls = 'background:#eef0f5;color:#5d6478;';
+            html += '<div class="resp-horario-row">' +
+                '<span class="h-date">' + fechaTxt + '</span>' +
+                '<span class="h-time">' + hInicio + ' — ' + hFin + '</span>' +
+                '<span class="h-estado" style="' + estCls + '">' + escHtml(estado) + '</span>' +
+                (asistenciaBtn ? '<span>' + asistenciaBtn + '</span>' : '<span></span>') +
+            '</div>';
+        });
+        return html;
+    }
+
+    // ===== Asistencia dentro del mismo modal =====
+    bodyEl.addEventListener('click', function (ev) {
+        var aBtn = ev.target.closest('.resp-ver-asistencia');
+        if (aBtn) {
+            showAsistencia(aBtn.dataset.horarioId, aBtn.dataset.horarioFecha);
+            return;
+        }
+        var backBtn = ev.target.closest('.resp-asist-back');
+        if (backBtn && horariosCache.body) {
+            bodyEl.innerHTML = horariosCache.body;
+            if (horariosCache.title) titleEl.innerHTML = horariosCache.title;
+        }
+    });
+
+    bodyEl.addEventListener('input', function (ev) {
+        if (!ev.target.classList.contains('resp-asist-search-input')) return;
+        var q = ev.target.value.toLowerCase().trim();
+        var rows = bodyEl.querySelectorAll('.resp-asist-table tbody tr');
+        var visibles = 0;
+        rows.forEach(function (r) {
+            var show = !q || (r.getAttribute('data-search') || '').indexOf(q) !== -1;
+            r.style.display = show ? '' : 'none';
+            if (show) visibles++;
+        });
+        var cnt = bodyEl.querySelector('.resp-asist-count');
+        if (cnt) cnt.textContent = visibles + ' de ' + rows.length;
+    });
+
+    function showAsistencia(horarioId, fechaTxt) {
+        horariosCache.body = bodyEl.innerHTML;
+        horariosCache.title = titleEl.innerHTML;
+        titleEl.innerHTML = '<i class="ri-team-line"></i> Asistencia — ' + escHtml(fechaTxt);
+        bodyEl.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted mb-0">Cargando asistencia...</p></div>';
+
+        var url = '{{ url("admin/programas/horario") }}/' + horarioId + '/asistencia';
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (!data.success) {
+                bodyEl.innerHTML = asistHeaderHtml(null, 0) + '<div class="text-center py-5 text-danger"><i class="ri-error-warning-line"></i><p class="mt-2">' + escHtml(data.message || 'Error al cargar') + '</p></div>';
+                return;
+            }
+            bodyEl.innerHTML = renderAsistencia(data.participantes || [], horarioId);
+        })
+        .catch(function () {
+            bodyEl.innerHTML = asistHeaderHtml(null, 0) + '<div class="text-center py-5 text-danger"><i class="ri-error-warning-line fs-3"></i><p class="mt-2">Error de conexión</p></div>';
+        });
+    }
+
+    function asistHeaderHtml(horarioId, registrados) {
+        var html = '<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">';
+        html += '<button type="button" class="resp-asist-back"><i class="ri-arrow-left-line"></i> Volver a horarios</button>';
+        if (horarioId && registrados > 0) {
+            html += '<a class="btn btn-sm btn-soft-danger d-inline-flex align-items-center gap-1" ' +
+                    'href="{{ url("admin/programas/horario") }}/' + horarioId + '/asistencia-pdf" ' +
+                    'title="Descargar reporte de asistencia en PDF"><i class="ri-file-pdf-line"></i> Reporte PDF</a>';
+        }
+        html += '</div>';
+        return html;
+    }
+
+    function renderAsistencia(parts, horarioId) {
+        var registrados = parts.filter(function (p) { return p.asistio; }).length;
+        var html = asistHeaderHtml(horarioId, registrados);
+
+        if (parts.length === 0) {
+            return html + '<div class="text-center py-5 text-muted"><i class="ri-inbox-2-line fs-2"></i><p class="mt-2">No hay participantes inscritos en este módulo.</p></div>';
+        }
+
+        var cfg = {
+            'Presente':    { ico: 'ri-checkbox-circle-line', bg: '#d4f6ee', color: '#0a7059' },
+            'Atraso':      { ico: 'ri-time-line',            bg: '#fff4d6', color: '#8a6100' },
+            'Falta':       { ico: 'ri-close-circle-line',    bg: '#ffd9d3', color: '#b1240f' },
+            'Justificado': { ico: 'ri-file-shield-2-line',   bg: '#dde7ff', color: '#1c3e9e' },
+            'Sin registro':{ ico: 'ri-question-line',        bg: '#eef0f5', color: '#5d6478' }
+        };
+        var resumen = {};
+        parts.forEach(function (p) {
+            var k = (p.asistio || '').trim() || 'Sin registro';
+            resumen[k] = (resumen[k] || 0) + 1;
+        });
+        var total = parts.length;
+        var keys = Object.keys(cfg).filter(function (k) { return resumen[k]; });
+        Object.keys(resumen).forEach(function (k) { if (keys.indexOf(k) === -1) keys.push(k); });
+
+        html += '<div class="resp-asist-stats">';
+        keys.forEach(function (k) {
+            var c = cfg[k] || { ico: 'ri-question-line', bg: '#eef0f5', color: '#5d6478' };
+            var count = resumen[k] || 0;
+            var pct = total > 0 ? Math.round(count * 100 / total) : 0;
+            html += '<div class="resp-stat">' +
+                    '<div class="resp-stat-ico" style="background:' + c.bg + ';color:' + c.color + ';"><i class="' + c.ico + '"></i></div>' +
+                    '<div><div class="num">' + count + '</div><div class="lbl">' + escHtml(k) + '</div></div>' +
+                    '<div class="pct">' + pct + '%</div>' +
+                    '</div>';
+        });
+        html += '</div>';
+
+        var avatarColors = ['#405189', '#0ab39c', '#299cdb', '#f06548', '#f7b84b', '#6559cc', '#02a8b5', '#d63384'];
+        html += '<div class="resp-asist-wrap">';
+        html += '<div class="resp-asist-toolbar">';
+        html += '<div class="resp-asist-search"><i class="ri-search-line"></i>' +
+                '<input type="text" class="resp-asist-search-input" placeholder="Buscar por nombre o CI..." autocomplete="off"></div>';
+        html += '<span class="resp-asist-countlbl resp-asist-count">' + total + ' de ' + total + '</span>';
+        html += '</div>';
+        html += '<div class="resp-asist-scroll"><table class="resp-asist-table">';
+        html += '<thead><tr><th style="width:38px;" class="text-center">#</th><th>Participante</th><th style="width:120px;" class="text-center">Asistencia</th><th style="width:28%;">Observación</th></tr></thead><tbody>';
+        parts.forEach(function (p, idx) {
+            var nombre = ((p.apellidos || '') + ', ' + (p.nombres || '')).replace(/^, /, '').replace(/, $/, '');
+            var iniciales = (((p.nombres || ' ').charAt(0)) + ((p.apellidos || ' ').charAt(0))).toUpperCase().trim() || '?';
+            var colorIdx = 0;
+            for (var ci = 0; ci < nombre.length; ci++) colorIdx = (colorIdx + nombre.charCodeAt(ci)) % avatarColors.length;
+            var estadoHtml = p.asistio
+                ? '<span class="a-pill a-' + escHtml((p.asistio || '').trim()) + '">' + escHtml(p.asistio) + '</span>'
+                : '<span class="text-muted fst-italic" style="font-size:.72rem;">Sin registro</span>';
+            html += '<tr data-search="' + escHtml((nombre + ' ' + (p.ci || '')).toLowerCase()) + '">' +
+                    '<td class="text-center text-muted">' + (idx + 1) + '</td>' +
+                    '<td><div class="resp-part-cell">' +
+                    '<span class="resp-avatar" style="background:' + avatarColors[colorIdx] + ';">' + escHtml(iniciales) + '</span>' +
+                    '<div style="min-width:0;"><div class="resp-part-name">' + escHtml(nombre) + '</div>' +
+                    '<div class="resp-part-ci">CI: ' + escHtml(p.ci || '—') + '</div></div>' +
+                    '</div></td>' +
+                    '<td class="text-center">' + estadoHtml + '</td>' +
+                    '<td class="resp-asist-obs">' + (p.observacion ? escHtml(p.observacion) : '—') + '</td>' +
+                    '</tr>';
+        });
+        html += '</tbody></table></div></div>';
+        return html;
+    }
+})();
+</script>
+@endpush

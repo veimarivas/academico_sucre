@@ -1,0 +1,1938 @@
+/* =====================================================================
+   AVIP · Área Académica — Capa de diseño
+   Se carga DESPUÉS de avip-ui.css. Unifica y pule las pantallas del área
+   académica (programas, tipos, áreas, cronogramas, seguimientos,
+   responsables y control de responsables):
+   espaciado, héroes, tarjetas de estadística, paneles, tablas, gráficas,
+   pestañas, formularios y estados vacíos.
+   Paleta institucional: navy #163b6b + gold #cba135.
+   ===================================================================== */
+
+.acad-page,
+.acad-page * {
+    --acad-navy: var(--avip-navy-700, #163b6b);
+    --acad-navy-2: var(--avip-navy-500, #2a5d97);
+    --acad-navy-soft: var(--avip-navy-50, #f1f5fa);
+    --acad-gold: var(--avip-gold-500, #cba135);
+    --acad-gold-soft: var(--avip-gold-100, #faf3df);
+    --acad-teal: var(--avip-teal-600, #0d8574);
+    --acad-teal-soft: var(--avip-teal-100, #e2f4f0);
+    --acad-red: var(--avip-red-600, #b3243a);
+    --acad-red-soft: var(--avip-red-100, #fbe9ec);
+    --acad-amber: var(--avip-amber-600, #b7791f);
+    --acad-amber-soft: var(--avip-amber-100, #fbf0da);
+    --acad-blue: var(--avip-blue-600, #1f6fbf);
+    --acad-blue-soft: var(--avip-blue-100, #e7f1fb);
+    --acad-line: var(--ui-line, #e6e9f0);
+    --acad-line-strong: var(--ui-line-strong, #d4dae5);
+    --acad-surface: var(--ui-surface, #fff);
+    --acad-surface-2: var(--ui-surface-2, #f7f9fc);
+    --acad-ink: var(--ui-ink, #101828);
+    --acad-ink-2: var(--ui-ink-2, #475467);
+    --acad-muted: var(--ui-muted, #667085);
+    --acad-grad: linear-gradient(135deg, var(--avip-navy-700, #163b6b) 0%, var(--avip-navy-500, #2a5d97) 100%);
+    --acad-grad-soft: linear-gradient(135deg, rgba(22, 59, 107, 0.05) 0%, rgba(22, 59, 107, 0) 60%);
+    --acad-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+    --acad-shadow-hover: 0 18px 38px -22px rgba(10, 26, 58, 0.38);
+
+    /* Gráficas: una sola fuente de verdad para los dos motores */
+    --acad-chart-1: #163b6b;
+    --acad-chart-2: #cba135;
+    --acad-chart-3: #1f6fbf;
+    --acad-chart-4: #0d8574;
+    --acad-chart-5: #b7791f;
+    --acad-chart-6: #7d9ec8;
+    --acad-chart-7: #b3243a;
+    --acad-chart-8: #2a5d97;
+}
+
+/* =====================================================================
+   1. Ritmo vertical y optimización de espacios
+   ===================================================================== */
+.acad-page {
+    --bs-gutter-x: 1.15rem;
+}
+
+.acad-page > .row {
+    --bs-gutter-x: 1.15rem;
+    --bs-gutter-y: 1.15rem;
+}
+
+.acad-page > :last-child {
+    margin-bottom: 0 !important;
+}
+
+/* El layout ya trae su contenedor: un container-fluid interno solo añade
+   padding lateral y desperdicia ancho útil. */
+.acad-page > .container-fluid {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+.acad-page .mb-4 {
+    margin-bottom: 1.15rem !important;
+}
+
+.acad-page .mb-3 {
+    margin-bottom: 1rem !important;
+}
+
+.acad-page .card > .card-body {
+    padding: 1.1rem 1.2rem;
+}
+
+.acad-page .card {
+    border-radius: 15px;
+}
+
+.acad-page :is(.card, .chart-card, .stat-card, .table-card, .cont-summary-card) {
+    border-color: var(--acad-line) !important;
+    box-shadow: var(--acad-shadow);
+}
+
+/* =====================================================================
+   2. Cabeceras de página (héroes)
+   ===================================================================== */
+.acad-page :is(
+    .programas-hero, .tipos-hero, .areas-hero, .cron-hero, .seg-hero,
+    .sd-hero, .resp-hero, .cr-hero, .modulo-hero, .show-hero, .search-hero
+) {
+    margin-bottom: 1.15rem !important;
+}
+
+.acad-page :is(
+    .programas-hero, .tipos-hero, .areas-hero, .cron-hero, .seg-hero,
+    .cr-hero, .resp-hero
+) {
+    position: relative;
+    background-image:
+        linear-gradient(90deg, var(--avip-navy-700, #163b6b) 0%, var(--avip-navy-500, #2a5d97) 52%, var(--avip-gold-500, #cba135) 100%) !important;
+    background-repeat: no-repeat !important;
+    background-position: top left !important;
+    background-size: 100% 3px !important;
+    border-radius: 16px !important;
+    padding: 1.25rem 1.4rem !important;
+}
+
+.acad-page :is(
+    .programas-hero, .tipos-hero, .areas-hero, .cron-hero, .seg-hero,
+    .cr-hero, .resp-hero
+) :is(h3, h4, h5, .sd-hero-title) {
+    font-size: 1.2rem !important;
+    letter-spacing: -0.02em;
+}
+
+.acad-page :is(
+    .programas-hero, .tipos-hero, .areas-hero, .cron-hero, .seg-hero,
+    .cr-hero, .resp-hero
+) :is(.hero-sub, p) {
+    font-size: 0.85rem !important;
+}
+
+.acad-page :is(.programas-hero, .tipos-hero, .areas-hero, .cron-hero, .seg-hero,
+    .cr-hero, .resp-hero, .sd-hero, .modulo-hero, .show-hero) .breadcrumb {
+    background: var(--acad-surface-2) !important;
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 999px !important;
+    padding: 0.38rem 0.9rem !important;
+    margin: 0 !important;
+    font-size: 0.75rem;
+}
+
+.acad-page :is(.programas-hero, .tipos-hero, .areas-hero, .cron-hero, .seg-hero,
+    .cr-hero, .resp-hero, .sd-hero, .modulo-hero, .show-hero) .breadcrumb-item,
+.acad-page :is(.programas-hero, .tipos-hero, .areas-hero, .cron-hero, .seg-hero,
+    .cr-hero, .resp-hero, .sd-hero, .modulo-hero, .show-hero) .breadcrumb-item a {
+    color: var(--acad-muted) !important;
+    text-decoration: none;
+}
+
+/* Chips y pastillas dentro de los héroes */
+.acad-page :is(.hero-chip, .hero-gestion, .hero-stat, .hero-info-pill, .hero-date) {
+    background: var(--acad-surface-2) !important;
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 10px !important;
+    color: var(--acad-ink-2) !important;
+}
+
+.acad-page :is(.hero-stat-valor, .hero-stat .stat-num, .hero-stat strong) {
+    color: var(--acad-navy) !important;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Héroes de detalle (fondo marino) mantienen su contraste */
+.acad-page :is(.show-hero, .sd-hero, .pose-hero, .prof-hero) .breadcrumb {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+.acad-page :is(.show-hero, .sd-hero) .breadcrumb-item,
+.acad-page :is(.show-hero, .sd-hero) .breadcrumb-item a {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* =====================================================================
+   3. Tarjetas de estadística
+   ===================================================================== */
+.acad-page :is(.stat-card, .global-stat, .stat-card-modern) {
+    position: relative;
+    background: var(--acad-surface) !important;
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 15px !important;
+    box-shadow: var(--acad-shadow) !important;
+    padding: 1rem 1.1rem !important;
+    height: 100%;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.acad-page :is(.stat-card, .global-stat, .stat-card-modern):hover {
+    transform: translateY(-2px);
+    box-shadow: var(--acad-shadow-hover) !important;
+}
+
+.acad-page .stat-label {
+    font-size: 0.65rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 800 !important;
+    color: var(--acad-muted) !important;
+}
+
+.acad-page :is(.stat-num, .stat-value) {
+    font-weight: 800 !important;
+    letter-spacing: -0.02em;
+    color: var(--acad-ink) !important;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+}
+
+.acad-page .stat-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    background: var(--acad-navy-soft);
+    color: var(--acad-navy);
+}
+
+.acad-page :is(.avatar-title, .avatar-xs .avatar-title) {
+    border-radius: 10px;
+}
+
+/* =====================================================================
+   4. Paneles y tarjetas de contenido
+   ===================================================================== */
+.acad-page :is(.panel-card, .tabs-card, .section-card, .table-card, .chart-card) {
+    background: var(--acad-surface) !important;
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 15px !important;
+    box-shadow: var(--acad-shadow) !important;
+    overflow: hidden;
+}
+
+.acad-page :is(.panel-card, .tabs-card, .section-card, .table-card, .chart-card) > .card-header {
+    background: var(--acad-grad-soft), var(--acad-surface-2) !important;
+    border-bottom: 1px solid var(--acad-line) !important;
+    padding: 0.9rem 1.2rem !important;
+}
+
+.acad-page :is(.card-title, .section-title, .chart-title) {
+    color: var(--acad-ink) !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.01em;
+}
+
+/* =====================================================================
+   5. Gráficas: contenedores y estadísticas asociadas
+   ===================================================================== */
+.acad-page :is(.chart-body-layout) {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    gap: 1.1rem;
+    align-items: stretch;
+}
+
+@media (max-width: 991.98px) {
+    .acad-page .chart-body-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.acad-page :is(.chart-area, .chart-wrapper) {
+    position: relative;
+    min-width: 0;
+}
+
+.acad-page :is(.chart-area, .chart-wrapper) canvas {
+    width: 100% !important;
+    max-width: 100%;
+}
+
+.acad-page :is(.chart-stats) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    min-width: 0;
+}
+
+.acad-page .chart-stat-box {
+    background: var(--acad-surface-2) !important;
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 12px !important;
+    padding: 0.7rem 0.85rem !important;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.acad-page .chart-stat-box:hover {
+    border-color: var(--acad-navy-200, #b8cbe4) !important;
+    transform: translateY(-1px);
+}
+
+.acad-page .chart-stat-box :is(.stat-num, .stat-value) {
+    font-size: 1.2rem !important;
+}
+
+/* ApexCharts: tipografía y colores coherentes con el tema */
+.acad-page .apexcharts-canvas,
+.acad-page .apexcharts-canvas text {
+    font-family: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif !important;
+}
+
+.acad-page .apexcharts-legend-text {
+    color: var(--acad-ink-2) !important;
+    font-weight: 600 !important;
+}
+
+.acad-page :is(.apexcharts-xaxis-label, .apexcharts-yaxis-label, .apexcharts-xaxis-title-text,
+    .apexcharts-yaxis-title-text) {
+    fill: var(--acad-muted) !important;
+    font-weight: 600;
+}
+
+.acad-page .apexcharts-gridline {
+    stroke: var(--acad-line) !important;
+}
+
+/* Centro de las donas: total y etiqueta legibles en ambos temas */
+.acad-page :is(.apexcharts-datalabel-label, .apexcharts-datalabel-value,
+    .apexcharts-datalabels-group text) {
+    fill: var(--acad-ink) !important;
+}
+
+.acad-page .apexcharts-legend-marker {
+    border-radius: 999px;
+}
+
+.acad-page .apexcharts-tooltip {
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 10px !important;
+    box-shadow: var(--acad-shadow-hover) !important;
+    background: var(--acad-surface) !important;
+    color: var(--acad-ink) !important;
+}
+
+.acad-page .apexcharts-tooltip-title {
+    background: var(--acad-surface-2) !important;
+    border-bottom: 1px solid var(--acad-line) !important;
+    font-weight: 700 !important;
+}
+
+/* =====================================================================
+   6. Tablas
+   ===================================================================== */
+.acad-page .table {
+    --bs-table-bg: transparent;
+    margin-bottom: 0;
+}
+
+.acad-page .table thead th {
+    background: var(--acad-surface-2) !important;
+    background-image: none !important;
+    color: var(--acad-navy) !important;
+    font-size: 0.67rem !important;
+    font-weight: 800 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--acad-line) !important;
+    padding: 0.7rem 0.7rem !important;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.acad-page .table tbody td {
+    padding: 0.62rem 0.7rem !important;
+    border-bottom: 1px solid var(--acad-line) !important;
+    color: var(--acad-ink-2);
+    vertical-align: middle;
+    font-size: 0.83rem;
+}
+
+.acad-page .table tbody tr:last-child td {
+    border-bottom: 0 !important;
+}
+
+.acad-page .table-hover tbody tr:hover {
+    background: var(--acad-surface-2) !important;
+}
+
+.acad-page .table tbody tr {
+    transition: background 0.14s ease;
+}
+
+.acad-page .table :is(td, th).text-end,
+.acad-page .table .num {
+    font-variant-numeric: tabular-nums;
+}
+
+.acad-page .table-responsive {
+    border-radius: 12px;
+}
+
+/* Barra de progreso genérica del área */
+.acad-page .progress {
+    background: var(--acad-line);
+    border-radius: 999px;
+    height: 0.5rem;
+}
+
+.acad-page .progress-bar {
+    background: var(--acad-grad);
+}
+
+/* =====================================================================
+   7. Pestañas
+   ===================================================================== */
+.acad-page .nav-tabs {
+    border-bottom: 1px solid var(--acad-line);
+    gap: 0.2rem;
+}
+
+.acad-page .nav-tabs .nav-link {
+    color: var(--acad-muted);
+    font-weight: 700;
+    font-size: 0.82rem;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 8px 8px 0 0;
+    padding: 0.55rem 0.9rem;
+    transition: color 0.15s ease, background 0.15s ease;
+}
+
+.acad-page .nav-tabs .nav-link:hover {
+    color: var(--acad-navy);
+    background: var(--acad-navy-soft);
+}
+
+.acad-page .nav-tabs .nav-link.active {
+    color: var(--acad-navy) !important;
+    background: transparent !important;
+    border-bottom-color: var(--acad-gold) !important;
+}
+
+.acad-page :is(.nav-pills, .nav-tabs-pill) .nav-link {
+    border-radius: 999px;
+    font-weight: 700;
+    color: var(--acad-ink-2);
+}
+
+.acad-page :is(.nav-pills, .nav-tabs-pill) .nav-link.active {
+    background: var(--acad-grad) !important;
+    color: #fff !important;
+}
+
+/* =====================================================================
+   8. Formularios, filtros y barras de herramientas
+   ===================================================================== */
+.acad-page :is(.form-label, label) {
+    color: var(--acad-ink-2);
+}
+
+.acad-page :is(.form-label) {
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--acad-muted);
+}
+
+.acad-page :is(.form-control, .form-select) {
+    border-color: var(--acad-line-strong);
+    border-radius: 9px;
+    font-size: 0.84rem;
+}
+
+.acad-page :is(.form-control, .form-select):focus {
+    border-color: var(--acad-navy-2);
+    box-shadow: 0 0 0 0.18rem rgba(22, 59, 107, 0.12);
+}
+
+.acad-page .input-group-text {
+    background: var(--acad-surface-2);
+    border-color: var(--acad-line-strong);
+    color: var(--acad-muted);
+    font-weight: 700;
+}
+
+.acad-page .filter-card,
+.acad-page .filtros-bar {
+    background: var(--acad-surface) !important;
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 15px !important;
+    box-shadow: var(--acad-shadow) !important;
+}
+
+/* =====================================================================
+   9. Botones, chips e insignias
+   ===================================================================== */
+.acad-page .btn {
+    border-radius: 9px;
+    font-weight: 700;
+}
+
+.acad-page .btn-sm {
+    padding: 0.32rem 0.7rem;
+    font-size: 0.76rem;
+}
+
+.acad-page .btn-icon,
+.acad-page .btn-icon-table {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+}
+
+.acad-page .btn-light {
+    background: var(--acad-surface-2);
+    border-color: var(--acad-line);
+    color: var(--acad-ink-2);
+}
+
+.acad-page .btn-light:hover {
+    background: var(--acad-navy-soft);
+    border-color: var(--acad-line-strong);
+    color: var(--acad-navy);
+}
+
+.acad-page :is(.badge, .chip) {
+    font-weight: 700;
+    border-radius: 999px;
+}
+
+.acad-page .badge.bg-soft-primary { background: var(--acad-navy-soft) !important; color: var(--acad-navy) !important; }
+.acad-page .badge.bg-soft-success,
+.acad-page .badge.bg-soft-info { background: var(--acad-teal-soft) !important; color: var(--acad-teal) !important; }
+.acad-page .badge.bg-soft-warning { background: var(--acad-amber-soft) !important; color: var(--acad-amber) !important; }
+.acad-page .badge.bg-soft-danger { background: var(--acad-red-soft) !important; color: var(--acad-red) !important; }
+
+/* =====================================================================
+   10. Estados vacíos
+   ===================================================================== */
+.acad-page :is(.empty-state) {
+    text-align: center;
+    padding: 3.25rem 1.5rem;
+    background: var(--acad-surface-2) !important;
+    border: 1px dashed var(--acad-line-strong) !important;
+    border-radius: 16px !important;
+}
+
+.acad-page :is(.empty-state) .empty-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--acad-navy-soft);
+    border-radius: 50%;
+    font-size: 2.2rem;
+    color: var(--acad-navy);
+}
+
+/* =====================================================================
+   11. Modo oscuro
+   ===================================================================== */
+:is([data-bs-theme="dark"], [data-layout-mode="dark"]) .acad-page :is(
+    .programas-hero, .tipos-hero, .areas-hero, .cron-hero, .seg-hero,
+    .cr-hero, .resp-hero
+) {
+    background-image:
+        linear-gradient(90deg, var(--avip-navy-600, #1d4a80) 0%, var(--avip-navy-400, #4c7bb0) 52%, var(--avip-gold-400, #ddb84d) 100%) !important;
+    background-size: 100% 3px !important;
+    background-repeat: no-repeat !important;
+}
+
+:is([data-bs-theme="dark"], [data-layout-mode="dark"]) .acad-page :is(
+    .chart-stat-box, .table thead th, .panel-card > .card-header, .tabs-card > .card-header,
+    .section-card > .card-header, .table-card > .card-header, .chart-card > .card-header
+) {
+    background-image: none !important;
+}
+
+:is([data-bs-theme="dark"], [data-layout-mode="dark"]) .acad-page :is(
+    .stat-num, .stat-value, .card-title, .section-title, .chart-title, .table tbody td
+) {
+    color: var(--acad-ink) !important;
+}
+
+:is([data-bs-theme="dark"], [data-layout-mode="dark"]) .acad-page .apexcharts-tooltip {
+    background: var(--acad-surface-2) !important;
+    color: var(--acad-ink) !important;
+}
+
+/* =====================================================================
+   12. Responsive
+   ===================================================================== */
+@media (max-width: 991.98px) {
+    .acad-page {
+        --bs-gutter-x: 0.9rem;
+    }
+
+    .acad-page > .row {
+        --bs-gutter-y: 0.9rem;
+    }
+
+    .acad-page :is(.panel-card, .tabs-card, .section-card, .table-card, .chart-card) > .card-header {
+        padding: 0.8rem 1rem !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .acad-page :is(
+        .programas-hero, .tipos-hero, .areas-hero, .cron-hero, .seg-hero,
+        .cr-hero, .resp-hero
+    ) {
+        padding: 1.05rem 1.1rem !important;
+    }
+
+    .acad-page :is(
+        .programas-hero, .tipos-hero, .areas-hero, .cron-hero, .seg-hero,
+        .cr-hero, .resp-hero
+    ) :is(h3, h4, h5) {
+        font-size: 1.05rem !important;
+    }
+
+    .acad-page .card > .card-body {
+        padding: 1rem;
+    }
+
+    .acad-page :is(.programas-hero, .tipos-hero, .areas-hero, .cron-hero, .seg-hero,
+        .cr-hero, .resp-hero) .breadcrumb {
+        border: 0 !important;
+        background: transparent !important;
+        padding: 0 !important;
+    }
+}
+
+/* =====================================================================
+   13. Cronogramas — filtro por asignado, calendario y modulos
+   ===================================================================== */
+.acad-page .cron-filter-card {
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 15px !important;
+    background: var(--acad-surface) !important;
+    box-shadow: var(--acad-shadow) !important;
+}
+
+.acad-page .cron-filter-card .filter-header {
+    background: var(--acad-grad-soft), var(--acad-surface-2) !important;
+    border-bottom: 1px solid var(--acad-line) !important;
+}
+
+.acad-page .filter-header-icon {
+    background: var(--acad-grad) !important;
+    box-shadow: 0 10px 20px -12px rgba(16, 46, 84, 0.85) !important;
+}
+
+.acad-page .filter-header-title { color: var(--acad-ink) !important; }
+.acad-page .filter-header-sub { color: var(--acad-muted) !important; }
+
+.acad-page .filter-count {
+    background: var(--acad-surface) !important;
+    border: 1px solid var(--acad-line) !important;
+    color: var(--acad-ink-2) !important;
+}
+
+.acad-page .filter-count .count-num { color: var(--acad-navy) !important; }
+
+.acad-page .filter-btn {
+    border: 1px solid var(--acad-line) !important;
+    box-shadow: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.acad-page .filter-btn:hover { box-shadow: 0 8px 18px -10px rgba(16, 46, 84, 0.5); }
+
+.acad-page .filter-btn.active {
+    box-shadow: 0 0 0 2px var(--acad-surface), 0 0 0 4px var(--acad-gold) !important;
+}
+
+.acad-page .filter-btn-all {
+    background: var(--acad-surface-2) !important;
+    color: var(--acad-ink-2) !important;
+    border-color: var(--acad-line) !important;
+}
+
+.acad-page .filter-btn-all .avatar-init {
+    background: var(--acad-grad) !important;
+    color: #fff !important;
+}
+
+.acad-page .filter-btn-all.active {
+    background: var(--acad-grad) !important;
+    color: #fff !important;
+    border-color: transparent !important;
+}
+
+.acad-page .cron-calendar-card {
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 15px !important;
+    box-shadow: var(--acad-shadow) !important;
+}
+
+.acad-page .nav-tabs-custom .nav-link { color: var(--acad-muted) !important; }
+
+.acad-page .nav-tabs-custom .nav-link:hover { color: var(--acad-navy) !important; }
+
+.acad-page .nav-tabs-custom .nav-link.active { color: var(--acad-navy) !important; }
+
+.acad-page .nav-tabs-custom .nav-link.active::after {
+    background: linear-gradient(90deg, var(--acad-navy) 0%, var(--acad-gold) 100%) !important;
+}
+
+/* FullCalendar */
+.acad-page .fc .fc-toolbar-title { color: var(--acad-ink) !important; }
+
+.acad-page .fc .fc-button {
+    background: var(--acad-surface) !important;
+    border-color: var(--acad-line) !important;
+    color: var(--acad-ink-2) !important;
+    border-radius: 9px !important;
+}
+
+.acad-page .fc .fc-button:hover {
+    background: var(--acad-navy-soft) !important;
+    border-color: var(--acad-navy-2) !important;
+    color: var(--acad-navy) !important;
+}
+
+.acad-page .fc .fc-button-primary:not(:disabled).fc-button-active,
+.acad-page .fc .fc-button-primary:not(:disabled):active {
+    background: var(--acad-grad) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+    box-shadow: 0 10px 20px -12px rgba(16, 46, 84, 0.9) !important;
+}
+
+.acad-page .fc .fc-col-header-cell {
+    background: var(--acad-surface-2) !important;
+    border-color: var(--acad-line) !important;
+    color: var(--acad-navy) !important;
+}
+
+.acad-page .fc .fc-daygrid-day { border-color: var(--acad-line) !important; }
+.acad-page .fc .fc-daygrid-day:hover { background-color: var(--acad-surface-2) !important; }
+.acad-page .fc .fc-day-today { background-color: rgba(22, 59, 107, 0.06) !important; }
+.acad-page .fc .fc-daygrid-day-number { color: var(--acad-ink-2) !important; }
+
+.acad-page .fc-day-today .fc-daygrid-day-number {
+    background: var(--acad-grad) !important;
+    color: #fff !important;
+    box-shadow: 0 8px 16px -8px rgba(16, 46, 84, 0.85) !important;
+}
+
+.acad-page .fc-event {
+    border-radius: 7px !important;
+    font-weight: 600;
+}
+
+/* Tabla de modulos que inician */
+.acad-page #modulosInicioTable table {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.acad-page #modulosInicioTable table th {
+    background: var(--acad-surface-2) !important;
+    color: var(--acad-navy) !important;
+    border-bottom: 1px solid var(--acad-line) !important;
+}
+
+.acad-page #modulosInicioTable table td {
+    border-bottom: 1px solid var(--acad-line) !important;
+    color: var(--acad-ink-2);
+}
+
+/* Secciones de detalle (modales) */
+.acad-page .detail-section {
+    background: var(--acad-surface) !important;
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 13px !important;
+}
+
+.acad-page .detail-section-title {
+    color: var(--acad-muted) !important;
+    border-bottom-color: var(--acad-line) !important;
+}
+
+.acad-page .detail-value { color: var(--acad-ink) !important; }
+
+.acad-page .detail-value .estado-pill { border-color: currentColor; }
+
+.acad-page .moodle-icon-link {
+    border-radius: 6px;
+    border-color: #ffd8a8;
+    background: #fff4e6;
+}
+
+/* =====================================================================
+   14. Seguimiento académico — programas, módulos y asistencia
+   ===================================================================== */
+.acad-page .programa-block {
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 16px !important;
+    background: var(--acad-surface) !important;
+    box-shadow: var(--acad-shadow) !important;
+}
+
+.acad-page .programa-block:hover { box-shadow: var(--acad-shadow-hover) !important; }
+
+.acad-page .programa-header {
+    background: var(--acad-grad-soft), var(--acad-surface-2) !important;
+    border-bottom: 1px solid var(--acad-line) !important;
+    border-left: 4px solid var(--acad-navy) !important;
+}
+
+.acad-page .programa-header--danger {
+    border-left-color: var(--acad-red) !important;
+    background: linear-gradient(135deg, rgba(179, 36, 58, 0.06), rgba(179, 36, 58, 0.02)) !important;
+}
+
+.acad-page .programa-header--success {
+    border-left-color: var(--acad-teal) !important;
+    background: linear-gradient(135deg, rgba(13, 133, 116, 0.06), rgba(13, 133, 116, 0.02)) !important;
+}
+
+.acad-page .programa-icon {
+    background: var(--acad-grad) !important;
+    box-shadow: 0 10px 20px -12px rgba(16, 46, 84, 0.85) !important;
+}
+
+.acad-page .programa-title { color: var(--acad-ink) !important; letter-spacing: -0.01em; }
+.acad-page .programa-meta { color: var(--acad-muted) !important; }
+
+.acad-page .programa-count {
+    background: var(--acad-grad) !important;
+    box-shadow: 0 8px 16px -10px rgba(16, 46, 84, 0.8);
+}
+
+.acad-page .modulo-card {
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 13px !important;
+    background: var(--acad-surface) !important;
+}
+
+.acad-page .modulo-card-header {
+    background: var(--acad-surface-2) !important;
+    border-bottom: 1px solid var(--acad-line) !important;
+    border-left: 3px solid var(--acad-line-strong) !important;
+}
+
+.acad-page .modulo-card-header--curso,
+.acad-page .modulo-card-header--reciente {
+    border-left-color: var(--acad-blue) !important;
+    background: var(--acad-blue-soft) !important;
+}
+
+.acad-page .modulo-card-header--proximo {
+    border-left-color: var(--acad-teal) !important;
+    background: var(--acad-teal-soft) !important;
+}
+
+.acad-page .modulo-num-badge,
+.acad-page .docente-avatar-mini {
+    background: var(--acad-grad) !important;
+}
+
+.acad-page .modulo-nombre { color: var(--acad-ink) !important; }
+.acad-page .modulo-docente { color: var(--acad-muted) !important; }
+
+.acad-page .chip-en-desarrollo { background: var(--acad-blue-soft) !important; color: var(--acad-blue) !important; border-color: rgba(31, 111, 191, 0.25) !important; }
+.acad-page .chip-no-inicio { background: var(--acad-surface-2) !important; color: var(--acad-ink-2) !important; border-color: var(--acad-line) !important; }
+.acad-page .chip-culminado { background: var(--acad-teal-soft) !important; color: var(--acad-teal) !important; border-color: rgba(13, 133, 116, 0.25) !important; }
+.acad-page .chip-vencido { background: var(--acad-red-soft) !important; color: var(--acad-red) !important; border-color: rgba(179, 36, 58, 0.25) !important; }
+.acad-page .chip-warning { background: var(--acad-amber-soft) !important; color: var(--acad-amber) !important; border-color: rgba(183, 121, 31, 0.3) !important; }
+
+.acad-page .modulo-highlight-chip--active { background: var(--acad-blue-soft) !important; color: var(--acad-blue) !important; border-color: rgba(31, 111, 191, 0.25) !important; }
+.acad-page .modulo-highlight-chip--proximo { background: var(--acad-teal-soft) !important; color: var(--acad-teal) !important; border-color: rgba(13, 133, 116, 0.25) !important; }
+
+/* Tabla de horarios */
+.acad-page .horarios-table thead th {
+    background: var(--acad-surface-2) !important;
+    color: var(--acad-navy) !important;
+    border-bottom: 1px solid var(--acad-line) !important;
+}
+
+.acad-page .horarios-table tbody td {
+    border-bottom: 1px solid var(--acad-line) !important;
+    color: var(--acad-ink-2);
+}
+
+.acad-page .horarios-table tbody tr:hover { background-color: var(--acad-surface-2) !important; }
+
+.acad-page .horarios-table tbody tr.row-pasado { background-color: var(--acad-red-soft) !important; }
+.acad-page .horarios-table tbody tr.row-hoy { background-color: var(--acad-amber-soft) !important; }
+.acad-page .horarios-table tbody tr.row-en-rango { background-color: var(--acad-teal-soft) !important; border-left: 3px solid var(--acad-teal) !important; }
+
+.acad-page .horarios-table tbody tr.seg-row.row-atrasado { background-color: var(--acad-red-soft) !important; border-left: 3px solid var(--acad-red) !important; }
+.acad-page .horarios-table tbody tr.seg-row.row-confirm-late { background-color: var(--acad-amber-soft) !important; border-left: 3px solid var(--acad-amber) !important; }
+.acad-page .horarios-table tbody tr.seg-row.row-confirm-future { background-color: var(--acad-teal-soft) !important; border-left: 3px solid var(--acad-teal) !important; }
+.acad-page .horarios-table tbody tr.seg-row.row-missing { background-color: var(--acad-blue-soft) !important; border-left: 3px solid var(--acad-blue) !important; }
+
+.acad-page .horario-fecha {
+    background: var(--acad-surface) !important;
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 11px !important;
+}
+
+.acad-page .horario-fecha .dia { color: var(--acad-ink) !important; }
+.acad-page .horario-hora { background: var(--acad-surface-2) !important; color: var(--acad-ink-2) !important; }
+
+.acad-page .seg-flag.f-danger { background: var(--acad-red) !important; }
+.acad-page .seg-flag.f-warn { background: var(--acad-amber) !important; }
+.acad-page .seg-flag.f-info { background: var(--acad-blue) !important; }
+.acad-page .seg-flag.f-success { background: var(--acad-teal) !important; }
+
+.acad-page .banner-culminado {
+    background: var(--acad-teal-soft) !important;
+    color: var(--acad-teal) !important;
+    border-left: 4px solid var(--acad-teal) !important;
+}
+
+.acad-page .banner-vencido {
+    background: var(--acad-red-soft) !important;
+    color: var(--acad-red) !important;
+    border-left: 4px solid var(--acad-red) !important;
+}
+
+.acad-page .modulo-progress .progress { background: var(--acad-line) !important; }
+.acad-page .modulo-progress .progress-label strong { color: var(--acad-ink-2) !important; }
+
+/* Modal de seguimiento */
+.acad-page .seg-modal-alert.is-danger { background: var(--acad-red-soft) !important; color: var(--acad-red) !important; border-color: rgba(179, 36, 58, 0.3) !important; }
+.acad-page .seg-modal-alert.is-warn { background: var(--acad-amber-soft) !important; color: var(--acad-amber) !important; border-color: rgba(183, 121, 31, 0.3) !important; }
+.acad-page .seg-modal-alert.is-info { background: var(--acad-blue-soft) !important; color: var(--acad-blue) !important; border-color: rgba(31, 111, 191, 0.3) !important; }
+
+.acad-page .seg-info-grid,
+.acad-page .seg-modal-info-grid {
+    background: var(--acad-surface) !important;
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 13px !important;
+}
+
+.acad-page .seg-info-ico { background: var(--acad-navy-soft) !important; color: var(--acad-navy) !important; }
+.acad-page .seg-info-value { color: var(--acad-ink) !important; }
+.acad-page .seg-info-value a { color: var(--acad-blue) !important; }
+
+.acad-page .seg-obs-box,
+.acad-page .sd-obs-box {
+    background: var(--acad-surface) !important;
+    border: 1px solid var(--acad-line) !important;
+    color: var(--acad-ink) !important;
+}
+
+.acad-page .sd-obs-empty { background: var(--acad-surface-2) !important; border: 1px dashed var(--acad-line-strong) !important; color: var(--acad-muted) !important; }
+.acad-page .sd-detail-title { color: var(--acad-muted) !important; }
+
+.acad-page .seg-a-Presente { background: var(--acad-teal-soft) !important; color: var(--acad-teal) !important; }
+.acad-page .seg-a-Atraso { background: var(--acad-amber-soft) !important; color: var(--acad-amber) !important; }
+.acad-page .seg-a-Falta { background: var(--acad-red-soft) !important; color: var(--acad-red) !important; }
+.acad-page .seg-a-Justificado { background: var(--acad-blue-soft) !important; color: var(--acad-blue) !important; }
+
+.acad-page .seg-asist-wrap,
+.acad-page .seg-asist-table { background: var(--acad-surface) !important; }
+
+/* =====================================================================
+   15. Seguimiento diario
+   ===================================================================== */
+.acad-page .sd-stat-card,
+.acad-page .sd-stat {
+    background: var(--acad-surface) !important;
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 14px !important;
+    box-shadow: var(--acad-shadow) !important;
+}
+
+/* Superficies del día, responsables y asistencia (adaptan al tema) */
+.acad-page :is(.sd-day, .sd-resp-section, .sd-resp-card, .sd-asist-wrap) {
+    background: var(--acad-surface) !important;
+    border: 1px solid var(--acad-line) !important;
+}
+
+.acad-page .sd-stat-ico,
+.acad-page .sd-stat-icon {
+    background: var(--acad-navy-soft) !important;
+    color: var(--acad-navy) !important;
+}
+
+.acad-page :is(.sd-stat-value, .sd-stat-num) { color: var(--acad-ink) !important; font-weight: 800; font-variant-numeric: tabular-nums; }
+.acad-page .sd-stat-label { color: var(--acad-muted) !important; }
+
+.acad-page .sd-info-grid,
+.acad-page .sd-modal-info-grid {
+    background: var(--acad-surface) !important;
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 13px !important;
+}
+
+.acad-page .sd-info-cell { border-color: var(--acad-line) !important; }
+.acad-page .sd-info-ico { background: var(--acad-navy-soft) !important; color: var(--acad-navy) !important; }
+.acad-page .sd-info-label { color: var(--acad-muted) !important; }
+.acad-page .sd-info-value { color: var(--acad-ink) !important; }
+
+/* Tarjetas de responsable: la cabecera conserva su color de marca sobre
+   texto blanco; el resto usa tokens para adaptarse al tema. */
+.acad-page .sd-resp-card-head {
+    background: linear-gradient(135deg, var(--sd-resp-color, #6c757d) 0%, color-mix(in srgb, var(--sd-resp-color, #6c757d) 62%, #0a182b) 100%) !important;
+    color: #fff !important;
+    border-bottom: 1px solid var(--acad-line) !important;
+}
+.acad-page .sd-resp-row { border-bottom: 1px solid var(--acad-line) !important; }
+.acad-page .sd-resp-row:hover { background: var(--acad-surface-2) !important; }
+.acad-page .sd-resp-row .val { color: var(--acad-ink) !important; }
+.acad-page .sd-resp-row .label { color: var(--acad-ink-2) !important; }
+
+.acad-page .sd-resp-chip { background: var(--acad-surface-2) !important; color: var(--acad-ink-2) !important; }
+
+.acad-page .sd-resp-chip.c-desarrollado,
+.acad-page .sd-resp-chip.c-asistok { background: var(--acad-teal-soft) !important; color: var(--acad-teal) !important; }
+.acad-page .sd-resp-chip.c-confirmado { background: var(--acad-amber-soft) !important; color: var(--acad-amber) !important; }
+.acad-page .sd-resp-chip.c-noinicio { background: var(--acad-red-soft) !important; color: var(--acad-red) !important; }
+.acad-page .sd-resp-chip.c-postergado { background: var(--acad-navy-soft) !important; color: var(--acad-navy) !important; }
+.acad-page .sd-resp-chip.c-asistmiss { background: var(--acad-blue-soft) !important; color: var(--acad-blue) !important; }
+
+/* Mini calendario semanal */
+.acad-page .sd-resp-week .day {
+    background: var(--acad-surface) !important;
+    border: 1px solid var(--acad-line) !important;
+}
+.acad-page .sd-resp-week .day .dow { color: var(--acad-muted) !important; }
+.acad-page .sd-resp-week .day .num { color: var(--acad-ink) !important; }
+.acad-page .sd-resp-week .day .cnt { background: var(--acad-surface-2) !important; color: var(--acad-ink-2) !important; }
+.acad-page .sd-resp-week .day.is-empty .cnt { background: transparent !important; color: var(--acad-line-strong) !important; }
+.acad-page .sd-resp-week .day.is-today { border-color: var(--acad-blue) !important; background: var(--acad-blue-soft) !important; }
+.acad-page .sd-resp-week .day.is-today .num { color: var(--acad-blue) !important; }
+.acad-page .sd-resp-week .day.has-parallel { border-color: var(--acad-amber) !important; background: var(--acad-amber-soft) !important; }
+.acad-page .sd-resp-week .day.has-parallel .cnt,
+.acad-page .sd-resp-week .par-flag { background: var(--acad-amber) !important; color: #fff !important; }
+.acad-page .sd-resp-week-foot { color: var(--acad-ink-2) !important; }
+.acad-page .sd-resp-week-foot .total-week { color: var(--acad-ink) !important; }
+.acad-page .sd-resp-week-foot .par-badge { background: var(--acad-amber-soft) !important; color: var(--acad-amber) !important; }
+
+.acad-page .sd-resp-sub-block {
+    background: var(--acad-surface-2) !important;
+    border: 1px dashed var(--acad-line-strong) !important;
+    color: var(--acad-ink-2) !important;
+}
+.acad-page .sd-resp-sub-block b { color: var(--acad-ink) !important; }
+.acad-page .sd-resp-sub-block .miss { color: var(--acad-red) !important; }
+.acad-page .sd-resp-sub-block .ok { color: var(--acad-teal) !important; }
+
+.acad-page .sd-resp-empty { color: var(--acad-muted) !important; border-color: var(--acad-line-strong) !important; }
+
+/* Día y filas de horario */
+.acad-page .sd-day-header { background: var(--acad-surface-2) !important; border-bottom: 1px solid var(--acad-line) !important; }
+.acad-page .sd-day-pill {
+    background: var(--acad-surface-2) !important;
+    border: 1px solid var(--acad-line) !important;
+    color: var(--acad-ink) !important;
+}
+.acad-page .sd-day-pill .sd-day-name { color: var(--acad-muted) !important; }
+.acad-page .sd-day-pill.is-today { background: var(--acad-blue-soft) !important; border-color: var(--acad-blue) !important; color: var(--acad-blue) !important; }
+.acad-page .sd-day-pill.is-today .sd-day-name { color: var(--acad-blue) !important; }
+.acad-page .sd-day-count { color: var(--acad-muted) !important; }
+.acad-page .sd-day-empty { border-color: var(--acad-line-strong) !important; color: var(--acad-muted) !important; }
+
+.acad-page .sd-h-row {
+    background: var(--acad-surface-2) !important;
+    border: 1px solid var(--acad-line) !important;
+    border-left: 4px solid var(--sd-row-accent, var(--acad-blue)) !important;
+}
+.acad-page .sd-h-row.is-late { background: var(--acad-red-soft) !important; border-color: var(--acad-red) !important; border-left-color: var(--acad-red) !important; }
+.acad-page .sd-h-row.is-confirm-late { background: var(--acad-amber-soft) !important; border-color: var(--acad-amber) !important; border-left-color: var(--acad-amber) !important; }
+.acad-page .sd-h-row.is-confirm { background: var(--acad-teal-soft) !important; border-color: var(--acad-teal) !important; border-left-color: var(--acad-teal) !important; }
+.acad-page .sd-h-row.is-missing { background: var(--acad-blue-soft) !important; border-color: var(--acad-blue) !important; border-left-color: var(--acad-blue) !important; }
+
+.acad-page .sd-h-time { background: var(--acad-surface) !important; border: 1px solid var(--acad-line) !important; }
+.acad-page .sd-h-time .h-i { color: var(--acad-ink) !important; }
+.acad-page .sd-h-time .h-s { color: var(--acad-muted) !important; }
+.acad-page .sd-h-row.is-late .sd-h-time { background: var(--acad-surface) !important; border-color: var(--acad-red) !important; }
+.acad-page .sd-h-row.is-confirm-late .sd-h-time { background: var(--acad-surface) !important; border-color: var(--acad-amber) !important; }
+.acad-page .sd-h-row.is-missing .sd-h-time { background: var(--acad-surface) !important; border-color: var(--acad-blue) !important; }
+.acad-page .sd-h-title { color: var(--acad-ink) !important; }
+.acad-page .sd-h-title a.sd-link:hover { color: var(--acad-navy) !important; border-bottom-color: var(--acad-navy) !important; }
+.acad-page .sd-h-modulo { color: var(--acad-ink-2) !important; }
+.acad-page .sd-h-modulo a.sd-link { color: var(--acad-ink-2) !important; }
+.acad-page .sd-h-modulo a.sd-link:hover { color: var(--acad-blue) !important; }
+.acad-page .sd-h-meta { color: var(--acad-ink-2) !important; }
+.acad-page .sd-h-meta .sd-meta-i i { color: var(--acad-muted) !important; }
+.acad-page .sd-h-meta .sd-meta-i b { color: var(--acad-ink) !important; }
+
+.acad-page .sd-btn-toggle { background: var(--acad-surface) !important; border: 1px solid var(--acad-line-strong) !important; color: var(--acad-ink-2) !important; }
+.acad-page .sd-btn-toggle:hover { background: var(--acad-surface-2) !important; color: var(--acad-ink) !important; }
+.acad-page .sd-btn-toggle.is-warn { border-color: rgba(183, 121, 31, 0.4) !important; background: var(--acad-amber-soft) !important; color: var(--acad-amber) !important; }
+.acad-page .sd-btn-toggle.is-info { border-color: rgba(31, 111, 191, 0.4) !important; background: var(--acad-blue-soft) !important; color: var(--acad-blue) !important; }
+.acad-page .sd-btn-toggle.is-danger { border-color: rgba(179, 36, 58, 0.4) !important; background: var(--acad-red-soft) !important; color: var(--acad-red) !important; }
+
+.acad-page .sd-flag.is-danger { background: var(--acad-red) !important; color: #fff !important; }
+.acad-page .sd-flag.is-warn { background: var(--acad-amber) !important; color: #fff !important; }
+.acad-page .sd-flag.is-info { background: var(--acad-blue) !important; color: #fff !important; }
+
+/* Lista de asistencia */
+.acad-page .sd-asist-wrap { border-radius: 14px !important; overflow: hidden; }
+.acad-page .sd-asist-toolbar { border-bottom: 1px solid var(--acad-line) !important; }
+.acad-page .sd-asist-search i { color: var(--acad-muted) !important; }
+.acad-page .sd-asist-search input {
+    background: var(--acad-surface) !important;
+    border: 1px solid var(--acad-line-strong) !important;
+    color: var(--acad-ink-2) !important;
+    border-radius: 9px !important;
+}
+.acad-page .sd-asist-countlbl { color: var(--acad-muted) !important; }
+.acad-page .sd-asist-table thead th {
+    background: var(--acad-surface-2) !important;
+    color: var(--acad-navy) !important;
+    border-bottom: 1px solid var(--acad-line) !important;
+}
+.acad-page .sd-asist-table tbody td { border-top: 1px solid var(--acad-line) !important; }
+.acad-page .sd-asist-table tbody tr:hover { background: var(--acad-surface-2) !important; }
+.acad-page .sd-part-name { color: var(--acad-ink) !important; }
+.acad-page .sd-part-ci,
+.acad-page .sd-asist-obs { color: var(--acad-muted) !important; }
+
+.acad-page .a-Presente { background: var(--acad-teal-soft) !important; color: var(--acad-teal) !important; }
+.acad-page .a-Atraso { background: var(--acad-amber-soft) !important; color: var(--acad-amber) !important; }
+.acad-page .a-Falta { background: var(--acad-red-soft) !important; color: var(--acad-red) !important; }
+.acad-page .a-Justificado { background: var(--acad-blue-soft) !important; color: var(--acad-blue) !important; }
+
+.acad-page .sd-modal-alert.is-danger { background: var(--acad-red-soft) !important; color: var(--acad-red) !important; }
+.acad-page .sd-modal-alert.is-warn { background: var(--acad-amber-soft) !important; color: var(--acad-amber) !important; }
+.acad-page .sd-modal-alert.is-info { background: var(--acad-blue-soft) !important; color: var(--acad-blue) !important; }
+
+/* =====================================================================
+   16. Responsables
+   ===================================================================== */
+.acad-page .resp-item,
+.acad-page .resp-stat,
+.acad-page .resp-asist-wrap,
+.acad-page .modulos-list {
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 14px !important;
+    background: var(--acad-surface) !important;
+    box-shadow: var(--acad-shadow) !important;
+}
+
+.acad-page .resp-item:hover { border-color: var(--acad-navy-200, #b8cbe4) !important; }
+.acad-page .resp-item-avatar,
+.acad-page .resp-avatar { background: var(--acad-grad) !important; }
+.acad-page .resp-item-name,
+.acad-page .resp-part-name { color: var(--acad-ink) !important; }
+.acad-page .resp-item-ci,
+.acad-page .resp-part-ci { color: var(--acad-muted) !important; }
+.acad-page .resp-item-count { background: var(--acad-navy-soft) !important; color: var(--acad-navy) !important; }
+.acad-page .resp-stat-ico { background: var(--acad-navy-soft) !important; color: var(--acad-navy) !important; }
+
+.acad-page .stat-chip {
+    background: var(--acad-navy-soft) !important;
+    color: var(--acad-navy) !important;
+    border-color: var(--acad-line) !important;
+}
+
+.acad-page .modulo-num { background: var(--acad-grad) !important; }
+
+.acad-page .resp-asist-table thead th {
+    background: var(--acad-surface-2) !important;
+    color: var(--acad-navy) !important;
+    border-bottom: 1px solid var(--acad-line) !important;
+}
+
+.acad-page .resp-asist-table tbody td { border-top: 1px solid var(--acad-line) !important; }
+.acad-page .resp-asist-table tbody tr:hover { background: var(--acad-surface-2) !important; }
+.acad-page .resp-asist-search-input { border-color: var(--acad-line-strong) !important; border-radius: 9px !important; }
+
+.acad-page .resp-ver-asistencia { color: var(--acad-navy) !important; }
+.acad-page .resp-asist-back { color: var(--acad-muted) !important; }
+.acad-page .resp-horario-row { border-bottom: 1px solid var(--acad-line) !important; }
+
+.acad-page .detail-header { border-bottom: 1px solid var(--acad-line) !important; }
+.acad-page .detail-tab { color: var(--acad-ink-2) !important; }
+.acad-page .detail-tab.active { color: #fff !important; }
+.acad-page .detail-filter-bar { background: var(--acad-surface-2) !important; border-color: var(--acad-line) !important; }
+.acad-page .detail-empty { background: var(--acad-surface-2) !important; border: 1px dashed var(--acad-line-strong) !important; border-radius: 14px !important; }
+
+/* Master-detail: lista de responsables */
+.acad-page .resp-master {
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 15px !important;
+    background: var(--acad-surface) !important;
+    box-shadow: var(--acad-shadow) !important;
+}
+
+.acad-page .master-header {
+    background: var(--acad-grad-soft), var(--acad-surface-2) !important;
+    border-bottom: 1px solid var(--acad-line) !important;
+}
+
+.acad-page .master-header-icon {
+    background: var(--acad-grad) !important;
+    box-shadow: 0 10px 20px -12px rgba(16, 46, 84, 0.85) !important;
+}
+
+.acad-page .master-header-title { color: var(--acad-ink) !important; }
+.acad-page .master-header-sub { color: var(--acad-muted) !important; }
+
+.acad-page .master-search { border-bottom: 1px solid var(--acad-line) !important; }
+.acad-page .master-search i { color: var(--acad-muted) !important; }
+.acad-page .master-search input {
+    border: 1px solid var(--acad-line-strong) !important;
+    border-radius: 9px !important;
+    background: var(--acad-surface) !important;
+    color: var(--acad-ink-2) !important;
+}
+.acad-page .master-search input:focus {
+    border-color: var(--acad-navy-2) !important;
+    box-shadow: 0 0 0 0.16rem rgba(22, 59, 107, 0.12) !important;
+}
+
+.acad-page .resp-item.active {
+    background: var(--acad-navy-soft) !important;
+    border-color: rgba(22, 59, 107, 0.2) !important;
+    box-shadow: inset 3px 0 0 var(--acad-gold), 0 6px 14px -8px rgba(16, 46, 84, 0.35) !important;
+}
+.acad-page .resp-item:hover { background: var(--acad-surface-2) !important; }
+.acad-page .resp-item-name { color: var(--acad-ink) !important; }
+.acad-page .resp-item-ci { color: var(--acad-muted) !important; }
+.acad-page .resp-item-count { background: var(--acad-navy-soft) !important; color: var(--acad-navy) !important; }
+
+.acad-page .detail-tabs {
+    background: var(--acad-surface-2) !important;
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 12px !important;
+    width: fit-content;
+    padding: 0.25rem !important;
+}
+
+/* Chips de estado del programa (semánticos y adaptables al tema) */
+.acad-page .stat-chip.green { background: var(--acad-teal-soft) !important; color: var(--acad-teal) !important; border-color: rgba(13, 133, 116, 0.25) !important; }
+.acad-page .stat-chip.blue { background: var(--acad-blue-soft) !important; color: var(--acad-blue) !important; border-color: rgba(31, 111, 191, 0.25) !important; }
+.acad-page .stat-chip.gray { background: var(--acad-surface-2) !important; color: var(--acad-muted) !important; border-color: var(--acad-line) !important; }
+.acad-page .stat-chip.dark { background: var(--acad-grad) !important; color: #fff !important; border-color: transparent !important; }
+
+/* Bloques de programa y módulos del detalle */
+.acad-page .programa-block { background: var(--acad-surface) !important; border: 1px solid var(--acad-line) !important; }
+.acad-page .programa-header { background: var(--acad-grad-soft), var(--acad-surface-2) !important; border-bottom: 1px solid var(--acad-line) !important; }
+.acad-page .programa-icon { background: var(--acad-grad) !important; }
+.acad-page .programa-title { color: var(--acad-ink) !important; }
+.acad-page .programa-meta { color: var(--acad-muted) !important; }
+.acad-page .programa-stats { border-top: 1px dashed var(--acad-line) !important; }
+
+.acad-page .progress-bar-wrap { background: var(--acad-line) !important; }
+.acad-page .progress-pct { color: var(--acad-ink-2) !important; }
+
+.acad-page .modulos-list { padding: 0.5rem; }
+.acad-page .modulo-row { border-bottom: 1px dashed var(--acad-line) !important; }
+.acad-page .modulo-row:hover { background: var(--acad-surface-2) !important; }
+.acad-page .modulo-nombre { color: var(--acad-ink) !important; }
+.acad-page .modulo-docente { color: var(--acad-muted) !important; }
+.acad-page .modulo-row--curso,
+.acad-page .modulo-row--reciente { background: var(--acad-blue-soft) !important; border-left: 3px solid var(--acad-blue) !important; }
+.acad-page .modulo-row--proximo { background: var(--acad-teal-soft) !important; border-left: 3px solid var(--acad-teal) !important; }
+.acad-page .mod-highlight-chip--active { background: var(--acad-blue-soft) !important; color: var(--acad-blue) !important; border-color: rgba(31, 111, 191, 0.25) !important; }
+.acad-page .mod-highlight-chip--proximo { background: var(--acad-teal-soft) !important; color: var(--acad-teal) !important; border-color: rgba(13, 133, 116, 0.25) !important; }
+
+.acad-page .resp-horarios-btn { background: var(--acad-blue-soft) !important; color: var(--acad-blue) !important; border-color: rgba(31, 111, 191, 0.25) !important; }
+.acad-page .resp-horario-row { background: var(--acad-surface) !important; border: 1px solid var(--acad-line) !important; }
+.acad-page .resp-horario-row .h-date { color: var(--acad-ink) !important; }
+.acad-page .resp-horario-row .h-time { color: var(--acad-ink-2) !important; }
+.acad-page .resp-ver-asistencia { background: var(--acad-teal-soft) !important; color: var(--acad-teal) !important; border-color: rgba(13, 133, 116, 0.25) !important; }
+.acad-page .resp-asist-back { background: var(--acad-surface) !important; color: var(--acad-navy) !important; border-color: var(--acad-line-strong) !important; }
+.acad-page .resp-asist-back:hover { background: var(--acad-grad) !important; color: #fff !important; }
+
+.acad-page .resp-stat .num { color: var(--acad-ink) !important; }
+.acad-page .resp-stat .lbl { color: var(--acad-muted) !important; }
+.acad-page .resp-stat .pct { color: var(--acad-muted) !important; }
+
+.acad-page .resp-asist-wrap { background: var(--acad-surface) !important; border: 1px solid var(--acad-line) !important; }
+.acad-page .resp-asist-toolbar { border-bottom: 1px solid var(--acad-line) !important; }
+.acad-page .resp-asist-search i { color: var(--acad-muted) !important; }
+.acad-page .resp-asist-search input { background: var(--acad-surface) !important; border: 1px solid var(--acad-line-strong) !important; color: var(--acad-ink-2) !important; }
+.acad-page .resp-asist-countlbl { color: var(--acad-muted) !important; }
+
+.acad-page .btn-ver-programa { background: var(--acad-navy-soft) !important; border: 1px solid var(--acad-line) !important; color: var(--acad-navy) !important; }
+.acad-page .btn-ver-programa:hover { background: var(--acad-grad) !important; color: #fff !important; border-color: transparent !important; }
+.acad-page .btn-moodle { background: rgba(247, 103, 7, 0.1) !important; border: 1px solid rgba(247, 103, 7, 0.25) !important; color: #c2410c !important; }
+.acad-page .moodle-icon-link { background: #fff4e6 !important; color: #f76707 !important; border-color: #ffd8a8 !important; }
+
+.acad-page .detail-loading { background: var(--acad-surface) !important; border: 1px solid var(--acad-line) !important; }
+.acad-page .detail-empty .empty-icon { background: var(--acad-navy-soft) !important; color: var(--acad-navy) !important; }
+
+.acad-page .detail-header h3 { color: #fff !important; }
+.acad-page .detail-header-meta { color: rgba(255, 255, 255, 0.85) !important; }
+.acad-page .detail-avatar { background: rgba(255, 255, 255, 0.2) !important; border-color: rgba(255, 255, 255, 0.35) !important; color: #fff !important; }
+.acad-page .dms-pill { background: rgba(255, 255, 255, 0.18) !important; border-color: rgba(255, 255, 255, 0.25) !important; color: #fff !important; }
+
+/* Composición semanal (barras apiladas de seguimiento diario) */
+.acad-page .sd-resp-section-title { color: var(--acad-ink) !important; }
+.acad-page .sd-resp-section-title i { color: var(--acad-navy) !important; }
+.acad-page .sd-resp-section-hint { color: var(--acad-muted) !important; }
+.acad-page .sd-resp-section-header { border-bottom: 1px solid var(--acad-line) !important; }
+
+.acad-page .sd-resp-bar { background: var(--acad-line) !important; border-radius: 999px; overflow: hidden; }
+.acad-page .sd-resp-bar .bs-desarrollado { background: var(--acad-teal) !important; }
+.acad-page .sd-resp-bar .bs-confirmado { background: var(--acad-amber) !important; }
+.acad-page .sd-resp-bar .bs-noinicio { background: var(--acad-red) !important; }
+.acad-page .sd-resp-bar .bs-postergado { background: var(--acad-navy-2) !important; }
+.acad-page .sd-resp-bar .bs-otro { background: var(--acad-muted) !important; }
+.acad-page .sd-resp-bar .bs-futuro { background: var(--acad-line-strong) !important; }
+
+.acad-page .sd-resp-chip.c-desarrollado { background: var(--acad-teal-soft) !important; color: var(--acad-teal) !important; }
+.acad-page .sd-resp-chip.c-confirmado { background: var(--acad-amber-soft) !important; color: var(--acad-amber) !important; }
+.acad-page .sd-resp-chip.c-noinicio { background: var(--acad-red-soft) !important; color: var(--acad-red) !important; }
+
+/* Barras de progreso, acordeones y enlaces de la marca */
+.acad-page :is(.progress-bar-fill, .prog-acc-progress .bar > span, .modulo-progress .progress-bar) {
+    background: linear-gradient(90deg, var(--acad-teal) 0%, var(--acad-navy-2) 100%) !important;
+}
+
+.acad-page :is(.prog-acc-toggle:hover, .prog-acc-item.open .prog-acc-toggle) {
+    background: var(--acad-navy-soft) !important;
+}
+
+.acad-page :is(.programa-title-link, .modulo-nombre-link, .prog-acc-name-link):hover {
+    color: var(--acad-navy) !important;
+    border-bottom-color: var(--acad-navy) !important;
+}
+
+/* =====================================================================
+   17. Modo oscuro de los módulos anteriores
+   ===================================================================== */
+:is([data-bs-theme="dark"], [data-layout-mode="dark"]) .acad-page :is(
+    .cron-filter-card .filter-header, .programa-header, .modulo-card-header,
+    .filter-header-icon
+) {
+    background-image: none !important;
+}
+
+:is([data-bs-theme="dark"], [data-layout-mode="dark"]) .acad-page :is(
+    .programa-title, .modulo-nombre, .detail-value, .sd-info-value, .sd-stat-value,
+    .resp-item-name, .resp-part-name, .seg-info-value
+) {
+    color: var(--acad-ink) !important;
+}
+
+:is([data-bs-theme="dark"], [data-layout-mode="dark"]) .acad-page :is(
+    .programa-header, .modulo-card-header
+) {
+    background: var(--acad-surface-2) !important;
+}
+
+/* Colores literales incrustados en el marcado que no adaptan solos */
+:is([data-bs-theme="dark"], [data-layout-mode="dark"]) .acad-page [style*="color:#2a2f43"],
+:is([data-bs-theme="dark"], [data-layout-mode="dark"]) .acad-page [style*="color: #2a2f43"] {
+    color: var(--acad-ink) !important;
+}
+
+/* =====================================================================
+   18. Responsive de los módulos anteriores
+   ===================================================================== */
+@media (max-width: 767.98px) {
+    .acad-page .filter-body { max-height: 150px; }
+    .acad-page .programa-header,
+    .acad-page .modulo-card-header,
+    .acad-page .sd-resp-card-head {
+        padding: 0.85rem 1rem !important;
+    }
+}
+
+/* =====================================================================
+   19. Programas — tarjetas de estadística
+   ===================================================================== */
+.acad-page .stat-card.pg-stat {
+    position: relative;
+    background: var(--acad-surface) !important;
+    border: 1px solid var(--acad-line) !important;
+    border-top: 3px solid var(--pg-accent, var(--acad-navy)) !important;
+    border-radius: 16px !important;
+    box-shadow: var(--acad-shadow) !important;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.acad-page .stat-card.pg-stat:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--acad-shadow-hover) !important;
+}
+
+.acad-page .stat-card.pg-stat .card-body {
+    padding: 1.05rem 1.15rem !important;
+}
+
+.acad-page .pg-stat-label {
+    font-size: 0.64rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 800 !important;
+    color: var(--acad-muted) !important;
+    margin-bottom: 0.35rem !important;
+    line-height: 1.2;
+}
+
+.acad-page .pg-stat-value {
+    font-size: 1.45rem !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em;
+    color: var(--acad-ink) !important;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+}
+
+.acad-page .pg-stat-value.pg-stat-value--sm {
+    font-size: 1.35rem !important;
+}
+
+.acad-page .pg-stat-meta {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--acad-muted);
+    margin-bottom: 0.15rem;
+}
+
+.acad-page .pg-stat-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+    background: var(--pg-soft, var(--acad-navy-soft));
+    color: var(--pg-accent, var(--acad-navy));
+    transition: transform 0.2s ease;
+}
+
+.acad-page .stat-card.pg-stat:hover .pg-stat-icon {
+    transform: scale(1.07) rotate(-3deg);
+}
+
+.acad-page .pg-stat-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: 0.7rem;
+}
+
+.acad-page .pg-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border-radius: 999px;
+    padding: 0.2em 0.62em;
+    font-size: 0.66rem;
+    font-weight: 700;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    line-height: 1.4;
+}
+
+/* Fila única de tarjetas por tipo (todas visibles, con scroll si no caben) */
+.acad-page .tipo-stats-row {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.7rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 0.35rem;
+    -webkit-overflow-scrolling: touch;
+}
+.acad-page .tipo-stats-row::-webkit-scrollbar { height: 5px; }
+.acad-page .tipo-stats-row::-webkit-scrollbar-thumb { background: var(--acad-line); border-radius: 999px; }
+.acad-page .pg-tipo-col {
+    flex: 1 1 0;
+    min-width: 180px;
+}
+.acad-page .pg-tipo-card {
+    cursor: pointer;
+    outline: none;
+}
+.acad-page .pg-tipo-card:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--pg-accent, var(--acad-navy)) 35%, transparent) !important;
+}
+.acad-page .pg-tipo-card .card-body {
+    padding: 0.85rem 0.95rem !important;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+.acad-page .pg-tipo-card .pg-stat-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    font-size: 1.1rem;
+}
+.acad-page .pg-tipo-card .pg-stat-value {
+    font-size: 1.4rem !important;
+}
+.acad-page .pg-tipo-card .pg-stat-badges {
+    margin-top: 0.55rem;
+}
+.acad-page .pg-tipo-cta {
+    margin-top: 0.6rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--acad-line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: var(--pg-accent, var(--acad-navy));
+    text-transform: uppercase;
+}
+.acad-page .pg-tipo-cta i {
+    transition: transform 0.18s ease;
+}
+.acad-page .pg-tipo-card:hover .pg-tipo-cta i {
+    transform: translateX(3px);
+}
+
+/* Chip y fila de estadísticas dentro de las pestañas por tipo */
+.acad-page .tab-stats-row {
+    background: var(--acad-surface-2) !important;
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 14px !important;
+    gap: 1rem !important;
+}
+
+.acad-page .tab-stat-item {
+    color: var(--acad-ink-2) !important;
+    font-weight: 600;
+}
+
+.acad-page .tab-stat-item .num {
+    color: var(--acad-navy) !important;
+    font-variant-numeric: tabular-nums;
+}
+
+.acad-page .tab-stat-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+    background: var(--acad-navy-soft);
+    color: var(--acad-navy);
+    margin-right: 0.4rem;
+}
+
+/* =====================================================================
+   20. Programas — pestañas por tipo
+   ===================================================================== */
+.acad-page .programa-count {
+    background: var(--acad-grad) !important;
+    box-shadow: 0 8px 16px -10px rgba(16, 46, 84, 0.8);
+}
+
+.acad-page .tab-header-row h6 .text-muted { color: var(--acad-muted) !important; }
+.acad-page .tab-header-row h6 .text-dark { color: var(--acad-ink) !important; }
+.acad-page .tab-header-row small { color: var(--acad-muted) !important; }
+
+/* =====================================================================
+   21. Programa (show) — pestañas, tablas y contenido
+   ===================================================================== */
+
+/* --- Pestañas (principales y secundarias) --- */
+.acad-page .nav-tabs-show {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    width: 100%;
+    gap: 0.3rem !important;
+    padding: 0.35rem !important;
+    background: var(--acad-surface-2) !important;
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 14px !important;
+    overflow: visible !important;
+}
+
+.acad-page .nav-tabs-show .nav-item { margin: 0; }
+
+.acad-page .nav-tabs-show .nav-link {
+    border: 0 !important;
+    border-radius: 10px !important;
+    color: var(--acad-ink-2) !important;
+    font-weight: 700 !important;
+    font-size: 0.8rem !important;
+    padding: 0.5rem 0.85rem !important;
+    display: inline-flex !important;
+    align-items: center;
+    gap: 0.4rem;
+    transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.acad-page .nav-tabs-show .nav-link:hover {
+    background: rgba(22, 59, 107, 0.07) !important;
+    color: var(--acad-navy) !important;
+}
+
+.acad-page .nav-tabs-show .nav-link.active {
+    background: var(--acad-grad) !important;
+    color: #fff !important;
+    box-shadow: 0 10px 20px -12px rgba(16, 46, 84, 0.9), inset 0 -2px 0 var(--acad-gold) !important;
+}
+
+.acad-page .nav-tabs-show .nav-link i { font-size: 1rem; }
+
+.acad-page .nav-tabs-show .nav-link .badge {
+    background: var(--acad-navy-soft) !important;
+    color: var(--acad-navy) !important;
+    font-size: 0.66rem !important;
+    font-weight: 800 !important;
+    padding: 0.25em 0.55em !important;
+}
+
+.acad-page .nav-tabs-show .nav-link.active .badge {
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: #fff !important;
+}
+
+/* --- Sub-pestañas de módulos --- */
+.acad-page .modulos-subtabs {
+    gap: 0.3rem !important;
+    padding: 0.35rem !important;
+    background: var(--acad-surface-2) !important;
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 14px !important;
+}
+
+.acad-page .modulos-subtabs .nav-link {
+    border: 0 !important;
+    border-radius: 10px !important;
+    color: var(--acad-ink-2) !important;
+    font-weight: 700 !important;
+}
+
+.acad-page .modulos-subtabs .nav-link:hover {
+    background: rgba(22, 59, 107, 0.07) !important;
+    color: var(--acad-navy) !important;
+    border-color: transparent !important;
+}
+
+.acad-page .modulos-subtabs .nav-link.active {
+    background: var(--acad-grad) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+    box-shadow: 0 10px 20px -12px rgba(16, 46, 84, 0.9), inset 0 -2px 0 var(--acad-gold) !important;
+}
+
+.acad-page .modulos-subtabs .nav-link.active .badge {
+    background: rgba(255, 255, 255, 0.22) !important;
+    color: #fff !important;
+}
+
+/* --- Tarjeta contenedora de pestañas --- */
+.acad-page .show-tabs-card {
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 16px !important;
+    box-shadow: var(--acad-shadow) !important;
+}
+
+.acad-page .show-tabs-card > .card-body { padding: 1.1rem 1.2rem !important; }
+
+/* --- Tarjetas de estadística del programa --- */
+.acad-page .stat-card {
+    border-top: 3px solid var(--stat-accent, var(--acad-navy)) !important;
+}
+
+.acad-page .stat-card[style*="#405189"] { --stat-accent: var(--acad-navy) !important; }
+.acad-page .stat-card[style*="#0ab39c"] { --stat-accent: var(--acad-teal) !important; }
+.acad-page .stat-card[style*="#f7b84b"] { --stat-accent: var(--acad-amber) !important; }
+.acad-page .stat-card[style*="#299cdb"] { --stat-accent: var(--acad-blue) !important; }
+.acad-page .stat-card[style*="#f06548"] { --stat-accent: var(--acad-red) !important; }
+.acad-page .stat-card[style*="#878a99"] { --stat-accent: var(--acad-muted) !important; }
+
+/* --- Gráficas --- */
+.acad-page .chart-card {
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 14px !important;
+    box-shadow: var(--acad-shadow) !important;
+}
+
+.acad-page .chart-card .card-body { padding: 1rem !important; }
+
+.acad-page .chart-title {
+    color: var(--acad-navy) !important;
+    border-bottom: 1px dashed var(--acad-line) !important;
+    margin-bottom: 0.85rem !important;
+    padding-bottom: 0.6rem !important;
+    font-size: 0.72rem !important;
+    font-weight: 800 !important;
+}
+
+.acad-page .chart-title i { color: var(--acad-gold) !important; }
+
+/* --- Tablas: compactas y fluidas (sin scroll innecesario) --- */
+.acad-page .show-tabs-card .table-card {
+    border: 1px solid var(--acad-line) !important;
+    border-radius: 14px !important;
+}
+
+.acad-page .show-tabs-card .table thead th {
+    background: var(--acad-surface-2) !important;
+    color: var(--acad-navy) !important;
+    border-bottom: 1px solid var(--acad-line) !important;
+    font-size: 0.68rem !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.04em;
+    padding: 0.6rem 0.5rem !important;
+}
+
+.acad-page .show-tabs-card .table tbody td {
+    border-bottom: 1px solid var(--acad-line) !important;
+    padding: 0.55rem 0.5rem !important;
+    color: var(--acad-ink-2);
+    vertical-align: middle;
+}
+
+.acad-page .show-tabs-card .table-hover tbody tr:hover {
+    background: var(--acad-surface-2) !important;
+}
+
+/* Las tablas se ajustan al ancho disponible (sin scroll horizontal). */
+.acad-page .show-tabs-card .table {
+    width: 100% !important;
+}
+
+.acad-page :is(.tabla-inscritos, .tabla-fase-inscritos, .tabla-marketing-reales,
+    .tabla-seguimiento, .table-desarrollo, .table-contable, .table-fase-concluida) {
+    min-width: 100% !important;
+}
+
+.acad-page :is(.cell-participante, .cell-contacto, .cell-money, .cell-asesor,
+    .tabla-seguimiento .acciones-modulo, .tabla-seguimiento .notas-indicators) {
+    min-width: 0 !important;
+    max-width: none !important;
+}
+
+/* Columnas de módulo: que se repartan en vez de forzar 150px cada una */
+.acad-page .show-tabs-card .col-mod { min-width: 0 !important; }
+
+.acad-page :is(.tabla-inscritos, .tabla-fase-inscritos, .tabla-marketing-reales,
+    .tabla-seguimiento, .table-desarrollo, .table-contable, .table-fase-concluida) :is(th, td) {
+    padding: 0.48rem 0.4rem !important;
+    font-size: 0.76rem;
+}
+
+/* Reparto fijo de columnas: la tabla nunca supera el contenedor y
+   "Participante"/"Módulo" reciben el ancho suficiente. */
+.acad-page :is(#sub-tab-inscritos .tabla-inscritos, #sub-fase-inscritos .tabla-fase-inscritos) {
+    table-layout: fixed !important;
+}
+.acad-page :is(#sub-tab-inscritos .tabla-inscritos, #sub-fase-inscritos .tabla-fase-inscritos) :is(th, td):nth-child(1) { width: 3% !important; }
+.acad-page :is(#sub-tab-inscritos .tabla-inscritos, #sub-fase-inscritos .tabla-fase-inscritos) :is(th, td):nth-child(2) { width: 17% !important; }
+.acad-page :is(#sub-tab-inscritos .tabla-inscritos, #sub-fase-inscritos .tabla-fase-inscritos) :is(th, td):nth-child(3) { width: 10% !important; }
+.acad-page :is(#sub-tab-inscritos .tabla-inscritos, #sub-fase-inscritos .tabla-fase-inscritos) :is(th, td):nth-child(4) { width: 11% !important; }
+.acad-page :is(#sub-tab-inscritos .tabla-inscritos, #sub-fase-inscritos .tabla-fase-inscritos) :is(th, td):nth-child(5) { width: 7% !important; }
+.acad-page :is(#sub-tab-inscritos .tabla-inscritos, #sub-fase-inscritos .tabla-fase-inscritos) :is(th, td):nth-child(6) { width: 10% !important; }
+.acad-page :is(#sub-tab-inscritos .tabla-inscritos, #sub-fase-inscritos .tabla-fase-inscritos) :is(th, td):nth-child(7) { width: 10% !important; }
+.acad-page :is(#sub-tab-inscritos .tabla-inscritos, #sub-fase-inscritos .tabla-fase-inscritos) :is(th, td):nth-child(8) { width: 7% !important; }
+.acad-page :is(#sub-tab-inscritos .tabla-inscritos, #sub-fase-inscritos .tabla-fase-inscritos) :is(th, td):nth-child(9) { width: 10% !important; }
+.acad-page :is(#sub-tab-inscritos .tabla-inscritos, #sub-fase-inscritos .tabla-fase-inscritos) :is(th, td):nth-child(10) { width: 15% !important; }
+
+/* 8 columnas: matrículas y colegiaturas */
+.acad-page :is(#sub-tab-matriculas .tabla-inscritos, #sub-tab-colegiaturas .tabla-inscritos,
+    #sub-fase-matriculas .tabla-fase-inscritos, #sub-fase-colegiaturas .tabla-fase-inscritos) {
+    table-layout: fixed !important;
+}
+.acad-page :is(#sub-tab-matriculas .tabla-inscritos, #sub-tab-colegiaturas .tabla-inscritos,
+    #sub-fase-matriculas .tabla-fase-inscritos, #sub-fase-colegiaturas .tabla-fase-inscritos) :is(th, td):nth-child(1) { width: 4% !important; }
+.acad-page :is(#sub-tab-matriculas .tabla-inscritos, #sub-tab-colegiaturas .tabla-inscritos,
+    #sub-fase-matriculas .tabla-fase-inscritos, #sub-fase-colegiaturas .tabla-fase-inscritos) :is(th, td):nth-child(2) { width: 26% !important; }
+.acad-page :is(#sub-tab-matriculas .tabla-inscritos, #sub-tab-colegiaturas .tabla-inscritos,
+    #sub-fase-matriculas .tabla-fase-inscritos, #sub-fase-colegiaturas .tabla-fase-inscritos) :is(th, td):nth-child(3) { width: 12% !important; }
+.acad-page :is(#sub-tab-matriculas .tabla-inscritos, #sub-tab-colegiaturas .tabla-inscritos,
+    #sub-fase-matriculas .tabla-fase-inscritos, #sub-fase-colegiaturas .tabla-fase-inscritos) :is(th, td):nth-child(4) { width: 10% !important; }
+.acad-page :is(#sub-tab-matriculas .tabla-inscritos, #sub-tab-colegiaturas .tabla-inscritos,
+    #sub-fase-matriculas .tabla-fase-inscritos, #sub-fase-colegiaturas .tabla-fase-inscritos) :is(th, td):nth-child(5) { width: 12% !important; }
+.acad-page :is(#sub-tab-matriculas .tabla-inscritos, #sub-tab-colegiaturas .tabla-inscritos,
+    #sub-fase-matriculas .tabla-fase-inscritos, #sub-fase-colegiaturas .tabla-fase-inscritos) :is(th, td):nth-child(6) { width: 12% !important; }
+.acad-page :is(#sub-tab-matriculas .tabla-inscritos, #sub-tab-colegiaturas .tabla-inscritos,
+    #sub-fase-matriculas .tabla-fase-inscritos, #sub-fase-colegiaturas .tabla-fase-inscritos) :is(th, td):nth-child(7) { width: 6% !important; }
+.acad-page :is(#sub-tab-matriculas .tabla-inscritos, #sub-tab-colegiaturas .tabla-inscritos,
+    #sub-fase-matriculas .tabla-fase-inscritos, #sub-fase-colegiaturas .tabla-fase-inscritos) :is(th, td):nth-child(8) { width: 18% !important; }
+
+/* 7 columnas: marketing real y seguimiento de módulos */
+.acad-page :is(#tab-marketing-reales .tabla-marketing-reales, #tab-seguimiento-academico .tabla-seguimiento) {
+    table-layout: fixed !important;
+}
+.acad-page #tab-marketing-reales .tabla-marketing-reales :is(th, td):nth-child(1) { width: 5% !important; }
+.acad-page #tab-marketing-reales .tabla-marketing-reales :is(th, td):nth-child(2) { width: 28% !important; }
+.acad-page #tab-marketing-reales .tabla-marketing-reales :is(th, td):nth-child(3) { width: 14% !important; }
+.acad-page #tab-marketing-reales .tabla-marketing-reales :is(th, td):nth-child(4) { width: 11% !important; }
+.acad-page #tab-marketing-reales .tabla-marketing-reales :is(th, td):nth-child(5) { width: 14% !important; }
+.acad-page #tab-marketing-reales .tabla-marketing-reales :is(th, td):nth-child(6) { width: 14% !important; }
+.acad-page #tab-marketing-reales .tabla-marketing-reales :is(th, td):nth-child(7) { width: 14% !important; }
+.acad-page #tab-seguimiento-academico .tabla-seguimiento :is(th, td):nth-child(1) { width: 4% !important; }
+.acad-page #tab-seguimiento-academico .tabla-seguimiento :is(th, td):nth-child(2) { width: 21% !important; }
+.acad-page #tab-seguimiento-academico .tabla-seguimiento :is(th, td):nth-child(3) { width: 17% !important; }
+.acad-page #tab-seguimiento-academico .tabla-seguimiento :is(th, td):nth-child(4) { width: 15% !important; }
+.acad-page #tab-seguimiento-academico .tabla-seguimiento :is(th, td):nth-child(5) { width: 15% !important; }
+.acad-page #tab-seguimiento-academico .tabla-seguimiento :is(th, td):nth-child(6) { width: 5% !important; }
+.acad-page #tab-seguimiento-academico .tabla-seguimiento :is(th, td):nth-child(7) { width: 23% !important; }
+
+/* La columna de acciones acomoda todos sus botones dentro del ancho */
+.acad-page #tab-seguimiento-academico .tabla-seguimiento .acciones-modulo {
+    white-space: normal !important;
+    overflow: visible !important;
+}
+.acad-page #tab-seguimiento-academico .tabla-seguimiento .acciones-modulo .hstack {
+    flex-wrap: wrap;
+    gap: 0.25rem !important;
+    justify-content: center;
+    align-items: center;
+}
+.acad-page #tab-seguimiento-academico .tabla-seguimiento .acciones-modulo .btn {
+    font-size: 0.66rem;
+    padding: 0.26rem 0.5rem;
+    line-height: 1.15;
+    white-space: nowrap;
+}
+.acad-page #tab-seguimiento-academico .tabla-seguimiento .acciones-modulo .btn-icon {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+}
+
+/* El contenido de cada celda se muestra completo y legible (sin recortes) */
+.acad-page :is(#sub-tab-inscritos .tabla-inscritos, #sub-fase-inscritos .tabla-fase-inscritos,
+    #sub-tab-matriculas .tabla-inscritos, #sub-tab-colegiaturas .tabla-inscritos,
+    #sub-fase-matriculas .tabla-fase-inscritos, #sub-fase-colegiaturas .tabla-fase-inscritos,
+    #tab-marketing-reales .tabla-marketing-reales, #tab-seguimiento-academico .tabla-seguimiento) :is(th, td) {
+    white-space: normal;
+    overflow-wrap: break-word;
+}
+
+/* Los montos no se parten a mitad de número */
+.acad-page .money-stack span { white-space: nowrap; }
+
+/* El correo del participante se muestra completo (sin recortar) */
+.acad-page .cell-contacto .line {
+    max-width: none !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+}
+
+/* En pantallas pequeñas, aún más compacto */
+@media (max-width: 1199.98px) {
+    .acad-page :is(.tabla-inscritos, .tabla-fase-inscritos, .tabla-marketing-reales,
+        .tabla-seguimiento, .table-desarrollo, .table-contable, .table-fase-concluida) :is(th, td) {
+        padding: 0.4rem 0.3rem !important;
+        font-size: 0.72rem;
+    }
+}
+
+.acad-page .show-tabs-card .table-responsive::-webkit-scrollbar { height: 8px; }
+.acad-page .show-tabs-card .table-responsive::-webkit-scrollbar-thumb {
+    background: var(--acad-line-strong);
+    border-radius: 4px;
+}
+
+/* --- Celdas y utilidades de tablas del programa --- */
+.acad-page .cell-participante .nombre { color: var(--acad-ink) !important; font-weight: 700; }
+.acad-page .money-stack .deuda { color: var(--acad-ink) !important; font-weight: 700; }
+.acad-page .docente-nombre { color: var(--acad-ink) !important; }
+.acad-page .modulo-num { background: var(--acad-grad) !important; }
+.acad-page .docente-avatar { background: var(--acad-grad) !important; }
+.acad-page .tabla-seguimiento tbody tr:hover { border-left-color: var(--acad-gold) !important; }
+.acad-page .tabla-seguimiento .modulo-nombre { color: var(--acad-ink) !important; }
+
+/* --- Optimización de espacios del contenido --- */
+.acad-page .show-tabs-card :is(.row, .tab-content) > .tab-pane > :last-child {
+    margin-bottom: 0 !important;
+}
+
+.acad-page .show-tabs-card .nav-tabs-show.mt-3 { margin-top: 0.6rem !important; }
+
+@media (max-width: 991.98px) {
+    .acad-page .nav-tabs-show .nav-link,
+    .acad-page .modulos-subtabs .nav-link {
+        padding: 0.45rem 0.7rem !important;
+        font-size: 0.76rem !important;
+    }
+}
+
+/* =====================================================================
+   22. Texto más compacto en las tablas de Inscripciones
+   (Total Registros Inscripciones e Inscritos Fase Formativa)
+   ===================================================================== */
+.acad-page .show-tabs-card :is(.tabla-inscritos, .tabla-fase-inscritos) {
+    font-size: 0.72rem !important;
+}
+
+.acad-page .show-tabs-card :is(.tabla-inscritos, .tabla-fase-inscritos) :is(th, td) {
+    font-size: 0.72rem !important;
+    padding: 0.42rem 0.35rem !important;
+    line-height: 1.25;
+}
+
+.acad-page .show-tabs-card :is(.tabla-inscritos, .tabla-fase-inscritos) thead th {
+    font-size: 0.6rem !important;
+    padding: 0.48rem 0.35rem !important;
+}
+
+.acad-page .show-tabs-card :is(.tabla-inscritos, .tabla-fase-inscritos) .cell-participante .nombre {
+    font-size: 0.76rem !important;
+}
+.acad-page .show-tabs-card :is(.tabla-inscritos, .tabla-fase-inscritos) .cell-participante .ci-info {
+    font-size: 0.64rem !important;
+}
+.acad-page .show-tabs-card :is(.tabla-inscritos, .tabla-fase-inscritos) .money-stack span {
+    font-size: 0.68rem !important;
+}
+.acad-page .show-tabs-card :is(.tabla-inscritos, .tabla-fase-inscritos) :is(.badge, .pill-mini) {
+    font-size: 0.62rem !important;
+}
+
+@media (max-width: 1199.98px) {
+    .acad-page .show-tabs-card :is(.tabla-inscritos, .tabla-fase-inscritos) :is(th, td) {
+        font-size: 0.66rem !important;
+        padding: 0.36rem 0.28rem !important;
+    }
+    .acad-page .show-tabs-card :is(.tabla-inscritos, .tabla-fase-inscritos) :is(th, td) .cell-participante .nombre {
+        font-size: 0.72rem !important;
+    }
+}
+
+/* Botones de la columna Acción: todos visibles dentro de su columna */
+.acad-page .show-tabs-card :is(.tabla-inscritos, .tabla-fase-inscritos) td .hstack {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem !important;
+}
+.acad-page .show-tabs-card :is(.tabla-inscritos, .tabla-fase-inscritos) .btn-icon {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    font-size: 0.82rem;
+}

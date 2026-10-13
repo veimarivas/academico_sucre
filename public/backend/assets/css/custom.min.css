@@ -1,0 +1,84 @@
+.form-control {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: var(--vz-primary);
+    box-shadow: 0 0 0 3px rgba(var(--vz-primary-rgb, 99, 102, 241), 0.12);
+}
+
+.btn-login {
+    padding: 0.6rem 1.2rem;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(var(--vz-success-rgb, 11, 194, 118), 0.35);
+}
+
+.btn-login:active {
+    transform: translateY(0);
+}
+
+.card {
+    animation: fadeInUp 0.5s ease;
+    border: none;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.auth-one-bg .text-white-75 {
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.auth-one-bg .ri-double-quotes-l {
+    opacity: 0.8;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.auth-bg-cover {
+    position: relative;
+}
+
+.auth-bg-cover > .bg-overlay {
+    background-image: none;
+    background-color: transparent;
+}
+
+.form-check-input:checked {
+    background-color: var(--vz-success);
+    border-color: var(--vz-success);
+}
+
+.auth-pass-inputgroup .form-control:focus ~ .password-addon {
+    color: var(--vz-primary) !important;
+}
+
+.form-label {
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+@media (max-width: 991.98px) {
+    .auth-one-bg {
+        display: none;
+    }
+}
+
+.text-white-75 {
+    color: rgba(255, 255, 255, 0.75);
+}

@@ -1,0 +1,564 @@
+/* =====================================================================
+   AVIP · Área de Marketing — Capa de diseño
+   Se carga DESPUÉS de avip-ui.css. Unifica y pule las pantallas de
+   marketing (estadísticas, asesores, inversiones, masterclass, programas,
+   otras sedes y publicidad): espaciado, héroes, stats, paneles, tablas,
+   gráficas, pestañas, formularios y estados vacíos.
+   Paleta institucional: navy #163b6b + gold #cba135.
+   ===================================================================== */
+
+.mkt-page,
+.mkt-page * {
+    --mkt-navy: var(--avip-navy-700, #163b6b);
+    --mkt-navy-2: var(--avip-navy-500, #2a5d97);
+    --mkt-navy-soft: var(--avip-navy-50, #f1f5fa);
+    --mkt-gold: var(--avip-gold-500, #cba135);
+    --mkt-gold-soft: var(--avip-gold-100, #faf3df);
+    --mkt-teal: var(--avip-teal-600, #0d8574);
+    --mkt-teal-soft: var(--avip-teal-100, #e2f4f0);
+    --mkt-red: var(--avip-red-600, #b3243a);
+    --mkt-red-soft: var(--avip-red-100, #fbe9ec);
+    --mkt-amber: var(--avip-amber-600, #b7791f);
+    --mkt-amber-soft: var(--avip-amber-100, #fbf0da);
+    --mkt-blue: var(--avip-blue-600, #1f6fbf);
+    --mkt-blue-soft: var(--avip-blue-100, #e7f1fb);
+    --mkt-line: var(--ui-line, #e6e9f0);
+    --mkt-line-strong: var(--ui-line-strong, #d4dae5);
+    --mkt-surface: var(--ui-surface, #fff);
+    --mkt-surface-2: var(--ui-surface-2, #f7f9fc);
+    --mkt-ink: var(--ui-ink, #101828);
+    --mkt-ink-2: var(--ui-ink-2, #475467);
+    --mkt-muted: var(--ui-muted, #667085);
+    --mkt-grad: linear-gradient(135deg, var(--avip-navy-700, #163b6b) 0%, var(--avip-navy-500, #2a5d97) 100%);
+    --mkt-grad-soft: linear-gradient(135deg, rgba(22, 59, 107, 0.05) 0%, rgba(22, 59, 107, 0) 60%);
+    --mkt-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+    --mkt-shadow-hover: 0 18px 38px -22px rgba(10, 26, 58, 0.38);
+}
+
+/* =====================================================================
+   1. Ritmo vertical y optimización de espacios
+   ===================================================================== */
+.mkt-page {
+    --bs-gutter-x: 1.15rem;
+}
+
+.mkt-page > .row {
+    --bs-gutter-x: 1.15rem;
+    --bs-gutter-y: 1.15rem;
+}
+
+.mkt-page > :last-child { margin-bottom: 0 !important; }
+.mkt-page > .container-fluid { padding-left: 0 !important; padding-right: 0 !important; }
+
+.mkt-page .mb-4 { margin-bottom: 1.15rem !important; }
+.mkt-page .mb-3 { margin-bottom: 1rem !important; }
+
+.mkt-page .card > .card-body { padding: 1.1rem 1.2rem; }
+.mkt-page .card { border-radius: 15px; }
+
+.mkt-page :is(.card, .card-panel, .chart-card, .stat-card, .table-card, .kpi) {
+    border-color: var(--mkt-line) !important;
+    box-shadow: var(--mkt-shadow);
+}
+
+/* =====================================================================
+   2. Cabeceras de página (héroes)
+   ===================================================================== */
+.mkt-page :is(.mkt-hero, .inv-hero, .pub-hero) {
+    position: relative;
+    background-image:
+        linear-gradient(90deg, var(--avip-navy-700, #163b6b) 0%, var(--avip-navy-500, #2a5d97) 52%, var(--avip-gold-500, #cba135) 100%) !important;
+    background-repeat: no-repeat !important;
+    background-position: top left !important;
+    background-size: 100% 3px !important;
+    border-radius: 16px !important;
+    padding: 1.25rem 1.4rem !important;
+    margin-bottom: 1.15rem !important;
+}
+
+.mkt-page :is(.mkt-hero, .inv-hero, .pub-hero) :is(h3, h4, h5) {
+    font-size: 1.2rem !important;
+    letter-spacing: -0.02em;
+}
+
+.mkt-page :is(.mkt-hero, .inv-hero, .pub-hero, .pose-hero, .show-hero) .breadcrumb {
+    background: var(--mkt-surface-2) !important;
+    border: 1px solid var(--mkt-line) !important;
+    border-radius: 999px !important;
+    padding: 0.38rem 0.9rem !important;
+    margin: 0 !important;
+    font-size: 0.75rem;
+}
+
+.mkt-page :is(.pose-hero, .show-hero) .breadcrumb {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+/* =====================================================================
+   3. Tarjetas de estadística / KPI
+   ===================================================================== */
+.mkt-page :is(.stat-card, .kpi) {
+    position: relative;
+    background: var(--mkt-surface) !important;
+    border: 1px solid var(--mkt-line) !important;
+    border-top: 3px solid var(--stat-accent, var(--k-accent, var(--mkt-navy))) !important;
+    border-radius: 15px !important;
+    box-shadow: var(--mkt-shadow) !important;
+    padding: 1rem 1.1rem !important;
+    height: 100%;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mkt-page :is(.stat-card, .kpi):hover {
+    transform: translateY(-2px);
+    box-shadow: var(--mkt-shadow-hover) !important;
+}
+
+.mkt-page .kpi::before,
+.mkt-page .stat-card::before { display: none !important; }
+
+.mkt-page :is(.stat-label, .stat-lbl, .k-lbl) {
+    font-size: 0.65rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 800 !important;
+    color: var(--mkt-muted) !important;
+}
+
+.mkt-page :is(.stat-value, .stat-val, .k-val) {
+    font-weight: 800 !important;
+    letter-spacing: -0.02em;
+    color: var(--mkt-ink) !important;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+}
+
+.mkt-page .stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+/* Mapeo de acentos heredados (inline) a la paleta institucional */
+.mkt-page .stat-card[style*="#405189"] { --stat-accent: var(--mkt-navy) !important; }
+.mkt-page .stat-card[style*="#0ab39c"] { --stat-accent: var(--mkt-teal) !important; }
+.mkt-page .stat-card[style*="#f7b84b"] { --stat-accent: var(--mkt-amber) !important; }
+.mkt-page .stat-card[style*="#f59e0b"] { --stat-accent: var(--mkt-amber) !important; }
+.mkt-page .stat-card[style*="#299cdb"] { --stat-accent: var(--mkt-blue) !important; }
+.mkt-page .stat-card[style*="#f06548"] { --stat-accent: var(--mkt-red) !important; }
+.mkt-page .kpi[style*="#299cdb"] { --k-accent: var(--mkt-blue) !important; }
+.mkt-page .kpi[style*="#405189"] { --k-accent: var(--mkt-navy) !important; }
+.mkt-page .kpi[style*="#0ab39c"] { --k-accent: var(--mkt-teal) !important; }
+.mkt-page .kpi[style*="#f06548"] { --k-accent: var(--mkt-red) !important; }
+
+/* =====================================================================
+   4. Paneles y tarjetas de contenido
+   ===================================================================== */
+.mkt-page :is(.panel-card, .card-panel, .section-card, .table-card, .chart-card) {
+    background: var(--mkt-surface) !important;
+    border: 1px solid var(--mkt-line) !important;
+    border-radius: 15px !important;
+    box-shadow: var(--mkt-shadow) !important;
+    overflow: hidden;
+}
+
+.mkt-page :is(.panel-card, .card-panel, .section-card, .table-card, .chart-card) > .card-header {
+    background: var(--mkt-grad-soft), var(--mkt-surface-2) !important;
+    border-bottom: 1px solid var(--mkt-line) !important;
+    padding: 0.9rem 1.2rem !important;
+}
+
+.mkt-page :is(.card-title, .section-title, .chart-title, .chart-card-title) {
+    color: var(--mkt-ink) !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.01em;
+}
+
+/* =====================================================================
+   5. Gráficas
+   ===================================================================== */
+.mkt-page :is(.chart-wrapper, .chart-canvas) { position: relative; min-width: 0; }
+.mkt-page :is(.chart-wrapper, .chart-canvas) canvas { width: 100% !important; max-width: 100%; }
+.mkt-page .chart-card canvas { max-width: 100%; }
+
+.mkt-page .chart-card .card-body { padding: 1rem !important; }
+
+.mkt-page :is(.chart-title, .chart-card-title) {
+    color: var(--mkt-navy) !important;
+    border-bottom: 1px dashed var(--mkt-line) !important;
+    margin-bottom: 0.85rem !important;
+    padding-bottom: 0.6rem !important;
+    font-size: 0.72rem !important;
+    font-weight: 800 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.mkt-page :is(.chart-title, .chart-card-title) i { color: var(--mkt-gold) !important; }
+
+/* ApexCharts: tipografía y colores coherentes con el tema */
+.mkt-page .apexcharts-canvas,
+.mkt-page .apexcharts-canvas text {
+    font-family: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif !important;
+}
+
+.mkt-page .apexcharts-legend-text { color: var(--mkt-ink-2) !important; font-weight: 600 !important; }
+.mkt-page .apexcharts-legend-marker { border-radius: 999px; }
+
+.mkt-page :is(.apexcharts-xaxis-label, .apexcharts-yaxis-label, .apexcharts-xaxis-title-text,
+    .apexcharts-yaxis-title-text) {
+    fill: var(--mkt-muted) !important;
+    font-weight: 600;
+}
+
+.mkt-page .apexcharts-gridline { stroke: var(--mkt-line) !important; }
+
+.mkt-page :is(.apexcharts-datalabel-label, .apexcharts-datalabel-value,
+    .apexcharts-datalabels-group text) {
+    fill: var(--mkt-ink) !important;
+}
+
+.mkt-page .apexcharts-tooltip {
+    border: 1px solid var(--mkt-line) !important;
+    border-radius: 10px !important;
+    box-shadow: var(--mkt-shadow-hover) !important;
+    background: var(--mkt-surface) !important;
+    color: var(--mkt-ink) !important;
+}
+
+.mkt-page .apexcharts-tooltip-title {
+    background: var(--mkt-surface-2) !important;
+    border-bottom: 1px solid var(--mkt-line) !important;
+    font-weight: 700 !important;
+}
+
+/* =====================================================================
+   6. Tablas
+   ===================================================================== */
+.mkt-page .table {
+    --bs-table-bg: transparent;
+    margin-bottom: 0;
+    width: 100%;
+}
+
+.mkt-page .table thead th {
+    background: var(--mkt-surface-2) !important;
+    background-image: none !important;
+    color: var(--mkt-navy) !important;
+    font-size: 0.67rem !important;
+    font-weight: 800 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--mkt-line) !important;
+    padding: 0.65rem 0.6rem !important;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.mkt-page .table tbody td {
+    padding: 0.6rem 0.6rem !important;
+    border-bottom: 1px solid var(--mkt-line) !important;
+    color: var(--mkt-ink-2);
+    vertical-align: middle;
+    font-size: 0.82rem;
+}
+
+.mkt-page .table tbody tr:last-child td { border-bottom: 0 !important; }
+.mkt-page .table tbody tr { transition: background 0.14s ease; }
+.mkt-page .table-hover tbody tr:hover { background: var(--mkt-surface-2) !important; }
+.mkt-page .table-responsive { border-radius: 12px; }
+
+/* Tablas fluidas: se ajustan al ancho disponible */
+.mkt-page .table-card-wrap,
+.mkt-page .table-responsive { overflow-x: auto; }
+.mkt-page :is(.table-asesores, .table-pg, .table-card-wrap .table) { min-width: 100% !important; }
+.mkt-page .table-responsive::-webkit-scrollbar { height: 8px; }
+.mkt-page .table-responsive::-webkit-scrollbar-thumb { background: var(--mkt-line-strong); border-radius: 4px; }
+
+/* =====================================================================
+   7. Pestañas
+   ===================================================================== */
+.mkt-page .nav-tabs { border-bottom: 1px solid var(--mkt-line); gap: 0.2rem; }
+
+.mkt-page .nav-tabs .nav-link {
+    color: var(--mkt-muted);
+    font-weight: 700;
+    font-size: 0.82rem;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 8px 8px 0 0;
+    padding: 0.55rem 0.9rem;
+    transition: color 0.15s ease, background 0.15s ease;
+}
+
+.mkt-page .nav-tabs .nav-link:hover { color: var(--mkt-navy); background: var(--mkt-navy-soft); }
+.mkt-page .nav-tabs .nav-link.active {
+    color: var(--mkt-navy) !important;
+    background: transparent !important;
+    border-bottom-color: var(--mkt-gold) !important;
+}
+
+.mkt-page :is(.nav-pills, .nav-tabs-pill) .nav-link { border-radius: 999px; font-weight: 700; color: var(--mkt-ink-2); }
+.mkt-page :is(.nav-pills, .nav-tabs-pill) .nav-link.active { background: var(--mkt-grad) !important; color: #fff !important; }
+
+/* =====================================================================
+   8. Formularios, filtros y botones
+   ===================================================================== */
+.mkt-page .form-label {
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--mkt-muted);
+}
+
+.mkt-page :is(.form-control, .form-select) { border-color: var(--mkt-line-strong); border-radius: 9px; font-size: 0.84rem; }
+.mkt-page :is(.form-control, .form-select):focus {
+    border-color: var(--mkt-navy-2);
+    box-shadow: 0 0 0 0.18rem rgba(22, 59, 107, 0.12);
+}
+
+.mkt-page .input-group-text {
+    background: var(--mkt-surface-2);
+    border-color: var(--mkt-line-strong);
+    color: var(--mkt-muted);
+    font-weight: 700;
+}
+
+.mkt-page .btn { border-radius: 9px; font-weight: 700; }
+.mkt-page .btn-sm { padding: 0.32rem 0.7rem; font-size: 0.76rem; }
+.mkt-page .btn-icon { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 9px; }
+.mkt-page .btn-light { background: var(--mkt-surface-2); border-color: var(--mkt-line); color: var(--mkt-ink-2); }
+.mkt-page .btn-light:hover { background: var(--mkt-navy-soft); border-color: var(--mkt-line-strong); color: var(--mkt-navy); }
+
+/* =====================================================================
+   9. Chips, pills e insignias
+   ===================================================================== */
+.mkt-page :is(.badge, .est-pill, .estado-pill, .estado-badge) {
+    font-weight: 700;
+    border-radius: 999px;
+}
+
+.mkt-page .badge.bg-soft-primary { background: var(--mkt-navy-soft) !important; color: var(--mkt-navy) !important; }
+.mkt-page .badge.bg-soft-success,
+.mkt-page .badge.bg-soft-info { background: var(--mkt-teal-soft) !important; color: var(--mkt-teal) !important; }
+.mkt-page .badge.bg-soft-warning { background: var(--mkt-amber-soft) !important; color: var(--mkt-amber) !important; }
+.mkt-page .badge.bg-soft-danger { background: var(--mkt-red-soft) !important; color: var(--mkt-red) !important; }
+
+/* =====================================================================
+   10. Estados vacíos
+   ===================================================================== */
+.mkt-page :is(.empty-state) {
+    text-align: center;
+    padding: 3.25rem 1.5rem;
+    background: var(--mkt-surface-2) !important;
+    border: 1px dashed var(--mkt-line-strong) !important;
+    border-radius: 16px !important;
+}
+
+.mkt-page :is(.empty-state) .empty-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--mkt-navy-soft);
+    border-radius: 50%;
+    font-size: 2.2rem;
+    color: var(--mkt-navy);
+}
+
+/* =====================================================================
+   11. Modo oscuro
+   ===================================================================== */
+:is([data-bs-theme="dark"], [data-layout-mode="dark"]) .mkt-page :is(.mkt-hero, .inv-hero, .pub-hero) {
+    background-image:
+        linear-gradient(90deg, var(--avip-navy-600, #1d4a80) 0%, var(--avip-navy-400, #4c7bb0) 52%, var(--avip-gold-400, #ddb84d) 100%) !important;
+    background-size: 100% 3px !important;
+    background-repeat: no-repeat !important;
+}
+
+:is([data-bs-theme="dark"], [data-layout-mode="dark"]) .mkt-page :is(
+    .card-header, .panel-card > .card-header, .table thead th,
+    .apexcharts-tooltip
+) {
+    background-image: none !important;
+}
+
+:is([data-bs-theme="dark"], [data-layout-mode="dark"]) .mkt-page :is(
+    .stat-value, .stat-val, .card-title, .table tbody td, .chart-title
+) {
+    color: var(--mkt-ink) !important;
+}
+
+/* =====================================================================
+   13. Publicidad — comprobantes
+   ===================================================================== */
+.mkt-page .presupuesto-item {
+    border: 1px solid var(--mkt-line) !important;
+    border-left: 4px solid var(--mkt-navy) !important;
+    border-radius: 14px !important;
+    background: var(--mkt-surface) !important;
+    box-shadow: var(--mkt-shadow) !important;
+}
+
+.mkt-page .presupuesto-item .card-monto {
+    border: 1px solid var(--mkt-line) !important;
+    border-radius: 10px !important;
+    background: var(--mkt-surface-2) !important;
+}
+
+.mkt-page .presupuesto-item :is(.amount-original, .amount-neto) { color: var(--mkt-navy) !important; }
+.mkt-page .presupuesto-item .amount-derived { color: var(--mkt-amber) !important; }
+
+.mkt-page .progress-bar-custom { background: var(--mkt-line) !important; }
+.mkt-page .progress-bar-custom > span {
+    background: linear-gradient(90deg, var(--mkt-teal), var(--mkt-navy-2)) !important;
+}
+.mkt-page .progress-bar-custom.warn > span {
+    background: linear-gradient(90deg, var(--mkt-amber), var(--mkt-red)) !important;
+}
+
+/* Tabla de comprobantes: se ajusta al ancho y muestra todas las columnas,
+   incluida "Acciones" (antes quedaba fuera por el ancho total). */
+.mkt-page .presupuesto-item .table-responsive { overflow-x: visible; }
+
+.mkt-page .tabla-pub[id^="comprobantes-"] {
+    table-layout: fixed !important;
+    width: 100% !important;
+}
+
+.mkt-page .tabla-pub[id^="comprobantes-"] :is(th, td) {
+    padding: 0.5rem 0.42rem !important;
+    font-size: 0.75rem !important;
+    white-space: normal !important;
+    overflow-wrap: break-word;
+    vertical-align: middle;
+}
+
+.mkt-page .tabla-pub[id^="comprobantes-"] thead th {
+    font-size: 0.62rem !important;
+    white-space: normal !important;
+    line-height: 1.2;
+}
+
+.mkt-page .tabla-pub[id^="comprobantes-"] :is(th, td):nth-child(1) { width: 3% !important; }
+.mkt-page .tabla-pub[id^="comprobantes-"] :is(th, td):nth-child(2) { width: 12% !important; }
+.mkt-page .tabla-pub[id^="comprobantes-"] :is(th, td):nth-child(3) { width: 12% !important; }
+.mkt-page .tabla-pub[id^="comprobantes-"] :is(th, td):nth-child(4) { width: 18% !important; }
+.mkt-page .tabla-pub[id^="comprobantes-"] :is(th, td):nth-child(5) { width: 8% !important; }
+.mkt-page .tabla-pub[id^="comprobantes-"] :is(th, td):nth-child(6) { width: 10% !important; }
+.mkt-page .tabla-pub[id^="comprobantes-"] :is(th, td):nth-child(7) { width: 9% !important; }
+.mkt-page .tabla-pub[id^="comprobantes-"] :is(th, td):nth-child(8) { width: 7% !important; }
+.mkt-page .tabla-pub[id^="comprobantes-"] :is(th, td):nth-child(9) { width: 10% !important; }
+.mkt-page .tabla-pub[id^="comprobantes-"] :is(th, td):nth-child(10) { width: 11% !important; }
+
+.mkt-page .tabla-pub[id^="comprobantes-"] td:last-child .btn {
+    font-size: 0.68rem;
+    padding: 0.24rem 0.45rem;
+    line-height: 1.15;
+}
+
+.mkt-page .tabla-pub[id^="comprobantes-"] .file-preview {
+    background: var(--mkt-navy-soft);
+    color: var(--mkt-navy);
+}
+.mkt-page .tabla-pub[id^="comprobantes-"] .file-preview:hover {
+    background: var(--mkt-navy);
+    color: #fff;
+}
+
+/* =====================================================================
+   14. Publicidad — Autogestión
+   ===================================================================== */
+.mkt-page .filter-card {
+    border: 1px solid var(--mkt-line) !important;
+    border-radius: 15px !important;
+    background: var(--mkt-surface) !important;
+    box-shadow: var(--mkt-shadow) !important;
+    overflow: hidden;
+}
+
+.mkt-page .filter-card .card-header {
+    background: var(--mkt-grad-soft), var(--mkt-surface-2) !important;
+    border-bottom: 1px solid var(--mkt-line) !important;
+    color: var(--mkt-ink) !important;
+    font-weight: 700;
+}
+
+/* Tabla de gastos: se ajusta al ancho y muestra "Acciones" */
+.mkt-page .tabla-autogestion {
+    table-layout: fixed !important;
+    width: 100% !important;
+}
+
+.mkt-page .tabla-autogestion :is(th, td) {
+    padding: 0.5rem 0.42rem !important;
+    font-size: 0.75rem !important;
+    white-space: normal !important;
+    overflow-wrap: break-word;
+    vertical-align: middle;
+}
+
+.mkt-page .tabla-autogestion thead th {
+    font-size: 0.62rem !important;
+    white-space: normal !important;
+    line-height: 1.2;
+}
+
+.mkt-page .tabla-autogestion :is(th, td):nth-child(1) { width: 3% !important; }
+.mkt-page .tabla-autogestion :is(th, td):nth-child(2) { width: 20% !important; }
+.mkt-page .tabla-autogestion :is(th, td):nth-child(3) { width: 12% !important; }
+.mkt-page .tabla-autogestion :is(th, td):nth-child(4) { width: 10% !important; }
+.mkt-page .tabla-autogestion :is(th, td):nth-child(5) { width: 8% !important; }
+.mkt-page .tabla-autogestion :is(th, td):nth-child(6) { width: 10% !important; }
+.mkt-page .tabla-autogestion :is(th, td):nth-child(7) { width: 9% !important; }
+.mkt-page .tabla-autogestion :is(th, td):nth-child(8) { width: 9% !important; }
+.mkt-page .tabla-autogestion :is(th, td):nth-child(9) { width: 9% !important; }
+.mkt-page .tabla-autogestion :is(th, td):nth-child(10) { width: 10% !important; }
+
+.mkt-page .tabla-autogestion td:last-child .btn {
+    font-size: 0.68rem;
+    padding: 0.24rem 0.45rem;
+    line-height: 1.15;
+}
+
+.mkt-page .tabla-autogestion .file-preview {
+    background: var(--mkt-navy-soft);
+    color: var(--mkt-navy);
+}
+.mkt-page .tabla-autogestion .file-preview:hover {
+    background: var(--mkt-navy);
+    color: #fff;
+}
+
+/* =====================================================================
+   12. Responsive
+   ===================================================================== */
+@media (max-width: 991.98px) {
+    .mkt-page { --bs-gutter-x: 0.9rem; }
+    .mkt-page > .row { --bs-gutter-y: 0.9rem; }
+
+    .mkt-page :is(.panel-card, .card-panel, .section-card, .table-card, .chart-card) > .card-header {
+        padding: 0.8rem 1rem !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .mkt-page :is(.mkt-hero, .inv-hero, .pub-hero) { padding: 1.05rem 1.1rem !important; }
+    .mkt-page :is(.mkt-hero, .inv-hero, .pub-hero) :is(h3, h4, h5) { font-size: 1.05rem !important; }
+    .mkt-page .card > .card-body { padding: 1rem; }
+
+    .mkt-page :is(.mkt-hero, .inv-hero, .pub-hero) .breadcrumb {
+        border: 0 !important;
+        background: transparent !important;
+        padding: 0 !important;
+    }
+}
