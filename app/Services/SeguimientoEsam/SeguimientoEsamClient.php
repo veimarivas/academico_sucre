@@ -117,6 +117,27 @@ class SeguimientoEsamClient
         return $this->unwrap($this->request()->post('/api/v1/accounts', $payload));
     }
 
+    /**
+     * Envía la nueva contraseña a Seguimiento ESAM para que el acceso directo
+     * al panel siga funcionando. No interrumpe el cambio en cronogramas: si la
+     * integración está apagada o falla, solo queda registrado en el log.
+     */
+    public function syncPassword(User $user, string $password): void
+    {
+        if (! $this->enabled() || $password === '') {
+            return;
+        }
+
+        try {
+            $this->registerAccount($user->fresh() ?? $user, $password);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('No se pudo sincronizar la contraseña con Seguimiento ESAM', [
+                'user' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
     public function batchStatus(int $batchId): array
     {
         return $this->unwrap($this->request()->get("/api/v1/batches/{$batchId}"));

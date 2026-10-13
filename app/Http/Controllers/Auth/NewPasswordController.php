@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\SeguimientoEsam\SeguimientoEsamClient;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -49,6 +50,9 @@ class NewPasswordController extends Controller
                 ])->save();
 
                 event(new PasswordReset($user));
+
+                // Mantiene sincronizado el acceso directo a Seguimiento ESAM.
+                app(SeguimientoEsamClient::class)->syncPassword($user, $request->password);
             }
         );
 
