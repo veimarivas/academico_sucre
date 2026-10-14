@@ -173,6 +173,18 @@
     [data-layout-mode="dark"] .wa-part .nm { color:#dee2e6; }
     .wa-part .ph { font-size:.72rem; color:#6b7280; font-variant-numeric: tabular-nums; }
     .wa-part .no-tel { color:#e8833a; font-weight:700; }
+    /* Dados de baja: en rojo para no enviarles mensajes personalizados */
+    .wa-part.wa-part-baja { background:#fff1f1; border-left:3px solid #dc3545; }
+    .wa-part.wa-part-baja:hover { background:#ffe6e6; }
+    .wa-part.wa-part-baja.selected { background:#ffd9d9; }
+    .wa-part.wa-part-baja .nm { color:#b42318; }
+    .wa-part.wa-part-baja .wa-avatar { background:#dc3545; color:#fff; }
+    [data-layout-mode="dark"] .wa-part.wa-part-baja { background:#3a1d20; }
+    [data-layout-mode="dark"] .wa-part.wa-part-baja .nm { color:#f19a9a; }
+    .wa-baja-tag { display:inline-flex; align-items:center; gap:.2rem; margin:.1rem 0; padding:0 .4rem; border-radius:999px;
+        font-size:.66rem; font-weight:700; color:#fff; background:#dc3545; }
+    .wa-bajas-hint { margin-bottom:.5rem; padding:.4rem .7rem; border-radius:8px; font-size:.78rem; color:#b42318; background:#fff1f1; }
+    [data-layout-mode="dark"] .wa-bajas-hint { background:#3a1d20; color:#f19a9a; }
 
     .form-check-input:checked { background-color:#405189; border-color:#405189; }
 </style>
@@ -360,15 +372,26 @@
                     @endif
                 </div>
 
+                @php $totalBajas = $participantes->filter(fn ($p) => $p->baja)->count(); @endphp
+                @if($totalBajas > 0)
+                    <div class="wa-bajas-hint">
+                        <i class="ri-user-unfollow-line"></i>
+                        {{ $totalBajas }} participante(s) dado(s) de baja en rojo. «Todos» no los incluye; no se les recomienda enviar mensajes.
+                    </div>
+                @endif
                 <div class="wa-list" id="partList">
                     @forelse($participantes as $p)
                         @php $tieneTel = trim((string) $p->celular) !== ''; @endphp
-                        <label class="wa-part" data-search="{{ strtolower($p->apellidos.' '.$p->nombres.' '.$p->celular) }}">
-                            <input type="checkbox" class="form-check-input partCheck" value="{{ $p->id }}"
+                        <label class="wa-part {{ $p->baja ? 'wa-part-baja' : '' }}" data-search="{{ strtolower($p->apellidos.' '.$p->nombres.' '.$p->celular) }}"
+                               @if($p->baja) title="{{ $p->baja }}: no se recomienda enviarle mensajes" @endif>
+                            <input type="checkbox" class="form-check-input partCheck" value="{{ $p->id }}" @if($p->baja) data-baja="1" @endif
                                    {{ ($puedeEditar && $tieneTel) ? '' : 'disabled' }} onchange="updateSel()">
                             <span class="wa-avatar">{{ strtoupper(mb_substr($p->nombres, 0, 1) . mb_substr($p->apellidos, 0, 1)) }}</span>
                             <span class="flex-grow-1 min-w-0">
                                 <span class="nm d-block text-truncate">{{ $p->apellidos }}, {{ $p->nombres }}</span>
+                                @if($p->baja)
+                                    <span class="wa-baja-tag"><i class="ri-user-unfollow-line"></i> {{ $p->baja }}</span>
+                                @endif
                                 <span class="ph d-block">
                                     <i class="ri-phone-line"></i>
                                     @if($tieneTel) {{ $p->celular }} @else <span class="no-tel">sin celular</span> @endif
@@ -496,8 +519,9 @@
     }
 
     function toggleTodos(cb) {
+        // «Todos» = todos los activos; los dados de baja solo se marcan a mano.
         document.querySelectorAll('.partCheck').forEach(function (c) {
-            if (! c.disabled) c.checked = cb.checked;
+            if (! c.disabled && ! c.dataset.baja) c.checked = cb.checked;
         });
         updateSel();
     }
@@ -537,7 +561,9 @@
         const texto = document.getElementById('partTexto').value.trim();
         const archivo = document.getElementById('partArchivo').files[0];
         if (! texto && ! archivo) { showResult(false, 'Escribí un mensaje o adjuntá un archivo.'); return; }
-        if (! confirm('¿Enviar a ' + ids.length + ' participante(s)?')) return;
+        const bajas = document.querySelectorAll('.partCheck[data-baja="1"]:checked').length;
+        if (! confirm('¿Enviar a ' + ids.length + ' participante(s)?' +
+            (bajas ? '\n\nAtención: ' + bajas + ' de ellos está(n) dado(s) de baja.' : ''))) return;
 
         const original = btn.innerHTML;
         btn.disabled = true;

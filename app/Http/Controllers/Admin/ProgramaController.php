@@ -2666,11 +2666,12 @@ class ProgramaController extends Controller
             $participantes = DB::table('inscripciones')
                 ->join('participantes as p', 'inscripciones.participante_id', '=', 'p.id')
                 ->where('inscripciones.programa_id', $modulo->programa_id)
-                ->select('p.id', 'p.ci', 'p.nombres', 'p.apellidos', 'p.celular')
-                ->distinct()
+                ->select('p.id', 'p.ci', 'p.nombres', 'p.apellidos', 'p.celular',
+                    'inscripciones.estado', 'inscripciones.baja_operativa', 'inscripciones.baja_academica', 'inscripciones.baja_contable')
                 ->orderBy('p.apellidos')
                 ->orderBy('p.nombres')
-                ->get();
+                ->get()
+                ->unique('id');
 
             $previas = DB::table('asistencias')
                 ->where('horario_id', $horarioId)
@@ -2681,6 +2682,9 @@ class ProgramaController extends Controller
                 $prev = $previas->get($p->id);
                 $p->asistio = $prev->asistio ?? null;
                 $p->observacion = $prev->observacion ?? null;
+                // Dados de baja: se resaltan y no se les registra asistencia.
+                $p->baja = \App\Support\BajaInscripcion::motivo($p);
+                unset($p->estado, $p->baja_operativa, $p->baja_academica, $p->baja_contable);
                 return $p;
             });
 
@@ -3615,15 +3619,15 @@ class ProgramaController extends Controller
             })
             ->exists();
 
+        // Todos los participantes del módulo, también los dados de baja (se
+        // muestran sin seleccionar para que no reciban el envío masivo).
         $participantes = DB::table('modulos_participantes')
             ->join('participantes', 'modulos_participantes.participante_id', '=', 'participantes.id')
-            ->join('inscripciones', function ($j) use ($modulo) {
+            ->leftJoin('inscripciones', function ($j) use ($modulo) {
                 $j->on('inscripciones.participante_id', '=', 'participantes.id')
                   ->where('inscripciones.programa_id', '=', $modulo->programa_id);
             })
             ->where('modulos_participantes.modulo_id', $moduloId)
-            ->where('inscripciones.baja_academica', 0)
-            ->where('inscripciones.baja_contable', 0)
             ->select(
                 'participantes.id',
                 'participantes.ci',
@@ -3631,10 +3635,16 @@ class ProgramaController extends Controller
                 'participantes.nombres',
                 'participantes.celular',
                 'modulos_participantes.nota_modulo',
-                'modulos_participantes.nota_nivelacion'
+                'modulos_participantes.nota_nivelacion',
+                'inscripciones.estado',
+                'inscripciones.baja_operativa',
+                'inscripciones.baja_academica',
+                'inscripciones.baja_contable'
             )
             ->orderBy('participantes.apellidos')
-            ->get();
+            ->orderBy('participantes.nombres')
+            ->get()
+            ->unique('id');
 
         $mensajes = [];
         $moduloNombre = $modulo->nombre;
@@ -3643,11 +3653,23 @@ class ProgramaController extends Controller
             $nm = $p->nota_modulo !== null ? (float) $p->nota_modulo : null;
             $nn = $p->nota_nivelacion !== null ? (float) $p->nota_nivelacion : null;
             $tieneNotaModulo = $nm !== null && $nm > 0;
-
-            if (!$tieneNotaModulo) continue;
+            $baja = \App\Support\BajaInscripcion::motivo($p);
 
             $celular = preg_replace('/[^0-9]/', '', $p->celular ?? '');
             if (strlen($celular) === 8) $celular = '591' . $celular;
+
+            if (!$tieneNotaModulo) {
+                $mensajes[] = [
+                    'participante_id' => $p->id,
+                    'nombres' => $p->nombres,
+                    'apellidos' => $p->apellidos,
+                    'celular' => $celular,
+                    'texto' => null,
+                    'tipo' => 'sin_nota',
+                    'baja' => $baja,
+                ];
+                continue;
+            }
 
             if (!$tieneNivelacion) {
                 if ($nm >= 71) {
@@ -3662,8 +3684,20 @@ class ProgramaController extends Controller
                     'celular' => $celular,
                     'texto' => $texto,
                     'tipo' => $nm >= 71 ? 'aprobado' : 'reprobado',
+                    'baja' => $baja,
                 ];
-            } elseif ($nm < 71) {
+            } elseif ($nm >= 71) {
+                // Aprobado directo en un módulo con nivelación: también recibe el aviso.
+                $mensajes[] = [
+                    'participante_id' => $p->id,
+                    'nombres' => $p->nombres,
+                    'apellidos' => $p->apellidos,
+                    'celular' => $celular,
+                    'texto' => "Hola {$p->nombres} {$p->apellidos}, has aprobado el módulo *{$moduloNombre}* del programa *{$programaNombre}*. Ingresa a la plataforma para verificar tu nota.",
+                    'tipo' => 'aprobado',
+                    'baja' => $baja,
+                ];
+            } else {
                 if ($nn !== null && $nn >= 71) {
                     $texto = "Hola {$p->nombres} {$p->apellidos}, has aprobado la nivelación del módulo *{$moduloNombre}* del programa *{$programaNombre}* con nota *{$nn}*. La nota máxima es 71.";
                 } else {
@@ -3677,6 +3711,7 @@ class ProgramaController extends Controller
                     'celular' => $celular,
                     'texto' => $texto,
                     'tipo' => ($nn !== null && $nn >= 71) ? 'aprobado' : 'reprobado',
+                    'baja' => $baja,
                 ];
             }
         }

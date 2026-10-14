@@ -26,11 +26,17 @@ class WhatsappProgramaController extends Controller
         $participantes = DB::table('inscripciones as i')
             ->join('participantes as p', 'i.participante_id', '=', 'p.id')
             ->where('i.programa_id', $programaId)
-            ->select('p.id', 'p.nombres', 'p.apellidos', 'p.celular', 'p.correo')
-            ->distinct()
+            ->select('p.id', 'p.nombres', 'p.apellidos', 'p.celular', 'p.correo',
+                'i.estado', 'i.baja_operativa', 'i.baja_academica', 'i.baja_contable')
             ->orderBy('p.apellidos')
             ->orderBy('p.nombres')
-            ->get();
+            ->get()
+            ->unique('id')
+            ->values()
+            // Dados de baja: se resaltan en la lista para no incluirlos sin querer.
+            ->each(function ($p) {
+                $p->baja = \App\Support\BajaInscripcion::motivo($p);
+            });
 
         $client = app(SeguimientoEsamClient::class);
         $error = $client->enabled() ? null : 'La integración con Seguimiento ESAM no está configurada.';

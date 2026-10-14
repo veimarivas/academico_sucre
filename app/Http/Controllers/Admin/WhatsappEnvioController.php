@@ -115,9 +115,20 @@ class WhatsappEnvioController extends Controller
             })
             ->exists();
 
+        // Selección del modal (participantes marcados). Sin selección se envía a
+        // todos los que tienen nota, excepto los dados de baja.
+        $seleccion = collect((array) $request->input('participante_ids', []))
+            ->map(fn ($id) => (int) $id)->filter()->unique()->values();
+        $conSeleccion = $request->has('participante_ids');
+
         $participantes = DB::table('modulos_participantes')
             ->join('participantes', 'modulos_participantes.participante_id', '=', 'participantes.id')
+            ->leftJoin('inscripciones', function ($j) use ($modulo) {
+                $j->on('inscripciones.participante_id', '=', 'participantes.id')
+                    ->where('inscripciones.programa_id', '=', $modulo->programa_id);
+            })
             ->where('modulos_participantes.modulo_id', $moduloId)
+            ->when($conSeleccion, fn ($q) => $q->whereIn('participantes.id', $seleccion->all() ?: [0]))
             ->select(
                 'modulos_participantes.id as mp_id',
                 'participantes.id as participante_id',
@@ -125,17 +136,26 @@ class WhatsappEnvioController extends Controller
                 'participantes.apellidos',
                 'participantes.celular',
                 'modulos_participantes.nota_modulo',
-                'modulos_participantes.nota_nivelacion'
+                'modulos_participantes.nota_nivelacion',
+                'inscripciones.estado',
+                'inscripciones.baja_operativa',
+                'inscripciones.baja_academica',
+                'inscripciones.baja_contable'
             )
             ->orderBy('participantes.apellidos')
             ->orderBy('participantes.nombres')
-            ->get();
+            ->get()
+            ->unique('mp_id');
 
         $items = [];
         $logRows = [];
         $sinTelefono = 0;
 
         foreach ($participantes as $p) {
+            if (! $conSeleccion && \App\Support\BajaInscripcion::es($p)) {
+                continue;
+            }
+
             $nm = $p->nota_modulo !== null ? (float) $p->nota_modulo : null;
 
             if ($nm === null || $nm <= 0) {
@@ -195,7 +215,9 @@ class WhatsappEnvioController extends Controller
         }
 
         if ($items === []) {
-            return response()->json(['success' => false, 'message' => 'No hay participantes con nota para notificar.'], 404);
+            return response()->json(['success' => false, 'message' => $conSeleccion
+                ? 'Ninguno de los participantes seleccionados tiene nota para notificar en ese grupo.'
+                : 'No hay participantes con nota para notificar.'], 404);
         }
 
         $dryRun = (bool) $request->boolean('dry_run');

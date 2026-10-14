@@ -596,6 +596,17 @@
 [data-layout-mode="dark"] .asistio-select[data-val="Tardanza"]    { color: #f0b64d; background-color: #362a10; border-color: #6b5218; }
 [data-layout-mode="dark"] .asistio-select[data-val="Justificado"] { color: #6bb6f5; background-color: #122436; border-color: #234a6b; }
 
+/* Dados de baja: fila en rojo, sin registro de asistencia */
+.asistencia-table tr.asist-baja > td { background: #fff1f1 !important; }
+.asistencia-table tr.asist-baja > td:first-child { box-shadow: inset 3px 0 0 #dc3545; }
+.asistencia-table tr.asist-baja .part-avatar { background: #dc3545; color: #fff; }
+.asistencia-table tr.asist-baja .asistio-select:disabled { color: #8a5a5a; background-color: #f6e3e3; border-color: #efc6c6; }
+[data-layout-mode="dark"] .asistencia-table tr.asist-baja > td { background: #3a1d20 !important; }
+.asist-baja-tag { display: inline-flex; align-items: center; gap: .2rem; margin-top: .15rem; padding: 0 .45rem; border-radius: 999px;
+    font-size: .66rem; font-weight: 700; color: #fff; background: #dc3545; }
+.asist-bajas-hint { margin-bottom: .75rem; padding: .45rem .75rem; border-radius: 8px; font-size: .8rem; color: #b42318; background: #fff1f1; }
+[data-layout-mode="dark"] .asist-bajas-hint { color: #f19a9a; background: #3a1d20; }
+
 .obs-input {
     border: 1px solid var(--md-line);
     border-radius: 8px;
@@ -1459,6 +1470,10 @@
                     <i class="ri-error-warning-line fs-16"></i>
                     <div>No hay participantes inscritos en este módulo.</div>
                 </div>
+                <div class="asist-bajas-hint" id="asistBajasHint" style="display:none;">
+                    <i class="ri-user-unfollow-line"></i>
+                    <span>0</span> participante(s) dado(s) de baja en rojo: no se les registra asistencia ni entran en «Todos presentes / ausentes».
+                </div>
                 <div class="table-responsive">
                     <table class="asistencia-table table">
                         <thead>
@@ -1701,10 +1716,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     return;
                 }
                 const ausentes = data.participantes.filter(function (p) {
-                    return p.asistio === 'Ausente' && p.celular;
+                    return p.asistio === 'Ausente' && p.celular && !p.baja; // sin dados de baja
                 });
                 if (!ausentes.length) {
-                    showToast('No hay participantes ausentes con WhatsApp', 'warning');
+                    showToast('No hay participantes ausentes con WhatsApp (sin contar los dados de baja)', 'warning');
                     return;
                 }
                 waAusentesData = ausentes;
@@ -1885,23 +1900,29 @@ document.addEventListener('DOMContentLoaded', function () {
         let html = '';
         parts.forEach(function (p, i) {
             const ini = ((p.nombres || '').charAt(0) + (p.apellidos || '').charAt(0)).toUpperCase();
-            const sel = p.asistio || 'Presente';
+            const baja = !!p.baja;
+            // A los dados de baja no se les registra asistencia (salvo que se habilite a mano).
+            const sel = p.asistio || (baja ? '' : 'Presente');
             const obs = p.observacion || '';
-            html += '<tr data-part-id="' + p.id + '" data-search="' + (p.ci + ' ' + p.nombres + ' ' + p.apellidos).toLowerCase() + '">' +
+            html += '<tr data-part-id="' + p.id + '"' + (baja ? ' class="asist-baja" data-baja="1"' : '') +
+                ' data-search="' + (p.ci + ' ' + p.nombres + ' ' + p.apellidos).toLowerCase() + '">' +
                 '<td class="text-center"><span class="session-num">' + (i + 1) + '</span></td>' +
                 '<td><div class="d-flex align-items-center gap-2">' +
                     '<span class="part-avatar">' + escHtml(ini) + '</span>' +
                     '<div style="min-width:0;">' +
-                        '<div class="fw-semibold text-dark">' + escHtml(p.apellidos) + ', ' + escHtml(p.nombres) + '</div>' +
+                        '<div class="fw-semibold ' + (baja ? 'text-danger' : 'text-dark') + '">' + escHtml(p.apellidos) + ', ' + escHtml(p.nombres) + '</div>' +
                         '<div class="text-muted fs-11"><i class="ri-passport-line"></i> CI: ' + escHtml(p.ci) + '</div>' +
+                        (baja ? '<span class="asist-baja-tag"><i class="ri-user-unfollow-line"></i> ' + escHtml(p.baja) + '</span>' : '') +
                     '</div>' +
                 '</div></td>' +
                 '<td>' +
-                    '<select class="form-select form-select-sm asistio-select" data-val="' + sel + '">' +
+                    '<select class="form-select form-select-sm asistio-select" data-val="' + sel + '"' + (baja ? ' disabled' : '') + '>' +
+                        (baja && !p.asistio ? '<option value="" selected>— De baja —</option>' : '') +
                         opciones.map(o => '<option value="' + o + '"' + (o === sel ? ' selected' : '') + '>' + o + '</option>').join('') +
                     '</select>' +
+                    (baja ? '<button type="button" class="btn btn-link btn-sm p-0 mt-1 fs-11 asist-habilitar" title="Por ejemplo, si la baja fue posterior a esta sesión">Registrar igual</button>' : '') +
                 '</td>' +
-                '<td><input type="text" class="obs-input" placeholder="Observación opcional" value="' + escHtml(obs) + '" maxlength="500"></td>' +
+                '<td><input type="text" class="obs-input" placeholder="Observación opcional" value="' + escHtml(obs) + '" maxlength="500"' + (baja ? ' disabled' : '') + '></td>' +
             '</tr>';
         });
         list.innerHTML = html;
@@ -1910,6 +1931,26 @@ document.addEventListener('DOMContentLoaded', function () {
         list.querySelectorAll('.asistio-select').forEach(function (sel) {
             sel.addEventListener('change', function () { this.dataset.val = this.value; });
         });
+        // Habilitar a mano el registro de un dado de baja.
+        list.querySelectorAll('.asist-habilitar').forEach(function (b) {
+            b.addEventListener('click', function () {
+                const tr = this.closest('tr');
+                const sel = tr.querySelector('.asistio-select');
+                const vacio = sel.querySelector('option[value=""]');
+                if (vacio) vacio.remove();
+                if (!sel.value) sel.value = 'Ausente';
+                sel.dataset.val = sel.value;
+                sel.disabled = false;
+                tr.querySelector('.obs-input').disabled = false;
+                this.remove();
+            });
+        });
+        const nBajas = parts.filter(function (p) { return p.baja; }).length;
+        const hint = document.getElementById('asistBajasHint');
+        if (hint) {
+            hint.style.display = nBajas ? 'block' : 'none';
+            hint.querySelector('span').textContent = nBajas;
+        }
     }
 
     function escHtml(s) {
@@ -1929,7 +1970,8 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.bulk-action').forEach(function (b) {
         b.addEventListener('click', function () {
             const val = this.dataset.bulk;
-            document.querySelectorAll('#asistenciaList tr:not(.hidden-row) .asistio-select').forEach(function (sel) {
+            // Los dados de baja (select deshabilitado) no entran en las acciones masivas.
+            document.querySelectorAll('#asistenciaList tr:not(.hidden-row) .asistio-select:not(:disabled)').forEach(function (sel) {
                 sel.value = val;
                 sel.dataset.val = val;
             });
@@ -1942,12 +1984,15 @@ document.addEventListener('DOMContentLoaded', function () {
         if (rows.length === 0) { showToast('No hay participantes', 'warning'); return; }
         const asistencias = [];
         rows.forEach(function (tr) {
+            // Dados de baja sin habilitar: no se registra (se conserva lo que ya hubiera).
+            if (tr.querySelector('.asistio-select').disabled) return;
             asistencias.push({
                 participante_id: parseInt(tr.dataset.partId),
                 asistio: tr.querySelector('.asistio-select').value,
                 observacion: tr.querySelector('.obs-input').value || null,
             });
         });
+        if (asistencias.length === 0) { showToast('No hay participantes activos para registrar', 'warning'); return; }
 
         const btn = this;
         const original = btn.innerHTML;
@@ -2054,10 +2099,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         return;
                     }
                     const ausentes = data.participantes.filter(function (p) {
-                        return p.asistio === 'Ausente' && p.celular;
+                        return p.asistio === 'Ausente' && p.celular && !p.baja; // sin dados de baja
                     });
                     if (!ausentes.length) {
-                        showToast('No hay participantes ausentes con WhatsApp', 'warning');
+                        showToast('No hay participantes ausentes con WhatsApp (sin contar los dados de baja)', 'warning');
                         return;
                     }
                     waAusentesData = ausentes;
