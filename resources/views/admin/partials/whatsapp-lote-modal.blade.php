@@ -58,11 +58,20 @@ window.EsamLote = (function () {
         if (failed > 0) partes.push(failed + ' fallido(s)');
         if (skipped > 0) partes.push(skipped + ' omitido(s)');
         if (d.pending > 0) partes.push(d.pending + ' pendiente(s)');
-        if (d.status === 'running' && (sent + failed + skipped) === 0) {
-            partes.push('en cola: puede esperar por la ventana horaria o el calentamiento (anti-baneo)');
+        // Motivo real que informa Seguimiento ESAM (con la hora estimada de reanudación).
+        if (d.status === 'running' && d.waiting_reason) {
+            var hora = '';
+            if (d.waiting_until) {
+                var t = new Date(d.waiting_until);
+                if (!isNaN(t)) hora = ' · sigue ' + (t.toDateString() === new Date().toDateString() ? 'a las ' : 'el ' + t.toLocaleDateString('es-BO', { weekday: 'long' }) + ' a las ') +
+                    t.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' });
+            }
+            partes.push('en espera: ' + d.waiting_reason + hora);
+        } else if (d.status === 'running' && (sent + failed + skipped) === 0) {
+            partes.push('en cola: el primer mensaje sale en breve');
         }
         if (d.status === 'paused') {
-            partes.push('pausado por el sistema');
+            partes.push(d.paused_reason ? 'pausado: ' + d.paused_reason : 'pausado por el sistema');
         }
         el('esamLoteInfo').textContent = partes.join(' · ');
     }
