@@ -44,17 +44,141 @@ class WhatsappProgramaController extends Controller
         return view('admin.programas.whatsapp', compact('programa', 'participantes', 'error'));
     }
 
-    public function guardarGrupo(Request $request, $programaId): RedirectResponse
+    /** Estados de programa que se pueden elegir al enviar a varios grupos. */
+    private const ESTADOS_GRUPOS = [1 => 'En desarrollo', 4 => 'Inscripciones', 3 => 'No ejecutado', 2 => 'Concluido'];
+
+    /**
+     * Envío a varios grupos de WhatsApp: programas por estado (por defecto, En
+     * desarrollo), con su grupo o la opción de registrarlo ahí mismo.
+     */
+    public function grupos(): View
+    {
+        $user = auth()->user();
+
+        $programas = DB::table('programas as p')
+            ->leftJoin('tipos as t', 'p.tipo_id', '=', 't.id')
+            ->whereIn('p.estado_id', array_keys(self::ESTADOS_GRUPOS))
+            ->when(! $user->hasRole('Super Admin'), function ($q) use ($user) {
+                // Responsables: solo sus programas.
+                $q->whereIn('p.id', DB::table('programas_responsables')
+                    ->where('responsable_id', $user->responsable_id ?: 0)->select('programa_id'));
+            })
+            ->select('p.id', 'p.codigo', 'p.nombre', 'p.gestion', 'p.estado_id', 'p.whatsapp_grupo_id', 'p.whatsapp_grupo_nombre',
+                't.nombre as tipo_nombre',
+                DB::raw('(SELECT COUNT(*) FROM inscripciones i WHERE i.programa_id = p.id AND i.estado = 1
+                    AND COALESCE(i.baja_operativa,0) = 0 AND COALESCE(i.baja_academica,0) = 0 AND COALESCE(i.baja_contable,0) = 0) as vigentes'))
+            ->orderByDesc('p.gestion')
+            ->orderBy('p.nombre')
+            ->get();
+
+        $estados = self::ESTADOS_GRUPOS;
+        $error = app(SeguimientoEsamClient::class)->enabled() ? null : 'La integración con Seguimiento ESAM no está configurada.';
+        $puedeGestionarGrupo = $user->can('whatsapp.admin');
+
+        return view('admin.programas.whatsapp-grupos', compact('programas', 'estados', 'error', 'puedeGestionarGrupo'));
+    }
+
+    /** Envía el mismo mensaje (y media) a los grupos de los programas elegidos, en un solo lote. */
+    public function enviarGrupos(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'whatsapp_grupo_id' => 'nullable|string|max:120',
-            'whatsapp_grupo_nombre' => 'nullable|string|max:180',
+            'programas' => 'required|array|min:1',
+            'programas.*' => 'integer',
+            'text' => 'nullable|string|max:4096',
+            'file' => 'nullable|file|max:51200',
         ]);
+
+        if (blank($validated['text'] ?? null) && ! $request->hasFile('file')) {
+            return response()->json(['success' => false, 'message' => 'Escribí un mensaje o adjuntá un archivo.'], 422);
+        }
+
+        $client = app(SeguimientoEsamClient::class);
+
+        if (! $client->enabled()) {
+            return response()->json(['success' => false, 'message' => 'La integración con Seguimiento ESAM no está configurada.'], 422);
+        }
+
+        $user = auth()->user();
+        $programas = DB::table('programas')->whereIn('id', $validated['programas'])->get()
+            ->filter(fn ($p) => $user->puedeWhatsappPrograma((int) $p->id));
+        $conGrupo = $programas->filter(fn ($p) => filled($p->whatsapp_grupo_id));
+
+        if ($conGrupo->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'Ninguno de los programas elegidos tiene grupo registrado.'], 422);
+        }
+
+        [$account, $accountError] = SenderAccount::resolve();
+
+        if ($accountError) {
+            return response()->json(['success' => false, 'message' => $accountError], 403);
+        }
+
+        $stamp = now()->format('YmdHis');
+        $items = $conGrupo->map(function ($p) use ($validated, $stamp) {
+            $body = str_replace(['{{programa}}', '{programa}'], [$p->nombre, $p->nombre], (string) ($validated['text'] ?? ''));
+
+            return [
+                'chat_id' => $p->whatsapp_grupo_id,
+                'contact_name' => $p->whatsapp_grupo_nombre ?: $p->nombre,
+                'body_override' => $body !== '' ? $body : null,
+                'external_ref' => 'grupo:'.$p->id.':'.$stamp,
+            ];
+        })->values()->all();
+
+        $meta = ['area' => $user->whatsapp_area ?: 'general', 'tipo' => 'grupos', 'programas' => $conGrupo->pluck('id')->values()->all()];
+
+        try {
+            $result = $client->sendBatch(
+                'Grupos — '.count($items).' programa(s)',
+                $items,
+                null,
+                null,
+                false,
+                $this->mediaPayload($request->file('file')),
+                $account,
+                $meta,
+            );
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 502);
+        }
+
+        $now = now();
+        DB::table('mensajes')->insert($conGrupo->map(fn ($p) => [
+            'mensaje' => 'WhatsApp whatsapp_grupo — '.$p->nombre.' — lote #'.($result['batch_id'] ?? ''),
+            'inscripcione_id' => 0,
+            'fecha_registro' => $now->toDateString(),
+            'tipo' => 'whatsapp_grupo',
+            'persona' => 'Grupo: '.($p->whatsapp_grupo_nombre ?: $p->whatsapp_grupo_id),
+        ])->values()->all());
+
+        return response()->json([
+            'success' => true,
+            'batch_id' => $result['batch_id'] ?? null,
+            'total' => count($items),
+            'sin_grupo' => $programas->count() - $conGrupo->count(),
+        ]);
+    }
+
+    public function guardarGrupo(Request $request, $programaId): RedirectResponse|JsonResponse
+    {
+        $validated = $request->validate([
+            'whatsapp_grupo_id' => ['nullable', 'string', 'max:120', 'regex:/@g\.us$/'],
+            'whatsapp_grupo_nombre' => 'nullable|string|max:180',
+        ], ['whatsapp_grupo_id.regex' => 'El ID del grupo debe terminar en @g.us.']);
 
         DB::table('programas')->where('id', $programaId)->update([
             'whatsapp_grupo_id' => $validated['whatsapp_grupo_id'] ?: null,
             'whatsapp_grupo_nombre' => $validated['whatsapp_grupo_nombre'] ?: null,
         ]);
+
+        // Desde «Enviar a varios grupos» se registra sin recargar la página.
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'id' => $validated['whatsapp_grupo_id'] ?: null,
+                'name' => $validated['whatsapp_grupo_nombre'] ?: null,
+            ]);
+        }
 
         return back()->with('success', 'Grupo del programa guardado.');
     }

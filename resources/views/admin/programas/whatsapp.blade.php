@@ -292,6 +292,10 @@
 
                 <div class="wa-divider"></div>
 
+                <a href="{{ route('admin.programas.whatsapp.grupos') }}" class="wa-btn wa-btn-soft w-100 mb-3">
+                    <i class="ri-chat-group-line"></i> Enviar a varios grupos de programas
+                </a>
+
                 <div class="d-flex align-items-center justify-content-between mb-2">
                     <h6 class="mb-0 fw-bold" style="font-size:.9rem;">Enviar al grupo</h6>
                     @if($puedeEditar && ! $tieneGrupo)

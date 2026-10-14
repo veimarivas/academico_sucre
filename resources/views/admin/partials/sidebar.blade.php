@@ -224,6 +224,13 @@
                         <i class="ri-whatsapp-line"></i> <span>Ajustes WhatsApp</span>
                     </a>
                 </li>
+                @can('programas.listar')
+                <li class="nav-item">
+                    <a class="nav-link menu-link {{ $isActive('admin.programas.whatsapp.grupos') }}" href="{{ route('admin.programas.whatsapp.grupos') }}">
+                        <i class="ri-chat-group-line"></i> <span>Mensajes a grupos</span>
+                    </a>
+                </li>
+                @endcan
                 <li class="nav-item">
                     <a class="nav-link menu-link" href="{{ route('admin.seguimiento-esam') }}" target="_blank">
                         <i class="ri-external-link-line"></i> <span>Seguimiento ESAM</span>

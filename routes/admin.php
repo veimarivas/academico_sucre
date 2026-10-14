@@ -80,6 +80,10 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
             Route::get('/{programa}/folios', [ProgramaController::class, 'getFolios'])->name('folios');
         });
 
+        // Envío a varios grupos de WhatsApp (programas por estado)
+        Route::get('/whatsapp-grupos', [WhatsappProgramaController::class, 'grupos'])->middleware('permission:programas.listar')->name('whatsapp.grupos');
+        Route::post('/whatsapp-grupos/enviar', [WhatsappProgramaController::class, 'enviarGrupos'])->middleware('permission:programas.listar')->name('whatsapp.grupos-enviar');
+
         // Envío por WhatsApp (grupo del programa y participantes seleccionados)
         Route::post('/{programa}/whatsapp/grupo', [WhatsappProgramaController::class, 'guardarGrupo'])->middleware('permission:whatsapp.admin')->name('whatsapp.grupo');
         Route::post('/{programa}/whatsapp/grupo/resolver', [WhatsappProgramaController::class, 'resolverGrupo'])->middleware('permission:whatsapp.admin')->name('whatsapp.grupo-resolver');
