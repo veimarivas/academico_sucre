@@ -345,6 +345,23 @@
 
 /* ===== Highlight activo en navegación ===== */
 .prog-nav-link.active { background:#299cdb; color:#fff; border-color:#299cdb; }
+
+/* ===== Dados de baja: en rojo y fuera de los montos ===== */
+.asig-table tr.is-baja > td { background:#fff1f1 !important; }
+.asig-table tr.is-baja > td:first-child { box-shadow: inset 3px 0 0 #dc3545; }
+.asig-table tr.is-baja .part-avatar { background:#dc3545 !important; color:#fff !important; }
+.asig-table tr.is-baja td.text-end { color:#b42318 !important; opacity:.8; }
+[data-layout-mode="dark"] .asig-table tr.is-baja > td { background:#3a1d20 !important; }
+.baja-tag { display:inline-flex; align-items:center; gap:3px; margin-top:2px; padding:0 .45rem; border-radius:999px; font-size:.64rem; font-weight:700; color:#fff; background:#dc3545; }
+.venc-pill.vp-baja { background:#fde2e2; color:#b42318; }
+.prog-stat-pill.psp-baja { background:#fde2e2; color:#b42318; }
+.estado-filter.is-baja.active { background:#dc3545; border-color:#dc3545; color:#fff; }
+.bajas-resumen { padding:.7rem 1rem; border-radius:12px; background:#fff1f1; border:1px solid #f6caca; color:#7a1d16; }
+.bajas-resumen .br-title { font-weight:800; font-size:.85rem; color:#b42318; }
+.bajas-resumen .br-title small { font-weight:600; color:#a15c5c; }
+.bajas-resumen .br-vals { display:flex; flex-wrap:wrap; gap:.4rem 1.2rem; margin-top:.3rem; font-size:.8rem; }
+.bajas-resumen .br-total { color:#495057; }
+[data-layout-mode="dark"] .bajas-resumen { background:#3a1d20; border-color:#6b2a2a; color:#f19a9a; }
 </style>
 @endpush
 
@@ -451,6 +468,18 @@
         </div>
     </div>
 </div>
+@if(($resumen['bajas_cuotas'] ?? 0) > 0)
+<div class="bajas-resumen mb-3">
+    <div class="br-title"><i class="ri-user-unfollow-line"></i> Dados de baja <small>(no se consideran en los montos de arriba)</small></div>
+    <div class="br-vals">
+        <span><b>{{ $resumen['bajas_participantes'] }}</b> participante(s) · <b>{{ $resumen['bajas_cuotas'] }}</b> cuota(s)</span>
+        <span>Esperado <b>Bs {{ number_format($resumen['bajas_esperado'], 2) }}</b></span>
+        <span>Cobrado <b>Bs {{ number_format($resumen['bajas_cobrado'], 2) }}</b></span>
+        <span>Pendiente <b>Bs {{ number_format($resumen['bajas_pendiente'], 2) }}</b></span>
+        <span class="br-total">Total general esperado (vigentes + baja): <b>Bs {{ number_format($resumen['total_esperado'] + $resumen['bajas_esperado'], 2) }}</b></span>
+    </div>
+</div>
+@endif
 
 {{-- Gráfico: recordatorios vs cobros por programa --}}
 @if($porPrograma->count() > 0)
@@ -570,6 +599,11 @@
     <button type="button" class="estado-filter is-pag" data-filter="pagada">
         <i class="ri-checkbox-circle-line"></i> Pagadas <span class="bdg">{{ $resumen['pagadas'] }}</span>
     </button>
+    @if(($resumen['bajas_cuotas'] ?? 0) > 0)
+    <button type="button" class="estado-filter is-baja" data-filter="baja">
+        <i class="ri-user-unfollow-line"></i> De baja <span class="bdg">{{ $resumen['bajas_cuotas'] }}</span>
+    </button>
+    @endif
 </div>
 
 {{-- Programas con cuotas --}}
@@ -594,6 +628,7 @@
             @if($pg->count_hoy > 0)<span class="prog-stat-pill psp-c-hoy"><i class="ri-alarm-warning-line"></i> {{ $pg->count_hoy }}</span>@endif
             @if($pg->count_proximas > 0)<span class="prog-stat-pill psp-c-prox"><i class="ri-time-line"></i> {{ $pg->count_proximas }}</span>@endif
             @if($pg->count_pagadas > 0)<span class="prog-stat-pill psp-c-pag"><i class="ri-checkbox-circle-line"></i> {{ $pg->count_pagadas }}</span>@endif
+            @if(($pg->count_bajas ?? 0) > 0)<span class="prog-stat-pill psp-baja" title="Dados de baja (no se suman): esperado Bs {{ number_format($pg->bajas_esperado, 2) }} · cobrado Bs {{ number_format($pg->bajas_cobrado, 2) }}"><i class="ri-user-unfollow-line"></i> Baja Bs {{ number_format($pg->bajas_pendiente, 2) }} pend.</span>@endif
             @if(($pg->recordatorios ?? 0) > 0)<span class="prog-stat-pill" title="Recordatorios de cobranza enviados este mes"><i class="ri-message-3-line"></i> Rec {{ $pg->recordatorios }}</span>@endif
             @if(($pg->monto_pagado_mes ?? 0) > 0)<span class="prog-stat-pill psp-cob" title="Pagos registrados este mes"><i class="ri-hand-coin-line"></i> Reg Bs {{ number_format($pg->monto_pagado_mes, 2) }}</span>@endif
             @if(($pg->pagaron_mes ?? 0) > 0)<span class="prog-stat-pill" title="Participantes que registraron pago este mes"><i class="ri-wallet-3-line"></i> Pagaron {{ $pg->pagaron_mes }}</span>@endif
@@ -626,12 +661,13 @@
                 @endphp
                 @foreach($grupos as $partId => $cuotas)
                 @php
-                    $rowIdx++;
                     $first = $cuotas->first();
+                    $esBaja = !empty($first->baja);
+                    if (! $esBaja) $rowIdx++;
                     $ini = strtoupper(substr($first->nombres, 0, 1) . substr($first->apellidos, 0, 1));
                     $estados = $cuotas->pluck('estado_venc')->unique()->values();
                     $worst = $estados->sortByDesc(fn($e) => $estadoPrio[$e] ?? 0)->first();
-                    $rowCls = match($worst) {
+                    $rowCls = $esBaja ? 'is-baja' : match($worst) {
                         'vencida' => 'is-venc',
                         'hoy' => 'is-hoy',
                         'pagada' => 'is-pag',
@@ -644,14 +680,17 @@
                     $modalId = 'modalCuotas-' . $loop->parent->iteration . '-' . $partId;
                 @endphp
                 <tr class="{{ $rowCls }}" data-estado="{{ $estados->implode(' ') }}">
-                    <td class="text-center text-muted fw-bold">{{ $rowIdx }}</td>
+                    <td class="text-center text-muted fw-bold">{{ $esBaja ? '—' : $rowIdx }}</td>
                     <td>
                         <a href="{{ route('admin.programas.participante-detalle', $partId) }}" class="text-reset text-decoration-none">
                             <div class="d-flex align-items-center gap-2">
                                 <span class="part-avatar">{{ $ini }}</span>
                                 <div style="min-width:0;">
-                                    <div class="fw-bold text-dark" style="font-size:.85rem;">{{ $first->apellidos }}, {{ $first->nombres }}</div>
+                                    <div class="fw-bold {{ $esBaja ? 'text-danger' : 'text-dark' }}" style="font-size:.85rem;">{{ $first->apellidos }}, {{ $first->nombres }}</div>
                                     <div class="text-muted" style="font-size:.7rem;"><i class="ri-passport-line"></i> CI: {{ $first->ci }}</div>
+                                    @if($esBaja)
+                                        <span class="baja-tag" title="No se suma a esperado, cobrado ni pendiente"><i class="ri-user-unfollow-line"></i> {{ $first->baja }}</span>
+                                    @endif
                                 </div>
                             </div>
                         </a>
@@ -680,13 +719,14 @@
                         @php
                             $c = $first;
                             $vencPillCls = match($c->estado_venc) {
-                                'vencida' => 'vp-venc', 'hoy' => 'vp-hoy', 'proxima' => 'vp-prox', 'pagada' => 'vp-pag', default => '',
+                                'vencida' => 'vp-venc', 'hoy' => 'vp-hoy', 'proxima' => 'vp-prox', 'pagada' => 'vp-pag', 'baja' => 'vp-baja', default => '',
                             };
                             $vencText = match($c->estado_venc) {
                                 'vencida' => 'Vencido ' . abs($c->dias) . 'd',
                                 'hoy' => 'Vence hoy',
                                 'proxima' => 'En ' . $c->dias . 'd',
                                 'pagada' => 'Pagada',
+                                'baja' => 'De baja',
                                 default => '—',
                             };
                             $vencIcon = match($c->estado_venc) {
@@ -754,13 +794,14 @@
                         @foreach($cuotas as $c)
                             @php
                                 $vencPillCls = match($c->estado_venc) {
-                                    'vencida' => 'vp-venc', 'hoy' => 'vp-hoy', 'proxima' => 'vp-prox', 'pagada' => 'vp-pag', default => '',
+                                    'vencida' => 'vp-venc', 'hoy' => 'vp-hoy', 'proxima' => 'vp-prox', 'pagada' => 'vp-pag', 'baja' => 'vp-baja', default => '',
                                 };
                                 $vencText = match($c->estado_venc) {
                                     'vencida' => 'Vencido ' . abs($c->dias) . 'd',
                                     'hoy' => 'Vence hoy',
                                     'proxima' => 'En ' . $c->dias . 'd',
                                     'pagada' => 'Pagada',
+                                    'baja' => 'De baja',
                                     default => '—',
                                 };
                                 $vencIcon = match($c->estado_venc) {

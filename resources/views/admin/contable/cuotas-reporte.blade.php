@@ -386,6 +386,19 @@
 }
 .prog-search-input:focus { outline:0; border-color:{{ $colorPrim }}; box-shadow: 0 0 0 .15rem rgba(240,101,72,.15); }
 [data-layout-mode="dark"] .prog-search-input { background:#1d2125; border-color:#2a2f34; color:#ced4da; }
+
+/* Dados de baja: en rojo, sin sumar al total ni recibir recordatorios */
+.part-row.part-baja { background:#fff1f1; }
+.part-row.part-baja::before { background:#dc3545 !important; }
+.part-row.part-baja .pr-name, .part-row.part-baja .deuda-total { color:#b42318; }
+.part-row.part-baja .pr-avatar, .part-row.part-baja .pr-num { background:#dc3545 !important; color:#fff !important; }
+.part-row.part-baja .cuota-mini { opacity:.7; }
+[data-layout-mode="dark"] .part-row.part-baja { background:#3a1d20; }
+.baja-tag { display:inline-flex; align-items:center; gap:3px; padding:0 .45rem; border-radius:999px; font-weight:700; color:#fff !important; background:#dc3545; }
+.baja-hint { padding:.5rem .85rem; border-radius:10px; font-size:.8rem; color:#b42318; background:#fff1f1; border:1px solid #f6caca; }
+[data-layout-mode="dark"] .baja-hint { background:#3a1d20; border-color:#6b2a2a; color:#f19a9a; }
+.bm-part-item.bm-baja { background:#fff1f1; }
+.bm-part-item.bm-baja .pi-nm { color:#b42318; }
 </style>
 @endpush
 
@@ -480,12 +493,31 @@
     <div class="col-lg col-md-6">
         <div class="kpi" style="--k-accent:#0ab39c; --k-bg:#ecfdf5; --k-color:#0ab39c;">
             <div class="d-flex align-items-center justify-content-between">
-                <div><div class="k-lbl">Total Adeudado</div><div class="k-val">Bs {{ number_format($totales['total_deuda'], 2) }}</div></div>
+                <div><div class="k-lbl">Adeudado vigentes</div><div class="k-val">Bs {{ number_format($totales['total_deuda'], 2) }}</div></div>
                 <span class="k-ic"><i class="ri-money-dollar-circle-line"></i></span>
             </div>
         </div>
     </div>
+    <div class="col-lg col-md-6">
+        <div class="kpi" style="--k-accent:#dc3545; --k-bg:#fff1f1; --k-color:#dc3545;">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="k-lbl">De baja (no se considera)</div>
+                    <div class="k-val" style="color:#b42318;">Bs {{ number_format($totales['bajas_deuda'], 2) }}</div>
+                    <div class="fs-11 text-muted">{{ $totales['bajas_participantes'] }} participante(s) · {{ $totales['bajas_cuotas'] }} cuota(s)</div>
+                </div>
+                <span class="k-ic"><i class="ri-user-unfollow-line"></i></span>
+            </div>
+        </div>
+    </div>
 </div>
+@if($totales['bajas_participantes'] > 0)
+    <div class="baja-hint mb-3">
+        <i class="ri-information-line"></i>
+        Total general (vigentes + de baja): <b>Bs {{ number_format($totales['total_deuda_general'], 2) }}</b>.
+        Los participantes dados de baja se listan en rojo al final de cada programa y <b>no reciben recordatorios</b>.
+    </div>
+@endif
 
 @if(count($porPrograma) === 0)
     <div class="empty-state">
@@ -518,6 +550,7 @@
             'ci' => $p->ci,
             'nombre' => $p->apellidos . ', ' . $p->nombres,
             'celular' => $p->celular,
+            'baja' => $p->baja,
             'total_saldo' => $p->total_saldo,
             'cuotas' => $p->cuotas->map(fn($c) => [
                 'tipo' => $c->tipo,
@@ -537,13 +570,19 @@
                 <i class="ri-hashtag"></i> {{ $pg->programa_codigo }} ·
                 <i class="ri-price-tag-3-line"></i> {{ $pg->tipo_nombre ?? 'Sin tipo' }} ·
                 <i class="ri-calendar-2-line"></i> Gestión {{ $pg->programa_gestion }} ·
-                <i class="ri-group-line"></i> {{ $pg->participantes->count() }} participante(s) ·
+                <i class="ri-group-line"></i> {{ $pg->vigentes_participantes }} participante(s) ·
                 <i class="{{ $heroIcon }}"></i> {{ $pg->total_cuotas }} cuota(s)
+                @if($pg->bajas_participantes > 0)
+                    · <span class="text-danger fw-semibold"><i class="ri-user-unfollow-line"></i> {{ $pg->bajas_participantes }} de baja</span>
+                @endif
             </div>
         </div>
         <div class="prog-totales">
             <div class="tt">Bs {{ number_format($pg->total_saldo, 2) }}</div>
-            <div class="ts">adeudado</div>
+            <div class="ts">adeudado vigentes</div>
+            @if($pg->bajas_participantes > 0)
+                <div class="ts text-danger fw-semibold">+ Bs {{ number_format($pg->bajas_saldo, 2) }} de baja</div>
+            @endif
         </div>
         <button type="button" class="btn-wa-bulk btn-open-bulk"
                 data-programa-id="{{ $pg->programa_id }}"
@@ -558,9 +597,10 @@
     </div>
 
     <div class="prog-card-body" data-prog-body>
+    @php $nroVig = 0; @endphp
     @foreach($pg->participantes as $pa)
-    <div class="part-row">
-        <div class="text-center"><span class="pr-num">{{ $loop->iteration }}</span></div>
+    <div class="part-row {{ $pa->baja ? 'part-baja' : '' }}">
+        <div class="text-center"><span class="pr-num">{{ $pa->baja ? '—' : ++$nroVig }}</span></div>
         <div class="pr-info">
             <div class="pr-name">
                 <span class="pr-avatar">{{ strtoupper(substr($pa->nombres, 0, 1) . substr($pa->apellidos, 0, 1)) }}</span>
@@ -572,6 +612,9 @@
                 <span><i class="ri-passport-line"></i> {{ $pa->ci }}</span>
                 @if($pa->celular)
                     <span><i class="ri-phone-line"></i> {{ $pa->celular }}</span>
+                @endif
+                @if($pa->baja)
+                    <span class="baja-tag"><i class="ri-user-unfollow-line"></i> {{ $pa->baja }} · no se considera</span>
                 @endif
             </div>
         </div>
@@ -618,7 +661,11 @@
                     'modo' => $modo,
                 ];
             @endphp
-            @if($tieneCel)
+            @if($pa->baja)
+                <span class="wa-link is-disabled" title="Dado de baja: no recibe recordatorios">
+                    <i class="ri-user-unfollow-line"></i> De baja
+                </span>
+            @elseif($tieneCel)
                 <a href="#" class="wa-link btn-wa-individual"
                    data-programa-id="{{ $pg->programa_id }}" data-dias="{{ $dias }}"
                    data-participante='@json($waDataPart)'>
@@ -819,19 +866,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function renderBulkList() {
         const list = document.getElementById('bmList');
-        const con = bulkData.participantes.filter(p => normalizePhone(p.celular));
-        const sin = bulkData.participantes.length - con.length;
+        // Los dados de baja se muestran pero no reciben el recordatorio.
+        const vigentes = bulkData.participantes.filter(p => !p.baja);
+        const con = vigentes.filter(p => normalizePhone(p.celular));
+        const sin = vigentes.length - con.length;
+        const nBajas = bulkData.participantes.length - vigentes.length;
         document.getElementById('bmCount').textContent = '(' + con.length + ')';
-        document.getElementById('bmSinTel').textContent = sin > 0 ? ('· ' + sin + ' sin celular') : '';
+        document.getElementById('bmSinTel').textContent = (sin > 0 ? ('· ' + sin + ' sin celular') : '') + (nBajas > 0 ? (' · ' + nBajas + ' de baja (no se envía)') : '');
 
         let html = '';
         bulkData.participantes.forEach(function (p) {
             const phone = normalizePhone(p.celular);
             const ini = p.nombre.split(',').map(s => (s.trim().charAt(0) || '').toUpperCase()).slice(0,2).join('');
-            const stCls = bulkSentIds.has(p.id) ? 'sent' : (phone ? '' : 'skip');
-            const stTxt = bulkSentIds.has(p.id) ? '✓ Enviado' : (phone ? 'Pendiente' : 'Sin tel.');
+            const stCls = p.baja ? 'skip' : (bulkSentIds.has(p.id) ? 'sent' : (phone ? '' : 'skip'));
+            const stTxt = p.baja ? 'De baja · no se envía' : (bulkSentIds.has(p.id) ? '✓ Enviado' : (phone ? 'Pendiente' : 'Sin tel.'));
             html +=
-                '<div class="bm-part-item">' +
+                '<div class="bm-part-item' + (p.baja ? ' bm-baja' : '') + '">' +
                     '<span class="pi-avatar">' + ini + '</span>' +
                     '<div>' +
                         '<div class="pi-nm">' + p.nombre + '</div>' +
@@ -845,8 +895,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.getElementById('btnBulkEnviar').addEventListener('click', function () {
         if (!bulkData) return;
-        const conTel = bulkData.participantes.filter(function (p) { return normalizePhone(p.celular); });
-        if (conTel.length === 0) { alert('Ningún participante tiene teléfono válido'); return; }
+        const conTel = bulkData.participantes.filter(function (p) { return !p.baja && normalizePhone(p.celular); });
+        if (conTel.length === 0) { alert('Ningún participante vigente tiene teléfono válido'); return; }
         enviarEsam(bulkData.programaId, bulkData.dias, bulkData.modo, null, this);
     });
 

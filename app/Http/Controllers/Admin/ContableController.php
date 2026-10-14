@@ -179,6 +179,9 @@ class ContableController extends Controller
                 ->join('modulos as m', 'mp.modulo_id', '=', 'm.id')
                 ->join('programas as pr', 'm.programa_id', '=', 'pr.id')
                 ->leftJoin('tipos as t', 'pr.tipo_id', '=', 't.id')
+                ->leftJoin('inscripciones as i', function ($j) {
+                    $j->on('i.participante_id', '=', 'pa.id')->on('i.programa_id', '=', 'pr.id');
+                })
                 ->whereNotNull('mp.fecha_pago')
                 ->whereIn('pr.estado_id', [1, 4])
                 ->where('pr.gestion', $gestion)
@@ -187,7 +190,8 @@ class ContableController extends Controller
                     'mp.id as cuota_id', 'mp.tipo', 'mp.fecha_pago', 'mp.deuda', 'mp.total_pagado',
                     'pa.id as participante_id', 'pa.ci', 'pa.nombres', 'pa.apellidos', 'pa.celular', 'pa.correo',
                     'pr.id as programa_id', 'pr.nombre as programa_nombre', 'pr.codigo as programa_codigo',
-                    'pr.gestion as programa_gestion', 't.nombre as tipo_nombre'
+                    'pr.gestion as programa_gestion', 't.nombre as tipo_nombre',
+                    'i.estado', 'i.baja_operativa', 'i.baja_academica', 'i.baja_contable'
                 );
 
             if ($modo === 'vencidas') {
@@ -203,7 +207,9 @@ class ContableController extends Controller
             $cuotas = $q->orderBy('mp.fecha_pago')
                 ->orderBy('pr.nombre')
                 ->orderBy('pa.apellidos')
-                ->get();
+                ->get()
+                ->unique('cuota_id')
+                ->values();
         }
 
         // Calcula campos y agrupa por programa → participante
@@ -213,14 +219,23 @@ class ContableController extends Controller
             $c->saldo = max(0, $deuda - $pagado);
             $fp = \Carbon\Carbon::parse($c->fecha_pago)->startOfDay();
             $c->dias = $hoy->diffInDays($fp, false);
+            $c->baja = \App\Support\BajaInscripcion::motivo($c);
             return $c;
         });
 
+        // Montos de los vigentes y de los dados de baja por separado: los de baja
+        // se muestran pero no se suman al total a cobrar ni reciben recordatorios.
+        $vigentes = $cuotas->whereNull('baja');
+        $deBaja = $cuotas->whereNotNull('baja');
         $totales = [
-            'total_cuotas' => $cuotas->count(),
-            'total_deuda' => $cuotas->sum('saldo'),
-            'total_participantes' => $cuotas->pluck('participante_id')->unique()->count(),
+            'total_cuotas' => $vigentes->count(),
+            'total_deuda' => $vigentes->sum('saldo'),
+            'total_participantes' => $vigentes->pluck('participante_id')->unique()->count(),
             'total_programas' => $cuotas->pluck('programa_id')->unique()->count(),
+            'bajas_cuotas' => $deBaja->count(),
+            'bajas_deuda' => $deBaja->sum('saldo'),
+            'bajas_participantes' => $deBaja->pluck('participante_id')->unique()->count(),
+            'total_deuda_general' => $cuotas->sum('saldo'),
         ];
 
         $porPrograma = $cuotas->groupBy('programa_id')->map(function ($cs) {
@@ -234,11 +249,12 @@ class ContableController extends Controller
                     'apellidos' => $p->apellidos,
                     'celular' => $p->celular,
                     'correo' => $p->correo,
+                    'baja' => $p->baja,
                     'cuotas' => $items->values(),
                     'total_saldo' => $items->sum('saldo'),
                     'count' => $items->count(),
                 ];
-        })->values();
+        })->sortBy(fn ($x) => $x->baja ? 1 : 0)->values();
 
         // ── Mensajería vs cobros del mes (¿el sistema ayuda a cobrar?) ──────────
 
@@ -250,8 +266,11 @@ class ContableController extends Controller
                 'programa_gestion' => $first->programa_gestion,
                 'tipo_nombre' => $first->tipo_nombre,
                 'participantes' => $porPart,
-                'total_saldo' => $cs->sum('saldo'),
-                'total_cuotas' => $cs->count(),
+                'total_saldo' => $cs->whereNull('baja')->sum('saldo'),
+                'total_cuotas' => $cs->whereNull('baja')->count(),
+                'bajas_saldo' => $cs->whereNotNull('baja')->sum('saldo'),
+                'bajas_participantes' => $cs->whereNotNull('baja')->pluck('participante_id')->unique()->count(),
+                'vigentes_participantes' => $cs->whereNull('baja')->pluck('participante_id')->unique()->count(),
             ];
         })->sortByDesc('total_saldo')->values();
 
@@ -304,10 +323,17 @@ class ContableController extends Controller
                 ->join('modulos as m', 'mp.modulo_id', '=', 'm.id')
                 ->join('programas as pr', 'm.programa_id', '=', 'pr.id')
                 ->leftJoin('tipos as t', 'pr.tipo_id', '=', 't.id')
+                ->leftJoin('inscripciones as i', function ($j) {
+                    $j->on('i.participante_id', '=', 'pa.id')->on('i.programa_id', '=', 'pr.id');
+                })
                 ->whereNotNull('mp.fecha_pago')
                 ->where('pr.estado_id', '!=', 3)
                 ->whereBetween('mp.fecha_pago', [$inicioMes, $finMes])
                 ->select(
+                    'i.estado',
+                    'i.baja_operativa',
+                    'i.baja_academica',
+                    'i.baja_contable',
                     'mp.id as cuota_id',
                     'mp.tipo',
                     'mp.fecha_pago',
@@ -326,9 +352,16 @@ class ContableController extends Controller
                 ->orderBy('mp.fecha_pago')
                 ->orderBy('pr.nombre')
                 ->orderBy('pa.apellidos')
-                ->get();
+                ->get()
+                ->unique('cuota_id')
+                ->values()
+                ->each(function ($c) {
+                    $c->baja = \App\Support\BajaInscripcion::motivo($c);
+                });
         }
 
+        // Los montos de los dados de baja se calculan aparte: no entran en lo
+        // esperado, cobrado ni pendiente de los vigentes.
         $hoyDate = $hoy->copy()->startOfDay();
         $resumen = [
             'total_cuotas' => 0,
@@ -339,8 +372,13 @@ class ContableController extends Controller
             'hoy' => 0,
             'proximas' => 0,
             'pagadas' => 0,
-            'participantes' => $cuotasMes->pluck('participante_id')->unique()->count(),
+            'participantes' => $cuotasMes->whereNull('baja')->pluck('participante_id')->unique()->count(),
             'programas' => $cuotasMes->pluck('programa_id')->unique()->count(),
+            'bajas_cuotas' => 0,
+            'bajas_esperado' => 0.0,
+            'bajas_cobrado' => 0.0,
+            'bajas_pendiente' => 0.0,
+            'bajas_participantes' => $cuotasMes->whereNotNull('baja')->pluck('participante_id')->unique()->count(),
         ];
 
         $cuotasMes = $cuotasMes->map(function ($c) use ($hoyDate, &$resumen) {
@@ -350,6 +388,18 @@ class ContableController extends Controller
             $pagada = $pagado >= $deuda && $deuda > 0;
             $fecha = \Carbon\Carbon::parse($c->fecha_pago)->startOfDay();
             $diff = $hoyDate->diffInDays($fecha, false);
+
+            if ($c->baja) {
+                $resumen['bajas_cuotas']++;
+                $resumen['bajas_esperado'] += $deuda;
+                $resumen['bajas_cobrado'] += min($pagado, $deuda);
+                $resumen['bajas_pendiente'] += $saldo;
+                $c->saldo = $saldo;
+                $c->pagada = $pagada;
+                $c->estado_venc = 'baja';
+                $c->dias = $diff;
+                return $c;
+            }
 
             if ($pagada) {
                 $estado = 'pagada'; $resumen['pagadas']++;
@@ -382,10 +432,15 @@ class ContableController extends Controller
                 'programa_codigo' => $first->programa_codigo,
                 'programa_gestion' => $first->programa_gestion,
                 'tipo_nombre' => $first->tipo_nombre,
-                'cuotas' => $items->values(),
-                'total_esperado' => $items->sum('deuda'),
-                'total_cobrado' => $items->sum(fn($c) => min((float)$c->total_pagado, (float)$c->deuda)),
-                'total_pendiente' => $items->sum('saldo'),
+                // Vigentes primero; los dados de baja al final.
+                'cuotas' => $items->sortBy(fn ($c) => $c->baja ? 1 : 0)->values(),
+                'total_esperado' => $items->whereNull('baja')->sum('deuda'),
+                'total_cobrado' => $items->whereNull('baja')->sum(fn($c) => min((float)$c->total_pagado, (float)$c->deuda)),
+                'total_pendiente' => $items->whereNull('baja')->sum('saldo'),
+                'bajas_esperado' => $items->whereNotNull('baja')->sum('deuda'),
+                'bajas_cobrado' => $items->whereNotNull('baja')->sum(fn($c) => min((float)$c->total_pagado, (float)$c->deuda)),
+                'bajas_pendiente' => $items->whereNotNull('baja')->sum('saldo'),
+                'count_bajas' => $items->whereNotNull('baja')->count(),
                 'count_vencidas' => $items->where('estado_venc', 'vencida')->count(),
                 'count_hoy' => $items->where('estado_venc', 'hoy')->count(),
                 'count_proximas' => $items->where('estado_venc', 'proxima')->count(),

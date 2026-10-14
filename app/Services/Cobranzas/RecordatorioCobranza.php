@@ -34,6 +34,13 @@ class RecordatorioCobranza
             ->where(function ($w) {
                 $w->where('mp.retirado', 0)->orWhereNull('mp.retirado');
             })
+            // Los dados de baja no reciben recordatorios de cobranza.
+            ->whereNotExists(function ($q) use ($programa) {
+                $q->select(DB::raw(1))->from('inscripciones as ib')
+                    ->whereColumn('ib.participante_id', 'pa.id')
+                    ->where('ib.programa_id', $programa->id)
+                    ->whereRaw('NOT '.\App\Support\BajaInscripcion::sqlActiva('ib'));
+            })
             ->select(
                 'mp.id as cuota_id', 'mp.tipo', 'mp.fecha_pago', 'mp.deuda', 'mp.total_pagado',
                 'pa.id as participante_id', 'pa.nombres', 'pa.apellidos', 'pa.celular'

@@ -604,6 +604,10 @@
 [data-layout-mode="dark"] .asistencia-table tr.asist-baja > td { background: #3a1d20 !important; }
 .asist-baja-tag { display: inline-flex; align-items: center; gap: .2rem; margin-top: .15rem; padding: 0 .45rem; border-radius: 999px;
     font-size: .66rem; font-weight: 700; color: #fff; background: #dc3545; }
+.stats-baja > td, .notas-baja > td { background: #fff1f1 !important; }
+.stats-baja > td:first-child, .notas-baja > td:first-child { box-shadow: inset 3px 0 0 #dc3545; }
+.stats-baja .part-avatar, .notas-baja .part-avatar { background: #dc3545; color: #fff; }
+[data-layout-mode="dark"] .stats-baja > td, [data-layout-mode="dark"] .notas-baja > td { background: #3a1d20 !important; }
 .asist-bajas-hint { margin-bottom: .75rem; padding: .45rem .75rem; border-radius: 8px; font-size: .8rem; color: #b42318; background: #fff1f1; }
 [data-layout-mode="dark"] .asist-bajas-hint { color: #f19a9a; background: #3a1d20; }
 
@@ -817,7 +821,7 @@
             <div class="hero-stat">
                 <span class="stat-ic"><i class="ri-group-line"></i></span>
                 <div class="stat-val">{{ $inscritosCount }}</div>
-                <div class="stat-lbl">Alumnos</div>
+                <div class="stat-lbl">Alumnos{{ $bajasCount > 0 ? ' · '.$bajasCount.' de baja' : '' }}</div>
             </div>
         </div>
     </div>
@@ -1110,27 +1114,34 @@
 
             {{-- NOTAS --}}
 @php
+    // Los conteos y la nivelación consideran solo a los activos; los dados de baja se listan aparte.
+    $activosNotas = $participantes->whereNull('baja');
     $aprobadosMod = 0; $reprobadosMod = 0;
-    foreach($participantes as $pp) {
+    foreach($activosNotas as $pp) {
         $nmVal = $pp->nota_modulo !== null ? (float) $pp->nota_modulo : 0;
         if ($nmVal > 0) {
             ($nmVal >= 71) ? $aprobadosMod++ : $reprobadosMod++;
         }
     }
-    $puedeNivelacion = !$sinNotas && $participantes->contains(fn($p) => $p->nota_modulo !== null && (float) $p->nota_modulo < 71);
-    $participantesNivelacion = $puedeNivelacion ? $participantes->filter(fn($p) => $p->nota_modulo !== null && (float) $p->nota_modulo < 71)->values() : collect();
-    $sinNivelacion = !$sinNotas && $participantes->filter(fn($p) => $p->nota_nivelacion !== null && (float) $p->nota_nivelacion > 0)->count() === 0;
+    $promedioMod = $activosNotas->filter(fn($p) => $p->nota_modulo !== null && (float) $p->nota_modulo > 0)->avg(fn($p) => (float) $p->nota_modulo);
+    $puedeNivelacion = !$sinNotas && $activosNotas->contains(fn($p) => $p->nota_modulo !== null && (float) $p->nota_modulo < 71);
+    $participantesNivelacion = $puedeNivelacion ? $activosNotas->filter(fn($p) => $p->nota_modulo !== null && (float) $p->nota_modulo < 71)->values() : collect();
+    $sinNivelacion = !$sinNotas && $activosNotas->filter(fn($p) => $p->nota_nivelacion !== null && (float) $p->nota_nivelacion > 0)->count() === 0;
     $hayNivelacion = $participantes->contains(fn($p) => $p->nota_nivelacion !== null && (float) $p->nota_nivelacion > 0);
     $mostrarBtnNivelacion = $puedeNivelacion || $hayNivelacion;
     if ($mostrarBtnNivelacion && $participantesNivelacion->isEmpty()) {
         $participantesNivelacion = $participantes->filter(fn($p) => $p->nota_nivelacion !== null && (float) $p->nota_nivelacion > 0)->values();
     }
+    $nroActivo = 0;
 @endphp
 <div class="info-card">
     <div class="card-header">
         <span class="section-icon bg-soft-success text-success"><i class="ri-file-list-3-line"></i></span>
         <h5 class="card-title mb-0 fs-14 fw-semibold">Notas de Estudiantes</h5>
         <span class="badge bg-soft-success text-success fs-11 ms-2">{{ $inscritosCount }} participantes</span>
+        @if($bajasCount > 0)
+            <span class="badge bg-soft-danger text-danger fs-11 ms-1" title="Se listan al final y no se consideran en los conteos">{{ $bajasCount }} de baja</span>
+        @endif
         @if($puedeGestionarModulo && $todasSesionesDesarrolladas && $sinNotas)
             <button type="button" class="btn btn-sm btn-success ms-auto d-inline-flex align-items-center gap-1" id="btnRegistrarNotas">
                 <i class="ri-add-circle-line"></i> Registrar Notas
@@ -1172,6 +1183,12 @@
                 <span class="badge bg-soft-success text-success fs-11">Aprobados: {{ $aprobadosMod }}</span>
                 <span class="badge bg-soft-danger text-danger fs-11">Reprobados: {{ $reprobadosMod }}</span>
                 <span class="badge bg-soft-info text-info fs-11">Con nota: {{ $conNota }}</span>
+                @if($promedioMod)
+                    <span class="badge bg-soft-primary text-primary fs-11">Promedio: {{ number_format($promedioMod, 2) }}</span>
+                @endif
+                @if($bajasCount > 0)
+                    <span class="badge bg-soft-danger text-danger fs-11"><i class="ri-user-unfollow-line"></i> De baja (no se consideran): {{ $bajasCount }}</span>
+                @endif
             </div>
             <div class="table-responsive">
                 <table class="sessions-table table align-middle">
@@ -1206,10 +1223,15 @@
                             $bgNivPago = $nnPago !== null && $nnPago > 0 ? ($nnPago >= 71 ? 'bg-soft-secondary' : 'bg-soft-danger') : '';
                             $txtNivPago = $nnPago !== null && $nnPago > 0 ? ($nnPago >= 71 ? 'text-dark' : 'text-danger') : 'text-muted';
                         @endphp
-                        <tr>
-                            <td class="text-center"><span class="session-num">{{ $loop->iteration }}</span></td>
+                        <tr class="{{ $p->baja ? 'notas-baja' : '' }}">
+                            <td class="text-center"><span class="session-num">{{ $p->baja ? '—' : ++$nroActivo }}</span></td>
                             <td class="fw-medium">{{ $p->ci }}</td>
-                            <td class="fw-medium">{{ $p->apellidos }}, {{ $p->nombres }}</td>
+                            <td class="fw-medium {{ $p->baja ? 'text-danger' : '' }}">
+                                {{ $p->apellidos }}, {{ $p->nombres }}
+                                @if($p->baja)
+                                    <br><span class="asist-baja-tag" title="No se considera en aprobados, reprobados ni promedio"><i class="ri-user-unfollow-line"></i> {{ $p->baja }}</span>
+                                @endif
+                            </td>
                             @if($hayNotaModulo)
                             <td class="text-center">
                                 <span class="nota-cell {{ $bgMod }} {{ $txtMod }}">{{ $nm !== null ? number_format($nm, 2) : '—' }}</span>
@@ -1269,10 +1291,12 @@
                         <tbody>
                             @foreach($participantes as $p)
                             @php $notaExistente = $p->nota_modulo !== null ? number_format((float) $p->nota_modulo, 2) : ''; @endphp
-                            <tr>
+                            <tr class="{{ $p->baja ? 'notas-baja' : '' }}">
                                 <td class="text-center text-muted fw-bold">{{ $loop->iteration }}</td>
                                 <td class="fw-medium">{{ $p->ci }}</td>
-                                <td class="fw-medium">{{ $p->apellidos }}, {{ $p->nombres }}</td>
+                                <td class="fw-medium {{ $p->baja ? 'text-danger' : '' }}">{{ $p->apellidos }}, {{ $p->nombres }}
+                                    @if($p->baja)<br><span class="asist-baja-tag"><i class="ri-user-unfollow-line"></i> {{ $p->baja }}</span>@endif
+                                </td>
                                 <td class="text-center">
                                     <input type="number" step="0.01" min="0" max="100" class="form-control form-control-sm modal-nota-input" data-mp-id="{{ $p->mp_id }}" data-part-id="{{ $p->id }}" data-tipo="nota_modulo" value="{{ $notaExistente }}" placeholder="0.00" style="width:110px;margin:0 auto;">
                                 </td>
@@ -2178,7 +2202,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
             document.getElementById('kpiPct').textContent = r.porcentaje_asistencia + '%';
             document.getElementById('kpiSes').textContent = r.sesiones_desarrolladas + ' / ' + r.total_sesiones;
-            document.getElementById('kpiParts').textContent = r.total_participantes;
+            document.getElementById('kpiParts').innerHTML = r.total_participantes +
+                (r.total_bajas ? ' <small class="text-danger fs-11 fw-semibold" title="Dados de baja: se listan pero no se consideran en los cálculos">+' + r.total_bajas + ' de baja</small>' : '');
             document.getElementById('kpiReg').textContent = r.total_registros;
             document.getElementById('asistStatsBadge').textContent = r.porcentaje_asistencia + '% asistencia';
 
@@ -2304,6 +2329,23 @@ document.addEventListener('DOMContentLoaded', function () {
         pageParts.forEach(function (p, i) {
             const globalIdx = start + i + 1;
             const ini = p.nombre.split(',').map(s => (s.trim().charAt(0) || '').toUpperCase()).join('');
+            // Dados de baja: se listan al final, sin puesto ni porcentaje.
+            if (p.baja) {
+                html += '<tr class="stats-baja">' +
+                    '<td class="text-center"><span class="session-num">—</span></td>' +
+                    '<td><div class="d-flex align-items-center gap-2">' +
+                        '<span class="part-avatar">' + ini + '</span>' +
+                        '<div style="min-width:0;">' +
+                            '<div class="fw-semibold text-danger">' + escHtml(p.nombre) + '</div>' +
+                            '<div class="text-muted fs-11">CI: ' + escHtml(p.ci) + '</div>' +
+                            '<span class="asist-baja-tag"><i class="ri-user-unfollow-line"></i> ' + escHtml(p.baja) + '</span>' +
+                        '</div>' +
+                    '</div></td>' +
+                    '<td colspan="5" class="text-center text-muted fs-12">No se considera en las estadísticas</td>' +
+                    '<td class="text-center text-muted">—</td>' +
+                '</tr>';
+                return;
+            }
             const cls = p.porcentaje >= 80 ? 'is-high' : (p.porcentaje >= 60 ? 'is-mid' : 'is-low');
             const color = p.porcentaje >= 80 ? '#0ab39c' : (p.porcentaje >= 60 ? '#f7b84b' : '#f06548');
             html += '<tr>' +

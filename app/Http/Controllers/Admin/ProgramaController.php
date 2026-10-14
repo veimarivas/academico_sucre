@@ -2540,21 +2540,33 @@ class ProgramaController extends Controller
             $horariosDes = $horarios->where('estado', 'Desarrollado')->values();
             $horarioIds = $horariosDes->pluck('id');
 
+            $programaId = DB::table('modulos')->where('id', $moduloId)->value('programa_id');
+
             $participantes = DB::table('modulos_participantes as mp')
                 ->join('participantes as p', 'mp.participante_id', '=', 'p.id')
+                ->leftJoin('inscripciones as i', function ($j) use ($programaId) {
+                    $j->on('i.participante_id', '=', 'p.id')->where('i.programa_id', '=', $programaId);
+                })
                 ->where('mp.modulo_id', $moduloId)
                 ->where(function ($q) {
                     $q->where('mp.retirado', 0)->orWhereNull('mp.retirado');
                 })
-                ->select('p.id', 'p.ci', 'p.nombres', 'p.apellidos')
-                ->distinct()
+                ->select('p.id', 'p.ci', 'p.nombres', 'p.apellidos', 'i.estado', 'i.baja_operativa', 'i.baja_academica', 'i.baja_contable')
                 ->orderBy('p.apellidos')
                 ->orderBy('p.nombres')
-                ->get();
+                ->get()
+                ->unique('id')
+                ->each(function ($p) {
+                    $p->baja = \App\Support\BajaInscripcion::motivo($p);
+                });
+
+            // Los dados de baja se listan, pero no entran en los cálculos.
+            $activosIds = $participantes->whereNull('baja')->pluck('id')->flip();
 
             $asistencias = $horarioIds->isEmpty()
                 ? collect()
-                : DB::table('asistencias')->whereIn('horario_id', $horarioIds)->get();
+                : DB::table('asistencias')->whereIn('horario_id', $horarioIds)->get()
+                    ->filter(fn ($a) => $activosIds->has($a->participante_id))->values();
 
             // Distribución global
             $tipos = ['Presente' => 0, 'Ausente' => 0, 'Tardanza' => 0, 'Justificado' => 0];
@@ -2589,6 +2601,21 @@ class ProgramaController extends Controller
             $totalSes = $horariosDes->count();
             $porParticipante = [];
             foreach ($participantes as $p) {
+                if ($p->baja) {
+                    $porParticipante[] = [
+                        'id' => $p->id,
+                        'ci' => $p->ci,
+                        'nombre' => $p->apellidos . ', ' . $p->nombres,
+                        'Presente' => null,
+                        'Ausente' => null,
+                        'Tardanza' => null,
+                        'Justificado' => null,
+                        'sin_registro' => null,
+                        'porcentaje' => null,
+                        'baja' => $p->baja,
+                    ];
+                    continue;
+                }
                 $pAsist = $asistencias->where('participante_id', $p->id);
                 $cnt = ['Presente' => 0, 'Ausente' => 0, 'Tardanza' => 0, 'Justificado' => 0];
                 foreach ($pAsist as $a) {
@@ -2607,11 +2634,15 @@ class ProgramaController extends Controller
                     'Justificado' => $cnt['Justificado'],
                     'sin_registro' => max(0, $totalSes - $registradas),
                     'porcentaje' => $pct,
+                    'baja' => null,
                 ];
             }
 
-            // Ordena por % desc
-            usort($porParticipante, fn($a, $b) => $b['porcentaje'] <=> $a['porcentaje']);
+            // Ordena por % desc; los dados de baja, al final.
+            usort($porParticipante, function ($a, $b) {
+                if (($a['baja'] !== null) !== ($b['baja'] !== null)) return $a['baja'] !== null ? 1 : -1;
+                return ($b['porcentaje'] ?? 0) <=> ($a['porcentaje'] ?? 0);
+            });
 
             $totalRegistros = $asistencias->count();
             $pctAsistGlobal = $totalRegistros > 0
@@ -2623,7 +2654,8 @@ class ProgramaController extends Controller
                 'resumen' => [
                     'total_sesiones' => $horarios->count(),
                     'sesiones_desarrolladas' => $totalSes,
-                    'total_participantes' => $participantes->count(),
+                    'total_participantes' => $activosIds->count(),
+                    'total_bajas' => $participantes->count() - $activosIds->count(),
                     'total_registros' => $totalRegistros,
                     'porcentaje_asistencia' => $pctAsistGlobal,
                     'distribucion' => $tipos,
@@ -3066,15 +3098,27 @@ class ProgramaController extends Controller
                 DB::raw('MAX(modulos_participantes.id) as mp_id'),
                 DB::raw('MAX(modulos_participantes.nota_modulo) as nota_modulo'),
                 DB::raw('MAX(modulos_participantes.nota_nivelacion) as nota_nivelacion'),
-                DB::raw('(SELECT MAX(mpn.nota_nivelacion) FROM modulos_participantes mpn WHERE mpn.participante_id = participantes.id AND mpn.modulo_id = ' . (int) $moduloId . ' AND mpn.tipo = "Nivelacion") as nota_nivelacion_pago')
+                DB::raw('(SELECT MAX(mpn.nota_nivelacion) FROM modulos_participantes mpn WHERE mpn.participante_id = participantes.id AND mpn.modulo_id = ' . (int) $moduloId . ' AND mpn.tipo = "Nivelacion") as nota_nivelacion_pago'),
+                DB::raw('MIN(inscripciones.estado) as estado'),
+                DB::raw('MAX(inscripciones.baja_operativa) as baja_operativa'),
+                DB::raw('MAX(inscripciones.baja_academica) as baja_academica'),
+                DB::raw('MAX(inscripciones.baja_contable) as baja_contable')
             )
             ->groupBy('participantes.id', 'participantes.ci', 'participantes.apellidos', 'participantes.nombres')
             ->orderBy('participantes.apellidos')
             ->orderBy('participantes.nombres')
-            ->get();
+            ->get()
+            ->each(function ($p) {
+                $p->baja = \App\Support\BajaInscripcion::motivo($p);
+            });
 
-        $inscritosCount = $participantes->count();
-        $conNota = $participantes->filter(fn($p) => $p->nota_modulo !== null && (float) $p->nota_modulo > 0)->count();
+        // Dados de baja: se muestran al final y no entran en los conteos ni promedios.
+        $participantes = $participantes->whereNull('baja')->values()->concat($participantes->whereNotNull('baja')->values());
+        $activos = $participantes->whereNull('baja');
+        $bajasCount = $participantes->count() - $activos->count();
+
+        $inscritosCount = $activos->count();
+        $conNota = $activos->filter(fn($p) => $p->nota_modulo !== null && (float) $p->nota_modulo > 0)->count();
         $todasSesionesDesarrolladas = $horarios->count() > 0 && $horarios->every(fn($h) => ($h->estado ?? '') === 'Desarrollado');
         $sinNotas = $conNota === 0;
 
@@ -3084,6 +3128,7 @@ class ProgramaController extends Controller
             'horarios',
             'participantes',
             'inscritosCount',
+            'bajasCount',
             'conNota',
             'todasSesionesDesarrolladas',
             'sinNotas'
