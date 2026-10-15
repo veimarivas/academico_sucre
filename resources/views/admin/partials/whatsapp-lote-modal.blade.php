@@ -19,6 +19,7 @@
                     <span id="esamLotePct">0%</span>
                 </div>
                 <div class="mt-2 small text-muted" id="esamLoteInfo"></div>
+                <div class="mt-2 p-2 rounded small" id="esamLoteAntiBan" style="display:none;background:rgba(64,81,137,.06);border:1px dashed rgba(64,81,137,.25);"></div>
             </div>
             <div class="modal-footer">
                 <a href="{{ route('admin.seguimiento-esam') }}" target="_blank" class="btn btn-light btn-sm">
@@ -74,6 +75,25 @@ window.EsamLote = (function () {
             partes.push(d.paused_reason ? 'pausado: ' + d.paused_reason : 'pausado por el sistema');
         }
         el('esamLoteInfo').textContent = partes.join(' · ');
+
+        // Detalle anti-baneo de la línea: ritmo, límites y tiempo estimado.
+        var ab = d.anti_ban, box = el('esamLoteAntiBan');
+        if (ab) {
+            var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+            var eta = ab.eta_minutes > 0 && d.status !== 'done'
+                ? (ab.eta_minutes >= 60 ? Math.floor(ab.eta_minutes / 60) + ' h ' + (ab.eta_minutes % 60) + ' min' : ab.eta_minutes + ' min')
+                : null;
+            box.innerHTML =
+                '<div class="fw-semibold mb-1"><i class="ri-shield-star-line"></i> Anti-baneo de la línea</div>' +
+                (ab.line_connected === false ? '<div class="text-danger fw-semibold mb-1"><i class="ri-error-warning-line"></i> La línea no está conectada: revisá «Conexión» en Seguimiento ESAM.</div>' : '') +
+                '<div>Ritmo: <b>' + esc(ab.pace) + '</b>' + (eta ? ' · Tiempo estimado: <b>~' + esc(eta) + '</b>' : '') + '</div>' +
+                '<div>Hoy: <b>' + esc(ab.daily_used) + ' / ' + esc(ab.daily_limit) + '</b> · Última hora: <b>' + esc(ab.hourly_used) + ' / ' + esc(ab.hourly_limit) + '</b>' +
+                ' · Contactos nuevos: <b>' + esc(ab.new_contacts_today) + ' / ' + esc(ab.new_contacts_limit) + '</b></div>' +
+                '<div class="text-muted">Horario de envío: ' + esc(ab.window) + '. Si un límite se alcanza, el lote espera solo y continúa.</div>';
+            box.style.display = 'block';
+        } else {
+            box.style.display = 'none';
+        }
     }
 
     function poll(batchId) {
