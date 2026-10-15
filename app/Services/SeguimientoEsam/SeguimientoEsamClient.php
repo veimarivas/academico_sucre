@@ -57,7 +57,12 @@ class SeguimientoEsamClient
      *
      * @param  array<int, array{chat_id: string, contact_name?: string, variables?: array, body_override?: string, external_ref?: string}>  $items
      */
-    public function sendBatch(string $name, array $items, ?string $category = null, ?int $templateId = null, bool $dryRun = false, ?array $defaultMedia = null, ?string $account = null, ?array $meta = null): array
+    /**
+     * @param  array{require_confirmation?: bool, confirm_group?: string, scheduled_at?: string, confirm_description?: string, notify?: bool}  $options
+     *         Programación con confirmación: el lote queda «esperando confirmación» en
+     *         Seguimiento ESAM y no se envía hasta que el dueño de la línea lo confirme.
+     */
+    public function sendBatch(string $name, array $items, ?string $category = null, ?int $templateId = null, bool $dryRun = false, ?array $defaultMedia = null, ?string $account = null, ?array $meta = null, array $options = []): array
     {
         $payload = [
             'name' => mb_substr($name, 0, 120),
@@ -79,7 +84,21 @@ class SeguimientoEsamClient
             $payload['meta'] = $meta;
         }
 
+        foreach (['require_confirmation', 'confirm_group', 'scheduled_at', 'confirm_description', 'notify'] as $key) {
+            if (array_key_exists($key, $options)) {
+                $payload[$key] = $options[$key];
+            }
+        }
+
         return $this->unwrap($this->request()->post('/api/v1/batches', $payload));
+    }
+
+    /** Avisa (una sola vez) al dueño de la línea que hay una programación para confirmar. */
+    public function notifyConfirmGroup(string $group, ?string $description = null): array
+    {
+        return $this->unwrap($this->request()->post('/api/v1/batches/confirm-group/'.rawurlencode($group).'/notify', [
+            'description' => $description,
+        ]));
     }
 
     /** Grupos de WhatsApp disponibles en la sesión. */

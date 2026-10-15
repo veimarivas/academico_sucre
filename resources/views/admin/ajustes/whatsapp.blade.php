@@ -315,4 +315,68 @@
         </div>
     </div>
 </div>
+
+@if($puedeAutomatizar)
+{{-- Recordatorios automáticos de cobranza --}}
+<div class="row g-3 mb-3">
+    <div class="col-12">
+        <div class="wa-card">
+            <div class="wa-card-header">
+                <div class="wa-card-icon" style="background: var(--ui-warning-soft, #fbf0da); color: var(--ui-warning, #b7791f);">
+                    <i class="ri-calendar-schedule-line"></i>
+                </div>
+                <div>
+                    <h6>Recordatorios automáticos de cobranza</h6>
+                    <small>Se preparan en los días elegidos y <b>no se envían hasta que se confirmen</b> en Seguimiento ESAM</small>
+                </div>
+            </div>
+            <div class="wa-card-body">
+                @if(session('success'))
+                    <div class="wa-info-alert info mb-3"><i class="ri-check-line"></i><span>{{ session('success') }}</span></div>
+                @endif
+                @if(session('error'))
+                    <div class="wa-info-alert danger mb-3"><i class="ri-error-warning-line"></i><span>{{ session('error') }}</span></div>
+                @endif
+                <form method="POST" action="{{ route('admin.ajustes.whatsapp.update') }}" class="row g-3 align-items-end">
+                    @csrf
+                    <input type="hidden" name="rec_form" value="1">
+                    <div class="col-md-3 wa-field">
+                        <label class="form-check form-switch d-flex align-items-center gap-2 mb-0">
+                            <input type="hidden" name="rec_auto" value="0">
+                            <input class="form-check-input" type="checkbox" name="rec_auto" value="1" {{ $recAuto ? 'checked' : '' }}>
+                            <span class="fw-semibold">{{ $recAuto ? 'Activados' : 'Desactivados' }}</span>
+                        </label>
+                        <div class="form-text">Apagado, no se prepara ningún envío automático.</div>
+                    </div>
+                    <div class="col-md-4 wa-field">
+                        <label class="form-label">Enviar solo desde la línea de</label>
+                        <select name="rec_cuenta" class="form-control">
+                            <option value="">— Elegí una cuenta —</option>
+                            @foreach($cuentasEnvio as $c)
+                                <option value="{{ $c->id }}" @selected($recCuenta === $c->id)>{{ $c->fullname }} · {{ $c->whatsapp_numero }}</option>
+                            @endforeach
+                        </select>
+                        <div class="form-text">Nunca se usan las líneas de otros usuarios.</div>
+                    </div>
+                    <div class="col-md-2 wa-field">
+                        <label class="form-label">Días del mes</label>
+                        <input type="text" name="dias_envio" class="form-control" value="{{ $diasEnvio }}" placeholder="1,5,10,15">
+                    </div>
+                    <div class="col-md-1 wa-field">
+                        <label class="form-label">Hora</label>
+                        <input type="time" name="rec_hora" class="form-control" value="{{ $recHora }}">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100"><i class="ri-save-3-line"></i> Guardar</button>
+                    </div>
+                </form>
+                <div class="wa-info-alert warning mt-3 mb-0">
+                    <i class="ri-shield-check-line"></i>
+                    <span>Cómo funciona: a las 07:30 del día elegido se preparan los recordatorios (programas <b>En desarrollo</b> e <b>Inscripciones</b> de la gestión actual, sin dados de baja). El dueño de la línea y el Super Admin reciben una notificación en Seguimiento ESAM para <b>confirmar o cancelar</b>. Sin confirmación no se envía nada y se cancela solo a las 20 horas.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
 @endsection

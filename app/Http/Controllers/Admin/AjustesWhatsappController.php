@@ -45,7 +45,24 @@ class AjustesWhatsappController extends Controller
             $error = 'La integración con Seguimiento ESAM no está configurada (faltan URL o token).';
         }
 
+        // Recordatorios automáticos de cobranza: apagados por defecto, una sola cuenta de envío.
+        $recAuto = Configuracion::get('whatsapp_recordatorios_auto', '0') === '1';
+        $recCuenta = (int) Configuracion::get('whatsapp_recordatorios_cuenta', '0');
+        $recHora = Configuracion::get('whatsapp_recordatorios_hora', '09:00');
+        $cuentasEnvio = \App\Models\User::query()
+            ->where('whatsapp_autorizado', true)
+            ->whereNotNull('whatsapp_numero')
+            ->where('whatsapp_numero', '!=', '')
+            ->orderBy('fullname')
+            ->get(['id', 'fullname', 'whatsapp_numero']);
+        $puedeAutomatizar = (bool) $authUser?->hasRole('Super Admin');
+
         return view('admin.ajustes.whatsapp', compact(
+            'recAuto',
+            'recCuenta',
+            'recHora',
+            'cuentasEnvio',
+            'puedeAutomatizar',
             'numero',
             'diasEnvio',
             'health',
@@ -58,6 +75,11 @@ class AjustesWhatsappController extends Controller
 
     public function update(Request $request): RedirectResponse
     {
+        // Formulario de recordatorios automáticos: solo toca sus ajustes (no el número global).
+        if ($request->has('rec_form')) {
+            return $this->guardarRecordatorios($request);
+        }
+
         $validated = $request->validate([
             'numero' => 'nullable|string|max:20',
             'dias_envio' => 'nullable|string|max:120',
@@ -92,6 +114,54 @@ class AjustesWhatsappController extends Controller
         }
 
         return back()->with('success', 'Número autorizado guardado.');
+    }
+
+    /**
+     * Recordatorios automáticos de cobranza (solo Super Admin): interruptor, días,
+     * hora y la única cuenta desde cuya línea salen. Siempre requieren confirmación
+     * en Seguimiento ESAM antes de enviarse.
+     */
+    private function guardarRecordatorios(Request $request): RedirectResponse
+    {
+        if (! $request->user()?->hasRole('Super Admin')) {
+            return back()->with('error', 'Solo el Super Admin puede configurar los recordatorios automáticos.');
+        }
+
+        $rec = $request->validate([
+            'rec_auto' => 'nullable|boolean',
+            'rec_cuenta' => 'nullable|integer',
+            'rec_hora' => ['nullable', 'regex:/^\d{2}:\d{2}$/'],
+            'dias_envio' => 'nullable|string|max:120',
+        ]);
+
+        $auto = (bool) ($rec['rec_auto'] ?? false);
+        $cuenta = (int) ($rec['rec_cuenta'] ?? 0);
+        $valida = $cuenta && \App\Models\User::where('id', $cuenta)
+            ->where('whatsapp_autorizado', true)
+            ->whereNotNull('whatsapp_numero')
+            ->where('whatsapp_numero', '!=', '')
+            ->exists();
+
+        if ($auto && ! $valida) {
+            return back()->with('error', 'Para activar los recordatorios automáticos elegí una cuenta con número de WhatsApp autorizado.');
+        }
+
+        $dias = collect(explode(',', (string) ($rec['dias_envio'] ?? '')))
+            ->map(fn ($d) => (int) trim($d))
+            ->filter(fn ($d) => $d >= 1 && $d <= 31)
+            ->unique()
+            ->sort()
+            ->values()
+            ->implode(',');
+
+        Configuracion::set('whatsapp_recordatorios_auto', $auto ? '1' : '0');
+        Configuracion::set('whatsapp_recordatorios_cuenta', $valida ? (string) $cuenta : null);
+        Configuracion::set('whatsapp_recordatorios_hora', $rec['rec_hora'] ?? '09:00');
+        Configuracion::set('whatsapp_dias_envio', $dias ?: '1,5,10,15');
+
+        return back()->with('success', $auto
+            ? 'Recordatorios automáticos activados. Cada envío quedará esperando tu confirmación en Seguimiento ESAM.'
+            : 'Recordatorios automáticos desactivados.');
     }
 
     /**

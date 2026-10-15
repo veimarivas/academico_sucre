@@ -8,9 +8,10 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// Recordatorios de cuotas por WhatsApp: corre a diario y respeta los días
-// configurados en Ajustes → WhatsApp (por defecto 1, 5, 10 y 15).
+// Recordatorios de cuotas por WhatsApp: solo si están activados en Ajustes →
+// WhatsApp y en los días configurados. NO envía: prepara los lotes desde la
+// línea elegida y quedan esperando confirmación en Seguimiento ESAM.
 Schedule::command('whatsapp:recordatorios')
-    ->dailyAt('08:00')
+    ->dailyAt('07:30')
     ->timezone('America/La_Paz')
     ->withoutOverlapping();
