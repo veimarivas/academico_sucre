@@ -5,9 +5,13 @@ namespace App\Services\SeguimientoEsam;
 /**
  * Resuelve desde qué cuenta corporativa envía el usuario autenticado.
  *
- * - Trabajador autorizado con número corporativo → envía desde su cuenta.
- * - Usuario con permiso `whatsapp.admin` sin número → sesión principal (gestión).
- * - Cualquier otro → no autorizado.
+ * Cada envío sale SOLO desde la línea de WhatsApp de quien lo hace:
+ * - Usuario con número registrado y autorizado → su propia cuenta.
+ * - Usuario con número pero sin autorización → no puede enviar (se explica).
+ * - Usuario sin número → no puede enviar, aunque sea administrador.
+ *
+ * Antes, un administrador sin número (o con número pero sin autorizar) enviaba
+ * por la línea principal, que es el número de otra persona.
  */
 class SenderAccount
 {
@@ -22,14 +26,14 @@ class SenderAccount
             return [null, 'No autenticado.'];
         }
 
-        if ($user->whatsapp_autorizado && $user->whatsapp_numero) {
-            return [(string) $user->id, null];
+        if (blank($user->whatsapp_numero)) {
+            return [null, 'Tu usuario no tiene un número de WhatsApp registrado. Los envíos salen solo desde tu propia línea: pedile a un administrador que registre tu número en Usuarios.'];
         }
 
-        if ($user->can('whatsapp.admin')) {
-            return [null, null];
+        if (! $user->whatsapp_autorizado) {
+            return [null, 'Tu número de WhatsApp ('.$user->whatsapp_numero.') no está autorizado para enviar. Pedile a un administrador que lo habilite en Usuarios.'];
         }
 
-        return [null, 'Tu usuario no está autorizado para enviar por WhatsApp. Pedile a un administrador que lo habilite.'];
+        return [(string) $user->id, null];
     }
 }

@@ -63,7 +63,7 @@ class WhatsappEnvioController extends Controller
         try {
             $result = $client->sendBatch($nombre, $data['items'], 'cobranza', null, $dryRun, null, $account, $meta);
         } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 502);
+            return $this->errorEsam($e);
         }
 
         if (! $dryRun) {
@@ -233,7 +233,7 @@ class WhatsappEnvioController extends Controller
         try {
             $result = $client->sendBatch($nombre, $items, 'academico', null, $dryRun, null, $account, $meta);
         } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 502);
+            return $this->errorEsam($e);
         }
 
         if (! $dryRun) {

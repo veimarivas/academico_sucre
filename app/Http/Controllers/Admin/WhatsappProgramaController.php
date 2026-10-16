@@ -139,7 +139,7 @@ class WhatsappProgramaController extends Controller
                 $meta,
             );
         } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 502);
+            return $this->errorEsam($e);
         }
 
         $now = now();
@@ -198,7 +198,7 @@ class WhatsappProgramaController extends Controller
         try {
             $info = $client->resolveGroup($validated['invite']);
         } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 502);
+            return $this->errorEsam($e);
         }
 
         if (empty($info['id'])) {
@@ -267,7 +267,7 @@ class WhatsappProgramaController extends Controller
                 $meta,
             );
         } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 502);
+            return $this->errorEsam($e);
         }
 
         $this->logMensajes($programa, [[
@@ -365,7 +365,7 @@ class WhatsappProgramaController extends Controller
                 $meta,
             );
         } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 502);
+            return $this->errorEsam($e);
         }
 
         $this->logMensajes($programa, $logRows, 'whatsapp_programa', $result['batch_id'] ?? null);

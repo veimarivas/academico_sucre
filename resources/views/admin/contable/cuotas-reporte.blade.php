@@ -795,8 +795,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Envía por la API de Seguimiento ESAM (sin abrir pestañas).
-    async function enviarEsam(programaId, dias, modo, participanteId, trigger) {
-        if (!confirm('¿Enviar por WhatsApp con Seguimiento ESAM?')) return;
+    async function enviarEsam(programaId, dias, modo, participanteId, trigger, reenviar) {
+        if (!reenviar && !confirm('¿Enviar por WhatsApp con Seguimiento ESAM desde tu línea?')) return;
         if (trigger) trigger.classList.add('is-loading');
         try {
             const res = await fetch('{{ route('admin.contable.whatsapp.enviar') }}', {
@@ -811,18 +811,21 @@ document.addEventListener('DOMContentLoaded', function () {
                     modo: modo,
                     dias: dias,
                     participante_id: participanteId || null,
+                    reenviar: !!reenviar,
                 }),
             });
             const data = await res.json().catch(function () { return {}; });
-            if (res.ok && data.success) {
+            if (res.ok && data.success && data.batch_id) {
                 var extra = (data.sin_telefono > 0) ? (' · sin teléfono: ' + data.sin_telefono) : '';
-                if (data.batch_id) {
-                    EsamLote.abrir(data.batch_id, 'Lote #' + data.batch_id + ' · ' + data.total + ' mensaje(s)' + extra);
-                } else {
-                    alert('Encolados ' + data.total + ' mensaje(s). Lote #' + data.batch_id + extra + '.');
+                EsamLote.abrir(data.batch_id, 'Lote #' + data.batch_id + ' · ' + data.total + ' mensaje(s)' + extra);
+            } else if (res.status === 409 && data.duplicado) {
+                // Ya se envió hoy: se explica desde dónde y se ofrece reenviar a propósito.
+                if (confirm(data.message + '\n\n¿Querés reenviarlos igual desde tu línea?')) {
+                    if (trigger) trigger.classList.remove('is-loading');
+                    return enviarEsam(programaId, dias, modo, participanteId, trigger, true);
                 }
             } else {
-                alert(data.message || 'No se pudo enviar.');
+                alert(data.message || 'No se pudo enviar: Seguimiento ESAM no creó el envío.');
             }
         } catch (err) {
             alert('Error: ' + err.message);

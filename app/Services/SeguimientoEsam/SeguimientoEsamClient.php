@@ -80,8 +80,21 @@ class SeguimientoEsamClient
             $payload['account'] = $account;
         }
 
+        // Quién pidió el envío (se ve en el detalle del lote en Seguimiento ESAM).
+        $solicita = auth()->user();
+        $meta = array_merge($meta ?? [], array_filter([
+            'solicitado_por' => $solicita?->fullname ?? $solicita?->username,
+            'solicitado_por_id' => $solicita?->id,
+            'origen_sistema' => 'cronogramas',
+        ], fn ($v) => $v !== null && $v !== ''));
+
         if ($meta) {
             $payload['meta'] = $meta;
+        }
+
+        // Reenvío intencional: el usuario confirmó repetir lo ya enviado hoy.
+        if (request()?->boolean('reenviar')) {
+            $payload['allow_resend'] = true;
         }
 
         foreach (['require_confirmation', 'confirm_group', 'scheduled_at', 'confirm_description', 'notify'] as $key) {
@@ -178,7 +191,10 @@ class SeguimientoEsamClient
             $message = $response->json('message') ?? $response->body();
             $message = is_array($message) ? implode('; ', $message) : $message;
 
-            throw new RuntimeException("Seguimiento ESAM ({$response->status()}): {$message}");
+            // 409/422 traen un mensaje para el usuario: se muestra tal cual.
+            $texto = in_array($response->status(), [409, 422], true) ? (string) $message : "Seguimiento ESAM ({$response->status()}): {$message}";
+
+            throw new SeguimientoEsamException($texto, $response->status(), (array) ($response->json() ?? []));
         }
 
         return $response->json() ?? [];
