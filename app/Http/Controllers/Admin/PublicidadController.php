@@ -387,6 +387,12 @@ class PublicidadController extends Controller
     {
         $gasto = \App\Models\GastoAutogestion::findOrFail($id);
 
+        // Fallos de subida que PHP reporta en $_FILES y que Laravel NO convierte en
+        // error de validación (upload_max_filesize/post_max_size, permisos, etc.).
+        if ($errorSubida = $this->mensajeErrorSubida($request)) {
+            return back()->withInput()->with('error', $errorSubida);
+        }
+
         $validated = $request->validate([
             'gestion' => 'required|integer|min:2020|max:2100',
             'mes' => 'required|integer|min:1|max:12',
@@ -419,24 +425,47 @@ class PublicidadController extends Controller
         $gasto->estado = $validated['estado'] ?? $gasto->estado;
         $gasto->observaciones = $validated['observaciones'] ?? null;
 
+        // Primero se guardan los archivos nuevos: store() devuelve false si el disco
+        // público no permite escribir, y antes eso borraba el archivo anterior y dejaba
+        // el gasto sin comprobante (la columna "Archivo" pasaba a mostrar "—").
+        $rutaComprobante = null;
         if ($request->hasFile('archivo')) {
+            $rutaComprobante = $this->guardarArchivoAutogestion($request->file('archivo'));
+
+            if (!$rutaComprobante) {
+                return back()->withInput()->with('error', 'No se pudo guardar el comprobante en el servidor (carpeta "public/storage/publicidad/autogestion" inexistente o sin permisos de escritura). No se aplicaron cambios.');
+            }
+        }
+
+        $rutaDebito = null;
+        if ($request->hasFile('archivo_debito')) {
+            $rutaDebito = $this->guardarArchivoAutogestion($request->file('archivo_debito'));
+
+            if (!$rutaDebito) {
+                if ($rutaComprobante) {
+                    Storage::disk('public')->delete($rutaComprobante);
+                }
+
+                return back()->withInput()->with('error', 'No se pudo guardar el comprobante de débito en el servidor (carpeta "public/storage/publicidad/autogestion" inexistente o sin permisos de escritura). No se aplicaron cambios.');
+            }
+        }
+
+        if ($rutaComprobante) {
             if ($gasto->archivo_path) {
                 Storage::disk('public')->delete($gasto->archivo_path);
             }
             $file = $request->file('archivo');
-            $path = $file->store('publicidad/autogestion', 'public');
-            $gasto->archivo_path = $path;
+            $gasto->archivo_path = $rutaComprobante;
             $gasto->archivo_original = $file->getClientOriginalName();
             $gasto->archivo_mime = $file->getMimeType();
         }
 
-        if ($request->hasFile('archivo_debito')) {
+        if ($rutaDebito) {
             if ($gasto->archivo_debito_path) {
                 Storage::disk('public')->delete($gasto->archivo_debito_path);
             }
             $file = $request->file('archivo_debito');
-            $path = $file->store('publicidad/autogestion', 'public');
-            $gasto->archivo_debito_path = $path;
+            $gasto->archivo_debito_path = $rutaDebito;
             $gasto->archivo_debito_original = $file->getClientOriginalName();
             $gasto->archivo_debito_mime = $file->getMimeType();
         }
@@ -444,6 +473,60 @@ class PublicidadController extends Controller
         $gasto->save();
 
         return back()->with('success', 'Gasto de autogestión actualizado correctamente.');
+    }
+
+    /**
+     * Revisa los códigos de error de subida de PHP (UPLOAD_ERR_*) y la pérdida del
+     * formulario por post_max_size. Devuelve un mensaje listo para mostrar o null.
+     */
+    private function mensajeErrorSubida(Request $request): ?string
+    {
+        foreach (['archivo' => 'comprobante', 'archivo_debito' => 'comprobante de débito'] as $campo => $etiqueta) {
+            $file = $request->file($campo);
+
+            if (!$file instanceof \Illuminate\Http\UploadedFile || $file->getError() === UPLOAD_ERR_OK) {
+                continue;
+            }
+
+            if (in_array($file->getError(), [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) {
+                return sprintf(
+                    'El %s supera el límite de subida del servidor (%s). Reduce el archivo o incrementa "upload_max_filesize" en el php.ini del servidor.',
+                    $etiqueta,
+                    ini_get('upload_max_filesize') ?: 'límite no definido'
+                );
+            }
+
+            if (in_array($file->getError(), [UPLOAD_ERR_PARTIAL, UPLOAD_ERR_NO_TMP_DIR, UPLOAD_ERR_CANT_WRITE], true)) {
+                return 'El servidor no pudo recibir el ' . $etiqueta . ' correctamente (subida incompleta o sin permisos de escritura). Intenta nuevamente.';
+            }
+
+            return 'No se pudo procesar el ' . $etiqueta . ' (código de error ' . $file->getError() . ').';
+        }
+
+        // Si se supera post_max_size, PHP descarta todo el formulario: $_POST y $_FILES
+        // quedan vacíos y la validación falla sin indicar la causa real.
+        if (empty($_POST) && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+            return 'El formulario supera el límite post_max_size del servidor (' . (ini_get('post_max_size') ?: 'límite no definido') . '). Reduce el tamaño de los archivos o incrementa ese valor en el php.ini del servidor.';
+        }
+
+        return null;
+    }
+
+    /**
+     * Guarda el archivo en el disco público y devuelve la ruta, o null si falla
+     * (permisos de escritura, carpeta destino inexistente, etc.).
+     */
+    private function guardarArchivoAutogestion(\Illuminate\Http\UploadedFile $file): ?string
+    {
+        try {
+            return $file->store('publicidad/autogestion', 'public') ?: null;
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('No se pudo guardar archivo de autogestión de publicidad', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
     }
 
     public function destroyAutogestion($id)

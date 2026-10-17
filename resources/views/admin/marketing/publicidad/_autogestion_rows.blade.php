@@ -31,17 +31,31 @@
     <td class="text-center fs-11">{{ $g->programa_nombre ?? '—' }}</td>
     <td class="text-end fw-bold">Bs {{ number_format($g->monto, 2) }}</td>
     <td class="text-center">
+        @php
+            $compOk = $g->archivo_path ? \Illuminate\Support\Facades\Storage::disk('public')->exists($g->archivo_path) : false;
+            $debOk = $g->archivo_debito_path ? \Illuminate\Support\Facades\Storage::disk('public')->exists($g->archivo_debito_path) : false;
+        @endphp
         @if($g->archivo_path)
         <div><span class="badge bg-primary px-1 py-0" style="font-size:.62rem!important;"><i class="ri-attachment-2"></i> Comp.</span>
+        @if($compOk)
         <a href="javascript:void(0)" class="file-preview btn-preview-file" data-url="{{ asset('storage/'.$g->archivo_path) }}" title="{{ $g->archivo_original }}">
             <i class="ri-attachment-2"></i> Ver
-        </a></div>
+        </a>
+        @else
+        <span class="text-danger fs-11" title="La ruta está registrada pero el archivo no se encontró en el servidor"><i class="ri-error-warning-line"></i> No encontrado</span>
+        @endif
+        </div>
         @endif
         @if($g->archivo_debito_path)
         <div class="mt-1"><span class="badge bg-warning text-dark px-1 py-0" style="font-size:.62rem!important;"><i class="ri-bank-card-line"></i> Débito</span>
+        @if($debOk)
         <a href="javascript:void(0)" class="file-preview btn-preview-file fs-11 text-warning" data-url="{{ asset('storage/'.$g->archivo_debito_path) }}" title="{{ $g->archivo_debito_original }}">
             <i class="ri-bank-card-line"></i> Ver
-        </a></div>
+        </a>
+        @else
+        <span class="text-danger fs-11" title="La ruta está registrada pero el archivo no se encontró en el servidor"><i class="ri-error-warning-line"></i> No encontrado</span>
+        @endif
+        </div>
         @endif
         @if(!$g->archivo_path && !$g->archivo_debito_path)
         <span class="text-muted fs-11">—</span>

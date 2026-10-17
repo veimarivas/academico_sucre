@@ -5,6 +5,31 @@
     </div>
 </div>
 
+{{-- Mensajes de registro de gastos de autogestión (éxito, error de subida o validación) --}}
+@if(session('publicidad_success'))
+<div class="alert alert-success alert-dismissible fade show fs-12" role="alert">
+    <i class="ri-check-double-line me-1"></i>{{ session('publicidad_success') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+@endif
+@if(session('publicidad_error'))
+<div class="alert alert-danger alert-dismissible fade show fs-12" role="alert">
+    <i class="ri-error-warning-line me-1"></i>{{ session('publicidad_error') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+@endif
+@if($errors->any())
+<div class="alert alert-danger alert-dismissible fade show fs-12" role="alert">
+    <i class="ri-error-warning-line me-1"></i>
+    <ul class="mb-0 ps-3">
+        @foreach($errors->all() as $err)
+        <li>{{ $err }}</li>
+        @endforeach
+    </ul>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+@endif
+
 @php
     $totalAsignado = $presupuestos->sum('monto_asignado');
     $totalGastado = $presupuestos->sum('total_gastado');
@@ -1040,11 +1065,12 @@
                         <div class="col-md-6">
                             <label class="form-label">Comprobante (PDF o imagen, máx 5MB)</label>
                             <input type="file" name="archivo" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp">
-                            <small class="text-muted fs-11">Opcional, pero recomendado para respaldo.</small>
+                            <small class="text-muted fs-11">Opcional, pero recomendado para respaldo. Límite del servidor: {{ ini_get('upload_max_filesize') ?: 'no definido' }}.</small>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Comprobante de débito de meta (PDF o imagen, máx 5MB)</label>
                             <input type="file" name="archivo_debito" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp">
+                            <small class="text-muted fs-11">Límite del servidor: {{ ini_get('upload_max_filesize') ?: 'no definido' }}.</small>
                         </div>
                     </div>
                 </div>

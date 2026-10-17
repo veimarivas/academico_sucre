@@ -728,6 +728,12 @@ canvas.chart-canvas { width:100% !important; height:300px !important; }
 @endpush
 
 @section('content')
+@php
+    // El tab de publicidad se carga por AJAX (2.ª petición): sin este keep() los mensajes
+    // flash (éxito/error de registro de gastos) caducan en la carga del perfil y nunca
+    // llegan al partial que los muestra.
+    session()->keep(['success', 'error', 'errors', 'publicidad_success', 'publicidad_error', 'publicidad_tab']);
+@endphp
 <div class="prof-page">
 @php
     $iniciales = strtoupper(collect(explode(' ', trim($user->fullname ?? $user->username ?? 'U')))
@@ -2561,10 +2567,17 @@ document.addEventListener('DOMContentLoaded', function () {
     })();
     @endif
 
-    // Si el backend redirigió con errores en la sección de password o flash success, abrir tab
-    @if ($errors->any() || session('success'))
+    // Si el backend redirigió con la sección de password (o un flash genérico), abrir su tab
+    @if (!session('publicidad_tab') && !session('publicidad_success') && !session('publicidad_error') && ($errors->any() || session('success')))
         const tabBtn = document.querySelector('[data-bs-target="#tab-password"]');
         if (tabBtn) new bootstrap.Tab(tabBtn).show();
+    @endif
+
+    // Si el registro de un gasto de publicidad devolvió mensaje (éxito, error de subida o
+    // validación), abrir la pestaña de publicidad para que el usuario lo vea.
+    @if (session('publicidad_tab') || session('publicidad_success') || session('publicidad_error'))
+        const tabPubBtn = document.querySelector('[data-bs-target="#tab-publicidad"]');
+        if (tabPubBtn) new bootstrap.Tab(tabPubBtn).show();
     @endif
 
     // ===== INSCRIBIR PARTICIPANTE (desde tab Ofertas) =====
