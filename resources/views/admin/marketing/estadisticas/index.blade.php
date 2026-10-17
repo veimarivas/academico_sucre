@@ -78,7 +78,7 @@ canvas.chart-canvas { width: 100% !important; height: 220px !important; max-heig
 .programas-sidebar-layout { display: flex; gap: 1rem; align-items: flex-start; }
 .programas-sidebar { flex-shrink: 0; width: 240px; }
 .programas-content { flex: 1; min-width: 0; }
-@media (max-width: 991.98px) { .programas-sidebar-layout { flex-direction: column; } .programas-sidebar { width: 100%; } }
+@media (max-width: 991.98px) { .programas-sidebar-layout { flex-direction: column; align-items: stretch; } .programas-sidebar { width: 100%; } }
 .lista-programas { list-style: none; padding: 0; margin: 0; border: 1px solid #eef0f4; border-radius: 12px; overflow: hidden; }
 .lista-programas li { border-bottom: 1px solid #f1f3f5; }
 .lista-programas li:last-child { border-bottom: 0; }

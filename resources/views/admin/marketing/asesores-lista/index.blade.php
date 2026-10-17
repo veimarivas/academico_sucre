@@ -86,6 +86,14 @@
 
 .table-asesores { width: 100%; table-layout: fixed; }
 .table-asesores th, .table-asesores td { vertical-align: middle; padding: .6rem .5rem; font-size: .78rem; white-space: normal; overflow: hidden; word-break: break-word; }
+
+/* Móvil: la tabla tiene 8 columnas; en pantallas angostas se desplaza en
+   horizontal en lugar de comprimirse (el contenedor deja de recortar). */
+@media (max-width: 767.98px) {
+    .cargo-group { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .table-asesores { table-layout: auto; min-width: 720px; }
+    .table-asesores th, .table-asesores td { white-space: nowrap; }
+}
 .table-asesores thead th {
     background: #fafbfd !important;
     font-size: .66rem; font-weight: 700;

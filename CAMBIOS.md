@@ -125,6 +125,95 @@ con el número de otro usuario) en vez de la sesión del usuario que ingresó.
 - Verificado en el gateway: `health?uid=1` (conectado, su número), `uid=10/26`
   (desconectados con sus números), `uid` inexistente → `unlinked`.
 
+## 10. Diseño responsivo móvil (2026-10-17)
+
+Objetivo: que el panel se vea y se use bien en teléfono y tablet, con acabado
+profesional, **sin tocar** rutas, controladores, modelos, permisos ni las
+librerías del tema.
+
+**Archivo nuevo**
+
+- `public/backend/assets/css/avip-mobile.css`: capa responsive única, cargada al
+  final del cascade (después de `avip-ui.css` y de los CSS por módulo, antes de
+  `@stack('css-after')`). Reutiliza los tokens existentes (`--ui-*`, `--avip-*`).
+
+**Archivos modificados**
+
+- `resources/views/admin/layouts/master.blade.php`: `viewport-fit=cover`,
+  `theme-color` claro/oscuro, carga de `avip-mobile.css`, `div.vertical-overlay`
+  (velo del menú móvil) y script que cierra el menú al tocar un enlace y restaura
+  el icono de hamburguesa en móvil.
+- `resources/views/layouts/guest.blade.php` (login): `viewport-fit=cover`,
+  `theme-color`, carga de la capa móvil y **marca ESAM para móvil/tablet**
+  (`div.avip-card-brand`, oculta en escritorio, ver sección 11).
+- `resources/views/admin/partials/topbar.blade.php`: botón de tema visible también
+  en móvil.
+- `resources/views/admin/programas/index.blade.php`: en móvil `.programas-table`
+  pasa a `table-layout:auto` con `min-width:560px` (la columna «Programa» deja de
+  quedar en ~25 px; la tabla se desplaza dentro de `.table-responsive`).
+- `resources/views/admin/programas/partials/table.blade.php`: tabla envuelta en
+  `.table-responsive`.
+- `resources/views/admin/marketing/estadisticas/index.blade.php`:
+  `.programas-sidebar-layout` con `align-items:stretch`.
+- `resources/views/admin/marketing/asesores-lista/index.blade.php`:
+  `.cargo-group` con `overflow-x:auto` y `.table-asesores` con `min-width` en móvil.
+
+**Qué resuelve `avip-mobile.css`** (breakpoints 991.98 / 767.98 / 575.98 px)
+
+- `color-scheme` y safe-areas; topbar y menús de usuario/notificaciones sin desbordar.
+- Sidebar off-canvas con velo, `body` bloqueado y restauración del icono.
+- Héroes y títulos que apilan; rejillas de estadísticas a 2 columnas.
+- Filtros que apilan sus campos a ancho completo.
+- Tablas: las que recortaban (`overflow:hidden`) pasan a desplazarse en horizontal,
+  con scroll táctil fino.
+- Tabla sin datos: se oculta su cabecera y el mensaje de estado vacío se centra en
+  el área visible (selector `table:has(> tbody > tr:only-child > td[colspan]:only-child)`).
+- Formularios: campos a 16 px (evita el zoom automático de iOS) y botones táctiles.
+- Pestañas desplazables, modales con cuerpo desplazable y pie a ancho completo.
+- Correcciones puntuales: cabeceras de tarjeta con badges que envuelven;
+  Seguridad › Roles (`.role-grid`) y › Permisos (`.perm-card`); Seguimiento diario
+  (`.sd-h-row`) sin desbordes.
+
+**Verificación** (Chrome headless + CDP, con sesión real reutilizable)
+
+- 31 rutas del panel a 320 px y a 390 px: sin desborde horizontal de página.
+- Menú móvil: velo visible, cierra al tocar fuera, `body` con `overflow:hidden`.
+- `php artisan view:cache` compila sin errores.
+
+---
+
+## 11. Acceso (login y pantallas de autenticación) en móvil (2026-10-17)
+
+**Problema**: en móvil, la columna lateral del login se oculta y en su lugar
+aparecía la marca compacta `.avip-form-brand` con `logo-dark.png`, que es el
+**logo de la plantilla** (Velzon), no el de la institución.
+
+**Solución** (enfoque continuista: una sola marca para todas las pantallas de
+acceso)
+
+- `resources/views/layouts/guest.blade.php`: se agrega `div.avip-card-brand`
+  antes del contenido de la tarjeta, con el **emblema ESAM** (`logo-sm.png`,
+  fondo transparente) y la leyenda «Plataforma de Cronogramas».
+- `resources/views/auth/login.blade.php`: se retira el bloque `.avip-form-brand`
+  que usaba `logo-dark.png` (logo de la plantilla).
+- `public/backend/assets/css/avip-mobile.css` (sección 11): la marca solo se
+  muestra hasta `991.98px` (justo cuando desaparece la columna lateral); en
+  escritorio queda con `display:none`, por lo que **el login de escritorio no
+  cambia**. Filete dorado bajo la leyenda y tamaño del emblema adaptado a
+  `575.98px`.
+
+Como el bloque vive en el layout, **todas** las pantallas de acceso (login,
+registro, recuperar/restablecer contraseña, verificar correo, confirmar
+contraseña) muestran la marca correcta en móvil.
+
+**Verificación**
+
+- Login a 320 / 390 / 820 px y escritorio 1280 px: `pageOverflow = false`;
+  en escritorio la columna lateral sigue visible y la marca móvil con `0x0`.
+- Recuperar contraseña y registro a 320 / 390 px: `pageOverflow = false`.
+
+---
+
 ## Notas
 
 - Si un usuario ve solo “Conexión” en baileys_esam, es porque su número aún no está vinculado.

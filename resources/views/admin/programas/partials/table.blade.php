@@ -1,4 +1,5 @@
-<table class="table mb-0 programas-table">
+<div class="table-responsive">
+    <table class="table mb-0 programas-table">
     <thead>
         <tr>
             <th class="text-center" style="width:38px;">#</th>
@@ -179,4 +180,5 @@
         </tr>
         @endforelse
     </tbody>
-</table>
+    </table>
+</div>

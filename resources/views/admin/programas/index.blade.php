@@ -644,6 +644,10 @@
 @media (max-width: 767.98px) {
     .programas-table .pv-col-periodo { display: none; }
     .programas-table th, .programas-table td { padding: .55rem .4rem; }
+    /* En móvil se abandona el "fixed" para que la columna Programa tenga
+       ancho legible; la tabla hace scroll horizontal dentro de .table-responsive. */
+    .programas-table { table-layout: auto; min-width: 560px; }
+    .programas-table th:last-child, .programas-table td:last-child { width: auto; min-width: 150px; }
 }
 
 .programas-table .btn-icon {

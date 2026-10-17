@@ -1,0 +1,468 @@
+/* =====================================================================
+   AVIP · Sistema de Cronogramas — Capa responsive móvil
+   Se carga AL FINAL del cascade (después de avip-ui.css y de los CSS por
+   módulo). Su único objetivo es adaptar topbar, sidebar, héroes, tablas,
+   formularios, pestañas y modales a tablet y teléfono, reutilizando los
+   tokens ya definidos (--ui-*, --avip-*). No introduce colores nuevos ni
+   altera el funcionamiento: todo vive dentro de @media.
+   ===================================================================== */
+
+/* ---------------------------------------------------------------------
+   0. Controles nativos y navegador móvil
+   Hace que select, date-pickers y scrollbars nativos respeten el tema
+   activo (claro u oscuro) en iOS/Android.
+   --------------------------------------------------------------------- */
+:root,
+body[data-layout-mode="light"] { color-scheme: light; }
+
+:root[data-bs-theme="dark"],
+body[data-layout-mode="dark"] { color-scheme: dark; }
+
+@media (max-width: 991.98px) {
+    /* Áreas seguras (muesca / barra inferior en iPhone) */
+    body {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .page-content {
+        padding-left: max(0.9rem, env(safe-area-inset-left)) !important;
+        padding-right: max(0.9rem, env(safe-area-inset-right)) !important;
+        padding-bottom: calc(2.5rem + env(safe-area-inset-bottom)) !important;
+    }
+}
+
+/* ---------------------------------------------------------------------
+   1. Topbar
+   --------------------------------------------------------------------- */
+@media (max-width: 767.98px) {
+    .navbar-header { padding: 0 6px; }
+
+    /* El desplegable de notificaciones trae width:400px en línea */
+    .noti-dropdown {
+        width: min(400px, calc(100vw - 1.5rem)) !important;
+        max-width: calc(100vw - 1.5rem);
+    }
+
+    .noti-dropdown #notiList { max-height: min(400px, 62vh) !important; }
+
+    /* El menú de usuario trae min-width:260px en línea */
+    #page-topbar .dropdown-menu {
+        max-width: calc(100vw - 1.5rem);
+    }
+
+    .topbar-sep { display: none; }
+}
+
+@media (max-width: 575.98px) {
+    #page-topbar .dropdown-menu-end {
+        right: 0 !important;
+        left: auto !important;
+    }
+
+    .btn-topbar-icon { width: 38px; height: 38px; }
+}
+
+/* ---------------------------------------------------------------------
+   2. Sidebar (menú lateral) en móvil
+   --------------------------------------------------------------------- */
+@media (max-width: 767.98px) {
+    /* El ancho del tema se deriva de esta variable, así que el cierre
+       automático (margin-left negativo) sigue funcionando. */
+    :root { --vz-vertical-menu-width: min(86vw, 320px); }
+
+    body.vertical-sidebar-enable { overflow: hidden; }
+
+    .vertical-sidebar-enable .app-menu.navbar-menu {
+        box-shadow: 0 0 70px -10px rgba(4, 14, 30, 0.75) !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Objetivos táctiles cómodos */
+    .app-menu .nav-link.menu-link {
+        padding: 0.72rem 0.9rem;
+        font-size: 0.9rem;
+        margin: 3px 10px;
+    }
+
+    .app-menu .menu-dropdown .nav-link {
+        padding: 0.62rem 0.8rem;
+        font-size: 0.84rem;
+    }
+
+    .app-menu .navbar-nav .menu-title {
+        padding: 1rem 1.25rem 0.45rem;
+    }
+
+    .navbar-brand-box .logo-lg img { height: 40px !important; }
+}
+
+/* ---------------------------------------------------------------------
+   3. Héroes / encabezados de página
+   --------------------------------------------------------------------- */
+@media (max-width: 767.98px) {
+    :is(
+        .dashboard-hero, .programas-hero, .pv-hero, .areas-hero, .asig-hero, .comp-hero,
+        .cont-hero, .credenciales-hero, .cr-hero, .cron-hero, .docentes-hero, .folios-hero,
+        .inv-hero, .mkt-hero, .modulo-hero, .noti-hero, .participantes-hero, .prof-hero,
+        .pub-hero, .rep-hero, .resp-hero, .sd-hero, .search-hero, .sec-hero, .seg-hero,
+        .show-hero, .tipos-hero, .pose-hero
+    ) {
+        padding: 1rem 1.05rem !important;
+        margin-bottom: 1rem !important;
+    }
+
+    :is(
+        .dashboard-hero, .programas-hero, .pv-hero, .areas-hero, .asig-hero, .comp-hero,
+        .cont-hero, .credenciales-hero, .cr-hero, .cron-hero, .docentes-hero, .folios-hero,
+        .inv-hero, .mkt-hero, .modulo-hero, .noti-hero, .participantes-hero, .prof-hero,
+        .pub-hero, .rep-hero, .resp-hero, .sd-hero, .search-hero, .sec-hero, .seg-hero,
+        .show-hero, .tipos-hero, .pose-hero
+    ) :is(h1, h2, h3, h4, h5, .hero-title, .sd-hero-title) {
+        font-size: 1.1rem !important;
+        line-height: 1.25 !important;
+    }
+
+    :is(
+        .dashboard-hero, .programas-hero, .pv-hero, .areas-hero, .asig-hero, .comp-hero,
+        .cont-hero, .credenciales-hero, .cr-hero, .cron-hero, .docentes-hero, .folios-hero,
+        .inv-hero, .mkt-hero, .modulo-hero, .noti-hero, .participantes-hero, .prof-hero,
+        .pub-hero, .rep-hero, .resp-hero, .sd-hero, .search-hero, .sec-hero, .seg-hero,
+        .show-hero, .tipos-hero, .pose-hero
+    ) :is(.hero-sub, .sd-hero-sub, .hero-subtitle, p) {
+        font-size: 0.82rem;
+    }
+
+    :is(
+        .dashboard-hero, .programas-hero, .pv-hero, .areas-hero, .asig-hero, .comp-hero,
+        .cont-hero, .credenciales-hero, .cr-hero, .cron-hero, .docentes-hero, .folios-hero,
+        .inv-hero, .mkt-hero, .modulo-hero, .noti-hero, .participantes-hero, .prof-hero,
+        .pub-hero, .rep-hero, .resp-hero, .sd-hero, .search-hero, .sec-hero, .seg-hero,
+        .show-hero, .tipos-hero, .pose-hero
+    ) .hero-icon {
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 10px !important;
+        font-size: 1.15rem !important;
+    }
+
+    /* El selector de gestión del héroe ocupa el ancho completo en móvil */
+    :is(
+        .dashboard-hero, .programas-hero, .pv-hero, .areas-hero, .asig-hero, .comp-hero,
+        .cont-hero, .credenciales-hero, .cr-hero, .cron-hero, .docentes-hero, .folios-hero,
+        .inv-hero, .mkt-hero, .modulo-hero, .noti-hero, .participantes-hero, .prof-hero,
+        .pub-hero, .rep-hero, .resp-hero, .sd-hero, .search-hero, .sec-hero, .seg-hero,
+        .show-hero, .tipos-hero, .pose-hero
+    ) .hero-gestion {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    :is(
+        .dashboard-hero, .programas-hero, .pv-hero, .areas-hero, .asig-hero, .comp-hero,
+        .cont-hero, .credenciales-hero, .cr-hero, .cron-hero, .docentes-hero, .folios-hero,
+        .inv-hero, .mkt-hero, .modulo-hero, .noti-hero, .participantes-hero, .prof-hero,
+        .pub-hero, .rep-hero, .resp-hero, .sd-hero, .search-hero, .sec-hero, .seg-hero,
+        .show-hero, .tipos-hero, .pose-hero
+    ) .hero-gestion select {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    /* Chips informativos del héroe: se reparten en líneas sin desbordar */
+    :is(
+        .dashboard-hero, .programas-hero, .pv-hero, .areas-hero, .asig-hero, .comp-hero,
+        .cont-hero, .credenciales-hero, .cr-hero, .cron-hero, .docentes-hero, .folios-hero,
+        .inv-hero, .mkt-hero, .modulo-hero, .noti-hero, .participantes-hero, .prof-hero,
+        .pub-hero, .rep-hero, .resp-hero, .sd-hero, .search-hero, .sec-hero, .seg-hero,
+        .show-hero, .tipos-hero, .pose-hero
+    ) :is(.hero-chip, .hero-stat, .hero-info-pill, .hero-date) {
+        max-width: 100%;
+        min-width: 0;
+    }
+}
+
+/* ---------------------------------------------------------------------
+   4. Rejillas, tarjetas y contención de ancho
+   --------------------------------------------------------------------- */
+@media (max-width: 991.98px) {
+    /* Evita que columnas flex/grid empujen el ancho de la página */
+    .row > [class*="col-"] { min-width: 0; }
+
+    .card,
+    .card-body { min-width: 0; }
+
+    .card-header {
+        flex-wrap: wrap;
+        row-gap: 0.5rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .page-title-box,
+    .breadcrumb { flex-wrap: wrap; }
+
+    /* Filtros: los min-width fijos de las vistas se vuelven relativos */
+    :is(.filter-card, .cron-filter-card, .sec-filter-card, .tab-stats-row)
+        :is(input, select, .form-control, .form-select, .input-group) {
+        min-width: 0 !important;
+        max-width: 100%;
+    }
+
+    /* Las tarjetas de filtro apilan sus campos a ancho completo:
+       mucho más cómodo de tocar y evita que un select desborde la tarjeta */
+    .filter-card form,
+    .filter-card .filter-body,
+    .cron-filter-card form,
+    .sec-filter-card form {
+        display: block !important;
+    }
+
+    .filter-card :is(input, select, textarea, .form-control, .form-select),
+    .cron-filter-card :is(input, select, .form-control, .form-select),
+    .sec-filter-card :is(input, select, .form-control, .form-select) {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+
+    .filter-card :is(.input-group, .d-flex, .row, [class*="col-"]),
+    .cron-filter-card :is(.input-group, .d-flex, .row, [class*="col-"]),
+    .sec-filter-card :is(.input-group, .d-flex, .row, [class*="col-"]) {
+        min-width: 0;
+    }
+
+    .filter-card form > .btn,
+    .cron-filter-card form > .btn {
+        width: 100%;
+        margin-left: 0 !important;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .card > .card-body { padding: 0.95rem; }
+    .card-header { padding: 0.85rem 0.95rem; }
+
+    /* Rejillas de 2 columnas fijas que aplastan en pantallas pequeñas */
+    .plan-switch { grid-template-columns: 1fr !important; }
+}
+
+/* ---------------------------------------------------------------------
+   5. Tablas
+   --------------------------------------------------------------------- */
+@media (max-width: 991.98px) {
+    /* Contenedores de tabla que en escritorio recortan (overflow:hidden):
+       en tablet y móvil deben permitir desplazarse en horizontal. */
+    :is(
+        .table-card-wrap, .inv-ranking-wrap, .mpp-table-wrap, .tabla-wrap,
+        .table-wrap, .results-table-wrap, .folio-table-wrap
+    ) {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .table-responsive {
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+
+    .table-responsive::-webkit-scrollbar { height: 7px; }
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: var(--ui-line-strong);
+        border-radius: 4px;
+    }
+
+    .table { font-size: 0.82rem; }
+
+    .table > :not(caption) > * > * { padding: 0.5rem 0.55rem; }
+
+    .table thead th { font-size: 0.66rem; }
+
+    /* Tabla sin datos (una sola fila con celda colspan): en vez de una
+       cabecera desplazada y recortada, se oculta y el mensaje vacío se
+       centra en el área visible. */
+    table:has(> tbody > tr:only-child > td[colspan]:only-child) {
+        width: 100% !important;
+        min-width: 0 !important;
+        table-layout: auto !important;
+    }
+
+    table:has(> tbody > tr:only-child > td[colspan]:only-child) > thead {
+        display: none;
+    }
+}
+
+/* Las tablas dentro de modales también deben poder desplazarse */
+@media (max-width: 767.98px) {
+    .modal-body { overflow-x: auto; }
+}
+
+/* ---------------------------------------------------------------------
+   6. Formularios y botones (táctil + anti-zoom iOS)
+   --------------------------------------------------------------------- */
+@media (max-width: 767.98px) {
+    /* iOS hace zoom al enfocar campos con font-size < 16px */
+    .form-control,
+    .form-select,
+    textarea.form-control {
+        font-size: 16px;
+    }
+
+    .form-label { font-size: 0.8rem; }
+
+    .btn { min-height: 40px; }
+
+    .btn-sm { min-height: 34px; }
+
+    .btn-icon { min-width: 38px; }
+}
+
+/* ---------------------------------------------------------------------
+   7. Pestañas desplazables
+   --------------------------------------------------------------------- */
+@media (max-width: 767.98px) {
+    ul.nav-tabs,
+    ul.nav-pills {
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        max-width: 100%;
+    }
+
+    ul.nav-tabs::-webkit-scrollbar,
+    ul.nav-pills::-webkit-scrollbar { display: none; }
+
+    ul.nav-tabs .nav-link,
+    ul.nav-pills .nav-link {
+        white-space: nowrap;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+
+    .nav-tabs-pill { flex-wrap: nowrap; overflow-x: auto; }
+}
+
+/* ---------------------------------------------------------------------
+   8. Modales
+   --------------------------------------------------------------------- */
+@media (max-width: 767.98px) {
+    .modal-dialog {
+        margin: 0.6rem;
+    }
+
+    .modal-header { padding: 0.9rem 1.05rem !important; }
+
+    .modal-body { padding: 1rem !important; }
+
+    .modal-footer {
+        padding: 0.8rem 1.05rem !important;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .modal-footer .btn { flex: 1 1 45%; margin: 0 !important; }
+
+    .modal-title { font-size: 0.98rem !important; }
+}
+
+/* ---------------------------------------------------------------------
+   9. Paginación y pie
+   --------------------------------------------------------------------- */
+@media (max-width: 575.98px) {
+    .pagination { flex-wrap: wrap; justify-content: center; row-gap: 4px; }
+
+    .footer { text-align: center; }
+}
+
+/* ---------------------------------------------------------------------
+   10. Correcciones puntuales de módulos
+   --------------------------------------------------------------------- */
+@media (max-width: 767.98px) {
+    /* Cabeceras de tarjeta: texto y badges ya no se desbordan */
+    .card-header.d-flex { flex-wrap: wrap; }
+    .card-header .badge { white-space: normal; max-width: 100%; }
+
+    /* Seguridad › Roles: rejilla con ancho mínimo flexible */
+    .role-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
+    .role-card-top { gap: 0.5rem; }
+    .role-id { min-width: 0; }
+
+    /* Seguridad › Permisos: nombre a ancho completo y acciones debajo */
+    .perm-card { flex-wrap: wrap; align-items: flex-start; row-gap: 0.5rem; }
+    .perm-card > :first-child { min-width: 0; flex: 1 1 100%; }
+    .perm-card-name span { overflow-wrap: anywhere; }
+
+    /* Seguimiento diario: la rejilla de cada sesión no debe desbordar */
+    .sd-h-row { grid-template-columns: minmax(0, 1fr); }
+    .sd-h-side {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        min-height: auto;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .sd-h-meta .sd-meta-i { min-width: 0; max-width: 100%; flex-wrap: wrap; }
+    .sd-h-meta .sd-asignado-chip { white-space: normal; max-width: 100%; }
+}
+
+/* ---------------------------------------------------------------------
+   11. Pantallas de autenticación (login, registro, recuperación)
+   --------------------------------------------------------------------- */
+/* Marca compacta del layout: solo se muestra cuando no hay columna lateral. */
+.avip-card-brand { display: none; }
+
+@media (max-width: 991.98px) {
+    .avip-card-brand {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.7rem;
+        padding: 1.7rem 1.4rem 0;
+        text-align: center;
+    }
+
+    .avip-card-brand img {
+        height: 68px;
+        width: auto;
+        max-width: 200px;
+        object-fit: contain;
+    }
+
+    .avip-card-brand__tag {
+        position: relative;
+        padding-bottom: 0.9rem;
+        font-size: 0.66rem;
+        font-weight: 700;
+        letter-spacing: 0.17em;
+        text-transform: uppercase;
+        color: #163b6b;
+    }
+
+    /* Filete dorado bajo la marca, como en la columna lateral de escritorio */
+    .avip-card-brand__tag::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: 0;
+        transform: translateX(-50%);
+        width: 46px;
+        height: 3px;
+        border-radius: 3px;
+        background: linear-gradient(90deg, #ddb84d, rgba(221, 184, 77, 0.15));
+    }
+
+    /* La marca ya hace de encabezado: menos aire arriba del formulario */
+    .avip-auth__main { padding-top: 1.2rem; }
+}
+
+@media (max-width: 575.98px) {
+    .avip-card-brand { padding: 1.45rem 1.15rem 0; }
+    .avip-card-brand img { height: 60px; }
+
+    .avip-auth__main { padding-top: 1rem; }
+}
+

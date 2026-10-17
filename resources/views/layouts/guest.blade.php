@@ -2,9 +2,10 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-layout="vertical" data-topbar="light" data-sidebar="dark" data-sidebar-size="lg" data-sidebar-image="none" data-preloader="disable" data-theme="default" data-theme-colors="default">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', config('app.name'))</title>
+    <meta name="theme-color" content="#102e54">
 
     <link rel="shortcut icon" href="{{ asset('backend/assets/images/favicon.ico') }}">
 
@@ -25,6 +26,7 @@
     <link href="{{ asset('backend/assets/css/app.min.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ asset('backend/assets/css/custom.min.css') }}?v={{ $assetVersion('backend/assets/css/custom.min.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ asset('backend/assets/css/avip-auth.css') }}?v={{ $assetVersion('backend/assets/css/avip-auth.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset('backend/assets/css/avip-mobile.css') }}?v={{ $assetVersion('backend/assets/css/avip-mobile.css') }}" rel="stylesheet" type="text/css" />
 
     @stack('css')
 </head>
@@ -37,6 +39,14 @@
 
     <main class="avip-auth-stage">
         <div class="avip-card">
+            {{-- Marca visible en móvil/tablet: en escritorio el logo va en la
+                 columna lateral (.avip-brand). Se usa el emblema ESAM (fondo
+                 transparente) para que se integre con la tarjeta clara. --}}
+            <div class="avip-card-brand">
+                <img src="{{ asset('backend/assets/images/logo-sm.png') }}" alt="{{ config('app.name') }}">
+                <span class="avip-card-brand__tag">Plataforma de Cronogramas</span>
+            </div>
+
             {{ $slot }}
         </div>
 

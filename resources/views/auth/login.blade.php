@@ -25,9 +25,6 @@
 
         <section class="avip-auth__main">
             <div class="avip-auth__main-inner">
-                <div class="avip-form-brand">
-                    <img src="{{ asset('backend/assets/images/logo-dark.png') }}" alt="{{ config('app.name') }}">
-                </div>
                 <div class="avip-form-head">
                     <h2>Inicia sesión</h2>
                     <p>Ingresa tus credenciales para acceder al sistema.</p>

@@ -2,10 +2,12 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-layout="vertical" data-topbar="light" data-sidebar="dark" data-sidebar-size="lg" data-sidebar-image="none" data-preloader="disable" data-theme="default" data-theme-colors="default">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', config('app.name'))</title>
     <meta name="description" content="Admin Dashboard" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#102e54" media="(prefers-color-scheme: dark)">
 
     @php
         $assetVersion = function ($relative) {
@@ -63,6 +65,9 @@
         <link href="{{ asset('backend/assets/css/avip-profile.css') }}?v={{ $assetVersion('backend/assets/css/avip-profile.css') }}" rel="stylesheet" type="text/css" />
     @endif
 
+    {{-- Capa responsive móvil: se carga al final para ajustar todo en tablet y teléfono --}}
+    <link href="{{ asset('backend/assets/css/avip-mobile.css') }}?v={{ $assetVersion('backend/assets/css/avip-mobile.css') }}" rel="stylesheet" type="text/css" />
+
     @stack('css-after')
 </head>
 <body>
@@ -118,6 +123,8 @@
     <div id="layout-wrapper">
         @include('admin.partials.topbar')
         @include('admin.partials.sidebar')
+        {{-- Velo del menú lateral en móvil: al tocarlo, el menú se cierra --}}
+        <div class="vertical-overlay"></div>
 
         <div class="main-content">
             <div class="page-content">
@@ -152,6 +159,52 @@
     !document.getElementById('back-to-top')&&(e=document.createElement('div'),e.id='back-to-top',e.style.display='none',document.body.appendChild(e));
     </script>
     <script src="{{ asset('backend/assets/js/app.js') }}"></script>
+
+    <script>
+    (function () {
+        // En móvil, cerrar el menú lateral al tocar un enlace de navegación.
+        var MOBILE = 767.98;
+
+        function closeSidebar() {
+            document.body.classList.remove('vertical-sidebar-enable');
+            document.documentElement.setAttribute('data-sidebar-size', 'lg');
+        }
+
+        // El tema base marca el icono del menú como "abierto" en móvil, lo que
+        // lo convierte en una flecha. En móvil el menú se abre con un toque,
+        // así que se restaura el icono de hamburguesa.
+        function resetHamburger() {
+            var icon = document.querySelector('.hamburger-icon');
+            if (icon && window.innerWidth <= MOBILE) icon.classList.remove('open');
+        }
+
+        resetHamburger();
+        window.addEventListener('load', resetHamburger);
+
+        document.addEventListener('click', function (e) {
+            if (window.innerWidth > MOBILE) return;
+
+            var link = e.target.closest ? e.target.closest('#navbar-nav a') : null;
+            if (!link) return;
+
+            // Los toggles de submenú solo abren/cierran la sección.
+            if (link.getAttribute('data-bs-toggle') === 'collapse') return;
+            if (link.getAttribute('href') === '#') return;
+
+            closeSidebar();
+            resetHamburger();
+        }, true);
+
+        // Al girar o ampliar la pantalla, restaurar el estado de escritorio.
+        window.addEventListener('resize', function () {
+            if (window.innerWidth > MOBILE) {
+                document.body.classList.remove('vertical-sidebar-enable');
+            } else {
+                resetHamburger();
+            }
+        });
+    })();
+    </script>
 
     @stack('js')
 </body>

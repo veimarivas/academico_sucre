@@ -32,7 +32,7 @@
                     <span class="topbar-sep d-none d-md-block"></span>
                 @endif
 
-                <button type="button" class="btn-topbar-icon d-none d-sm-inline-flex light-dark-mode" aria-label="Cambiar tema">
+                <button type="button" class="btn-topbar-icon d-inline-flex light-dark-mode" aria-label="Cambiar tema">
                     <i class='bx bx-moon fs-22'></i>
                 </button>
 
