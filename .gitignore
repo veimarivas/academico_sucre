@@ -21,3 +21,6 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Impeccable: motor binario local (se reinstala con `npx impeccable update`)
+/.agents/skills/impeccable/scripts/bin/
