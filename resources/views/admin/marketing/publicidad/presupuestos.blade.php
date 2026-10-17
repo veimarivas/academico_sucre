@@ -14,7 +14,7 @@
     padding: 1.7rem 1.9rem;
     color: #fff;
     overflow: hidden;
-    box-shadow: 0 18px 40px -24px rgba(18,52,91,.8);
+    box-shadow: 0 18px 40px -24px rgba(2,6,23,.5);
     margin-bottom: 1.5rem;
 }
 .pub-hero::after {
@@ -46,10 +46,12 @@
     border: 1px solid var(--pres-line);
     border-radius: 14px;
     background: #fff;
+    padding: .85rem 1rem;
     transition: transform .25s ease, box-shadow .25s ease;
 }
-.stat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 26px -18px rgba(16,24,40,.5); }
-.stat-card .stat-label { font-size: .66rem; text-transform: uppercase; letter-spacing: .06em; color: var(--pres-muted); font-weight: 700; margin-bottom: .3rem; }
+.stat-card .card-body { padding: 0; }
+.stat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 26px -18px rgba(2,6,23,.35); }
+.stat-card .stat-label { font-size: .72rem; color: var(--pres-muted); font-weight: 600; margin: 0; }
 .stat-card .stat-value { font-size: 1.3rem; font-weight: 800; color: var(--pres-ink); letter-spacing: -.4px; font-variant-numeric: tabular-nums; }
 .stat-card .stat-icon { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 1.3rem; }
 
@@ -73,13 +75,13 @@
     width: 42px; height: 42px; flex: 0 0 42px;
     display: inline-flex; align-items: center; justify-content: center;
     border-radius: 12px; background: linear-gradient(135deg, #405189, #5e72b8);
-    color: #fff; font-size: 1.2rem; box-shadow: 0 4px 12px -5px rgba(64,81,137,.7);
+    color: #fff; font-size: 1.2rem; box-shadow: 0 4px 12px -5px rgba(0,0,0,.4);
 }
 .period-title h6 { font-size: 1rem; font-weight: 700; letter-spacing: -.01em; color: var(--pres-ink); margin: 0; }
 .period-sub { font-size: .72rem; color: var(--pres-muted); margin-top: 1px; }
 .period-metrics { display: flex; align-items: center; gap: 1.5rem; margin-left: auto; flex-wrap: wrap; }
 .pm { display: flex; flex-direction: column; align-items: flex-end; }
-.pm-label { font-size: .6rem; text-transform: uppercase; letter-spacing: .06em; color: var(--pres-muted); font-weight: 700; }
+.pm-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--pres-muted); font-weight: 700; }
 .pm-value { font-size: .92rem; font-weight: 700; color: var(--pres-ink); font-variant-numeric: tabular-nums; }
 .bar { width: 108px; height: 7px; background: #e9edf2; border-radius: 99px; overflow: hidden; margin-top: 4px; }
 .bar > span { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #0ab39c, #299cdb); transform-origin: left center; transform: scaleX(var(--v, 0)); animation: barIn .6s cubic-bezier(.2, .8, .2, 1) both; }
@@ -87,12 +89,12 @@
 @keyframes barIn { from { transform: scaleX(0); } to { transform: scaleX(var(--v, 0)); } }
 @media (prefers-reduced-motion: reduce) { .bar > span { animation: none; } }
 .pm-pct { font-size: .7rem; font-weight: 700; color: var(--pres-muted); margin-top: 3px; font-variant-numeric: tabular-nums; }
-.period-status { font-size: .68rem; font-weight: 700; padding: .3rem .65rem; border-radius: 99px; white-space: nowrap; }
+.period-status { font-size: .72rem; font-weight: 700; padding: .3rem .65rem; border-radius: 99px; white-space: nowrap; }
 .period-status.open { background: #e7f8f4; color: #067a68; }
 .period-status.closed { background: #eef0f4; color: #5a6472; }
 .period-chevron { font-size: 1.4rem; color: #9aa4b2; transition: transform .3s ease; }
 .period-head[aria-expanded="true"] .period-chevron { transform: rotate(180deg); }
-.period-body { border-top: 1px solid var(--pres-line); }
+.period-body .q-block:first-child > .q-head { border-top: 1px solid var(--pres-line); }
 
 /* ─── Bloque de quincena ─── */
 .q-block + .q-block { border-top: 1px dashed #e6eaf0; }
@@ -103,12 +105,12 @@
 
 .badge-q1, .badge-q2 { font-weight: 700; padding: .3rem .7rem; font-size: .7rem; border-radius: 99px; letter-spacing: .02em; }
 .badge-q1 { background: #e6efff; color: #1d4ed8; }
-.badge-q2 { background: #fff3d6; color: #a76a06; }
+.badge-q2 { background: #fff3d6; color: #7a4a03; }
 
 /* ─── Tabla de presupuestos ─── */
 .pres-table { margin: 0; }
 .pres-table thead th {
-    font-size: .63rem; text-transform: uppercase; letter-spacing: .05em; color: #6b7280;
+    font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: #6b7280;
     font-weight: 700; border-bottom: 1px solid var(--pres-line); background: #fff;
     padding: .55rem .9rem; white-space: nowrap;
 }
@@ -118,10 +120,19 @@
 .amount-strong { font-weight: 700; color: var(--pres-ink); }
 .pres-asesor { display: flex; align-items: center; gap: .6rem; }
 .pres-avatar { width: 32px; height: 32px; flex: 0 0 32px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; background: #fff7e6; color: #c47f17; font-size: .95rem; }
+.pres-avatar-sm { width: 26px; height: 26px; flex: 0 0 26px; border-radius: 8px; font-size: .78rem; background: #fdf1e3; color: #b06a1a; }
+/* Filas de derivación anidadas bajo el asesor principal */
+.row-derivado > td { background: #fbfcfe; }
+.row-derivado:hover > td { background: #f5f8fd; }
+.deriv-cell { padding-left: 1.5rem; position: relative; }
+.deriv-cell::before { content: ''; position: absolute; left: .5rem; top: 0; bottom: 0; width: 1px; background: #e2e7ef; }
+.deriv-cell::after { content: ''; position: absolute; left: .5rem; top: 50%; width: .8rem; height: 1px; background: #e2e7ef; }
+tr.ultimo-derivado .deriv-cell::before { bottom: 50%; }
 .pres-name { font-weight: 600; color: var(--pres-ink); display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
-.pres-sub { font-size: .68rem; color: var(--pres-muted); }
-.chip { display: inline-flex; align-items: center; gap: .25rem; padding: .12rem .5rem; border-radius: 99px; font-size: .66rem; font-weight: 700; background: #eef2fb; color: #3b4c86; font-variant-numeric: tabular-nums; }
+.pres-sub { font-size: .75rem; color: var(--pres-muted); }
+.chip { display: inline-flex; align-items: center; gap: .25rem; padding: .16rem .55rem; border-radius: 99px; font-size: .72rem; font-weight: 700; background: #eef2fb; color: #3b4c86; font-variant-numeric: tabular-nums; }
 .chip-deriv { background: #fff2d6; color: #9a6206; }
+.pres-table .badge.fs-10 { font-size: .72rem; }
 .q-total-row td { background: #f8f9fc; font-weight: 700; font-size: .82rem; color: var(--pres-ink); padding: .6rem .9rem; border-top: 1px solid var(--pres-line); }
 .empty-row td { text-align: center; color: var(--pres-muted); padding: 1.1rem; font-size: .8rem; }
 
@@ -132,7 +143,11 @@
 [data-layout-mode="dark"] .stat-card .stat-value, [data-layout-mode="dark"] .period-title h6, [data-layout-mode="dark"] .pm-value, [data-layout-mode="dark"] .pres-name, [data-layout-mode="dark"] .amount-strong, [data-layout-mode="dark"] .q-total-row td, [data-layout-mode="dark"] .q-sum b { color: #eceff4; }
 [data-layout-mode="dark"] .pres-table thead th { background: #1a1d21; color: #9099a8; }
 [data-layout-mode="dark"] .pres-table tbody td { color: #cdd3dc; border-bottom-color: #262b31; }
-[data-layout-mode="dark"] .q-block + .q-block, [data-layout-mode="dark"] .period-body { border-color: #2a2f34; }
+[data-layout-mode="dark"] .row-derivado > td { background: #1e2227; }
+[data-layout-mode="dark"] .row-derivado:hover > td { background: #23282e; }
+[data-layout-mode="dark"] .deriv-cell::before, [data-layout-mode="dark"] .deriv-cell::after { background: #333a42; }
+[data-layout-mode="dark"] .pres-avatar-sm { background: #3a2f16; color: #f0c070; }
+[data-layout-mode="dark"] .q-block + .q-block, [data-layout-mode="dark"] .period-body .q-block:first-child > .q-head { border-color: #2a2f34; }
 [data-layout-mode="dark"] .chip { background: #232a3a; color: #a9baf0; }
 [data-layout-mode="dark"] .chip-deriv { background: #3a2f16; color: #f0c070; }
 </style>
@@ -177,11 +192,11 @@
 <div class="row mb-4">
     <div class="col-xl-3 col-md-6 mb-3">
         <div class="stat-card h-100">
-            <div class="card-body p-3">
+            <div class="card-body">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
-                        <p class="stat-label">Total presupuestado</p>
                         <h4 class="stat-value mb-0">Bs {{ number_format($resTotalAsignado, 2) }}</h4>
+                        <p class="stat-label">Total presupuestado</p>
                     </div>
                     <div class="stat-icon bg-soft-primary text-primary"><i class="ri-wallet-3-line"></i></div>
                 </div>
@@ -191,11 +206,11 @@
     </div>
     <div class="col-xl-3 col-md-6 mb-3">
         <div class="stat-card h-100">
-            <div class="card-body p-3">
+            <div class="card-body">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
-                        <p class="stat-label">Gastado (reportado)</p>
                         <h4 class="stat-value mb-0">Bs {{ number_format($resTotalGastado, 2) }}</h4>
+                        <p class="stat-label">Gastado (reportado)</p>
                     </div>
                     <div class="stat-icon bg-soft-success text-success"><i class="ri-money-dollar-circle-line"></i></div>
                 </div>
@@ -205,11 +220,11 @@
     </div>
     <div class="col-xl-3 col-md-6 mb-3">
         <div class="stat-card h-100">
-            <div class="card-body p-3">
+            <div class="card-body">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
-                        <p class="stat-label">Aprobado por contable</p>
                         <h4 class="stat-value mb-0">Bs {{ number_format($resTotalAprobado, 2) }}</h4>
+                        <p class="stat-label">Aprobado por contable</p>
                     </div>
                     <div class="stat-icon bg-soft-info text-info"><i class="ri-checkbox-circle-line"></i></div>
                 </div>
@@ -219,11 +234,11 @@
     </div>
     <div class="col-xl-3 col-md-6 mb-3">
         <div class="stat-card h-100">
-            <div class="card-body p-3">
+            <div class="card-body">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
-                        <p class="stat-label">Sin gastos (eliminables)</p>
                         <h4 class="stat-value mb-0">{{ $totalEliminables }}</h4>
+                        <p class="stat-label">Sin gastos (eliminables)</p>
                     </div>
                     <div class="stat-icon bg-soft-warning text-warning"><i class="ri-delete-bin-6-line"></i></div>
                 </div>
@@ -325,6 +340,7 @@
                             <span class="badge badge-{{ $meta['cls'] }}">{{ $meta['label'] }} · {{ $meta['rango'] }}</span>
                             @if($q)
                             <span class="q-sum">Asignado <b>Bs {{ number_format($q->total_asignado, 2) }}</b> · Gastado <b>Bs {{ number_format($q->total_gastado, 2) }}</b> · Aprobado <b>Bs {{ number_format($q->total_aprobado, 2) }}</b></span>
+                            <span class="chip"><i class="ri-list-check-2"></i>{{ ($q->presupuestos ?? collect())->count() }} principal(es) · {{ ($q->presupuestos ?? collect())->sum(fn($x) => ($x->derivados ?? collect())->count()) }} derivado(s)</span>
                             @if($q->periodo_cerrado)
                             <span class="period-status closed"><i class="ri-lock-line me-1"></i>Cerrado</span>
                             @else
@@ -372,79 +388,10 @@
                             </thead>
                             <tbody>
                                 @forelse($q->presupuestos ?? collect() as $p)
-                                <tr>
-                                    <td>
-                                        <div class="pres-asesor">
-                                            <span class="pres-avatar"><i class="ri-user-star-line"></i></span>
-                                            <div>
-                                                <div class="pres-name">
-                                                    @if($p->ase_apellidos)
-                                                        {{ $p->ase_apellidos }}, {{ $p->ase_nombres }}
-                                                    @else
-                                                        <span class="fst-italic text-muted" style="font-weight:400;">Sin asesor asignado</span>
-                                                    @endif
-                                                    @if($p->presupuesto_origen_id)
-                                                        <span class="chip chip-deriv"><i class="ri-share-forward-line"></i>Derivado</span>
-                                                    @endif
-                                                </div>
-                                                @if($p->sup_apellidos)
-                                                    <div class="pres-sub">Supervisor: {{ $p->sup_apellidos }}, {{ $p->sup_nombres }}</div>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="text-end num">
-                                        <span class="amount-strong">Bs {{ number_format($p->monto_asignado, 2) }}</span>
-                                        @if($p->monto_derivado_total > 0)
-                                            <div class="pres-sub">de Bs {{ number_format($p->monto_asignado + $p->monto_derivado_total, 2) }} · derivó {{ number_format($p->monto_derivado_total, 2) }}</div>
-                                        @endif
-                                    </td>
-                                    <td class="text-end num">
-                                        <span class="{{ (float) $p->total_gastado > 0 ? '' : 'text-muted' }}">Bs {{ number_format($p->total_gastado, 2) }}</span>
-                                    </td>
-                                    <td class="text-end num">
-                                        <span class="text-success fw-semibold">Bs {{ number_format($p->total_aprobado, 2) }}</span>
-                                        @if($p->total_aprobado_obs > 0)
-                                            <div class="pres-sub text-info">+ Bs {{ number_format($p->total_aprobado_obs, 2) }} c/obs</div>
-                                        @endif
-                                    </td>
-                                    <td class="text-center">
-                                        <span class="chip">{{ $p->total_comprobantes }}</span>
-                                    </td>
-                                    <td class="text-center">
-                                        @if($p->periodo_cerrado)
-                                            <span class="pres-sub"><i class="ri-lock-line"></i> Cerrado</span>
-                                        @elseif($p->estado === 'activo')
-                                            <span class="badge bg-soft-success text-success fs-10 px-2 py-1">Activo</span>
-                                        @else
-                                            <span class="badge bg-soft-secondary text-secondary fs-10 px-2 py-1">Cerrado</span>
-                                        @endif
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="d-flex align-items-center gap-1 justify-content-center">
-                                            <a href="{{ route('admin.marketing.publicidad.index', ['gestion' => $p->gestion, 'mes' => $p->mes, 'quincena' => $p->quincena]) }}" class="btn btn-sm btn-icon btn-soft-primary" title="Ver comprobantes del periodo">
-                                                <i class="ri-eye-line"></i>
-                                            </a>
-                                            @can('marketing.publicidad.presupuestos')
-                                            @if($p->puede_eliminar)
-                                            <button type="button" class="btn btn-sm btn-icon btn-soft-danger btn-eliminar-pres"
-                                                    data-id="{{ $p->id }}"
-                                                    data-asesor="{{ $p->ase_apellidos ? $p->ase_apellidos . ', ' . $p->ase_nombres : 'Sin asesor asignado' }}"
-                                                    data-periodo="{{ $meses[$p->mes] }} {{ $p->gestion }} · Q{{ $p->quincena }}"
-                                                    data-monto="{{ number_format($p->monto_asignado, 2) }}"
-                                                    title="Eliminar presupuesto sin gastos">
-                                                <i class="ri-delete-bin-6-line"></i>
-                                            </button>
-                                            @else
-                                            <button type="button" class="btn btn-sm btn-icon btn-soft-secondary" disabled
-                                                    title="{{ $p->total_comprobantes > 0 ? 'Tiene comprobantes: no se puede eliminar' : ($p->num_derivados > 0 ? 'Tiene derivaciones: no se puede eliminar' : ($p->periodo_cerrado ? 'El periodo está cerrado' : 'No se puede eliminar')) }}">
-                                                <i class="ri-delete-bin-6-line"></i>
-                                            </button>
-                                            @endif
-                                            @endcan
-                                        </div>
-                                    </td>
-                                </tr>
+                                @include('admin.marketing.publicidad._presupuesto_fila', ['p' => $p, 'nivel' => 'raiz'])
+                                @foreach($p->derivados ?? collect() as $d)
+                                @include('admin.marketing.publicidad._presupuesto_fila', ['p' => $d, 'nivel' => 'derivado', 'ultimoDerivado' => $loop->last])
+                                @endforeach
                                 @empty
                                 <tr class="empty-row">
                                     <td colspan="7"><i class="ri-inbox-2-line me-1"></i>Sin presupuestos asignados en esta quincena</td>

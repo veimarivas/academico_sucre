@@ -359,13 +359,40 @@ class PublicidadController extends Controller
         $presupuestosPorPeriodo = $detalle->groupBy(fn($x) => $x->gestion . '-' . $x->mes . '-' . $x->quincena);
         $totalEliminables = $detalle->where('puede_eliminar', true)->count();
 
-        // Adjuntar el detalle a cada quincena del grupo
+        // Adjuntar a cada quincena sus presupuestos raíz, con las derivaciones
+        // anidadas dentro de cada presupuesto principal.
         foreach ($grupos as $gr) {
             foreach (['q1', 'q2'] as $qk) {
-                if ($gr->$qk) {
-                    $pk = $gr->$qk->gestion . '-' . $gr->$qk->mes . '-' . $gr->$qk->quincena;
-                    $gr->$qk->presupuestos = $presupuestosPorPeriodo->get($pk, collect());
+                if (!$gr->$qk) {
+                    continue;
                 }
+
+                $pk = $gr->$qk->gestion . '-' . $gr->$qk->mes . '-' . $gr->$qk->quincena;
+                $items = $presupuestosPorPeriodo->get($pk, collect());
+
+                $raices = $items->filter(fn($x) => empty($x->presupuesto_origen_id))->values();
+                $porOrigen = $items->filter(fn($x) => !empty($x->presupuesto_origen_id))
+                    ->groupBy('presupuesto_origen_id');
+
+                $idsRaiz = $raices->pluck('id')->map(fn($v) => (int) $v)->all();
+                foreach ($raices as $raiz) {
+                    $raiz->derivados = $porOrigen->get($raiz->id, collect())->values();
+                }
+
+                // Derivaciones cuyo origen no está en este listado (por el filtro de
+                // gestión o porque el origen vive en otro periodo): se muestran igual
+                // como fila principal para no ocultar información.
+                $sueltos = collect();
+                foreach ($porOrigen as $origenId => $hijos) {
+                    if (!in_array((int) $origenId, $idsRaiz, true)) {
+                        foreach ($hijos as $h) {
+                            $h->derivados = collect();
+                            $sueltos->push($h);
+                        }
+                    }
+                }
+
+                $gr->$qk->presupuestos = $raices->concat($sueltos)->values();
             }
         }
 
