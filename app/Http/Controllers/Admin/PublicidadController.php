@@ -383,6 +383,123 @@ class PublicidadController extends Controller
         ]);
     }
 
+    /**
+     * Registra un gasto de autogestión desde el panel de Marketing (el asesor
+     * responsable se elige en el formulario). Sube los archivos de forma segura
+     * y sólo crea el registro si ambos se guardaron correctamente.
+     */
+    public function storeAutogestion(Request $request)
+    {
+        if ($errorSubida = $this->mensajeErrorSubida($request)) {
+            return back()->withInput()->with('error', $errorSubida);
+        }
+
+        $validated = $request->validate([
+            'asesor_id' => 'required|exists:asesores,id',
+            'gestion' => 'required|integer|min:2020|max:2100',
+            'mes' => 'required|integer|min:1|max:12',
+            'fecha_inicio' => 'nullable|date',
+            'fecha_fin' => 'nullable|date|after_or_equal:fecha_inicio',
+            'monto' => 'required|numeric|min:0.01|max:9999999.99',
+            'descripcion' => 'required|string|max:500',
+            'plataforma' => 'nullable|string|max:50',
+            'campana_nombre' => 'nullable|string|max:255',
+            'enlace_campana' => 'nullable|url|max:500',
+            'pagina_facebook' => 'nullable|url|max:500',
+            'programa_id' => 'nullable|exists:programas,id',
+            'estado' => 'nullable|in:pendiente,aprobado,rechazado',
+            'observaciones' => 'nullable|string|max:500',
+            'archivo' => 'nullable|file|mimes:pdf,jpg,jpeg,png,webp|max:5120',
+            'archivo_debito' => 'nullable|file|mimes:pdf,jpg,jpeg,png,webp|max:5120',
+        ]);
+
+        // Se guardan los archivos ANTES de crear el registro: si el disco público no
+        // permite escribir, no debe quedar un gasto sin su comprobante.
+        $rutaComprobante = null;
+        if ($request->hasFile('archivo')) {
+            $rutaComprobante = $this->guardarArchivoAutogestion($request->file('archivo'));
+
+            if (!$rutaComprobante) {
+                return back()->withInput()->with('error', 'No se pudo guardar el comprobante en el servidor (carpeta "public/storage/publicidad/autogestion" inexistente o sin permisos de escritura). El gasto no fue registrado.');
+            }
+        }
+
+        $rutaDebito = null;
+        if ($request->hasFile('archivo_debito')) {
+            $rutaDebito = $this->guardarArchivoAutogestion($request->file('archivo_debito'));
+
+            if (!$rutaDebito) {
+                if ($rutaComprobante) {
+                    Storage::disk('public')->delete($rutaComprobante);
+                }
+
+                return back()->withInput()->with('error', 'No se pudo guardar el comprobante de débito en el servidor (carpeta "public/storage/publicidad/autogestion" inexistente o sin permisos de escritura). El gasto no fue registrado.');
+            }
+        }
+
+        $gasto = new \App\Models\GastoAutogestion();
+        $gasto->asesor_id = $validated['asesor_id'];
+        $gasto->gestion = $validated['gestion'];
+        $gasto->mes = $validated['mes'];
+        $gasto->fecha_inicio = $validated['fecha_inicio'] ?? null;
+        $gasto->fecha_fin = $validated['fecha_fin'] ?? null;
+        $gasto->monto = $validated['monto'];
+        $gasto->descripcion = $validated['descripcion'];
+        $gasto->plataforma = $validated['plataforma'] ?? null;
+        $gasto->campana_nombre = $validated['campana_nombre'] ?? null;
+        $gasto->enlace_campana = $validated['enlace_campana'] ?? null;
+        $gasto->pagina_facebook = $validated['pagina_facebook'] ?? null;
+        $gasto->programa_id = $validated['programa_id'] ?? null;
+        $gasto->estado = $validated['estado'] ?? 'pendiente';
+        $gasto->observaciones = $validated['observaciones'] ?? null;
+
+        if ($rutaComprobante) {
+            $file = $request->file('archivo');
+            $gasto->archivo_path = $rutaComprobante;
+            $gasto->archivo_original = $file->getClientOriginalName();
+            $gasto->archivo_mime = $file->getMimeType();
+        }
+
+        if ($rutaDebito) {
+            $file = $request->file('archivo_debito');
+            $gasto->archivo_debito_path = $rutaDebito;
+            $gasto->archivo_debito_original = $file->getClientOriginalName();
+            $gasto->archivo_debito_mime = $file->getMimeType();
+        }
+
+        $gasto->save();
+
+        return back()->with('success', 'Gasto de autogestión registrado correctamente.');
+    }
+
+    /**
+     * Sirve el archivo (comprobante o débito) de un gasto por una ruta autenticada.
+     * Evita depender del enlace directo /storage, que depende del symlink y del
+     * docroot configurados en el servidor.
+     */
+    public function verArchivoAutogestion($id, $tipo)
+    {
+        $gasto = \App\Models\GastoAutogestion::findOrFail($id);
+
+        $ruta = match ($tipo) {
+            'debito' => $gasto->archivo_debito_path,
+            default => $gasto->archivo_path,
+        };
+
+        abort_unless($ruta, 404);
+
+        $disk = Storage::disk('public');
+
+        abort_unless($disk->exists($ruta), 404);
+
+        $original = $tipo === 'debito' ? $gasto->archivo_debito_original : $gasto->archivo_original;
+        $mime = $tipo === 'debito' ? $gasto->archivo_debito_mime : $gasto->archivo_mime;
+
+        return $disk->response($ruta, $original ?: basename($ruta), [
+            'Content-Type' => $mime ?: $disk->mimeType($ruta),
+        ], 'inline');
+    }
+
     public function updateAutogestion(Request $request, $id)
     {
         $gasto = \App\Models\GastoAutogestion::findOrFail($id);

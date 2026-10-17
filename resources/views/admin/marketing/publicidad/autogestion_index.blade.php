@@ -163,9 +163,14 @@
                     <option value="rechazado" {{ $estado === 'rechazado' ? 'selected' : '' }}>Rechazado</option>
                 </select>
             </div>
-            <div class="col-12">
+            <div class="col-12 d-flex align-items-center gap-2 flex-wrap">
                 <button type="submit" class="btn btn-primary btn-sm"><i class="ri-filter-3-line me-1"></i>Filtrar</button>
                 <button type="button" class="btn btn-soft-secondary btn-sm" id="btnLimpiarFiltros"><i class="ri-close-line me-1"></i>Limpiar</button>
+                @can('marketing.publicidad.subir')
+                <button type="button" class="btn btn-warning btn-sm ms-auto" data-bs-toggle="modal" data-bs-target="#modalNuevoAutogestion">
+                    <i class="ri-add-line me-1"></i>Nuevo gasto
+                </button>
+                @endcan
             </div>
         </form>
     </div>
@@ -204,6 +209,123 @@
     {{ $gastos->links('admin.marketing.publicidad._autogestion_pagination') }}
 </div>
 @endif
+
+{{-- Modal Nuevo gasto de autogestión --}}
+<div class="modal fade" id="modalNuevoAutogestion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="{{ route('admin.marketing.publicidad.autogestion.store') }}" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title mb-0"><i class="ri-hand-coin-line text-warning me-1"></i>Registrar gasto de autogestión</h5>
+                        <small class="text-muted">Gasto de publicidad con recursos propios del asesor</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Asesor <span class="text-danger">*</span></label>
+                            <select name="asesor_id" class="form-select" required>
+                                <option value="">— Seleccionar asesor —</option>
+                                @foreach($asesores as $a)
+                                    <option value="{{ $a->id }}" {{ (string) old('asesor_id') === (string) $a->id ? 'selected' : '' }}>{{ $a->apellidos }}, {{ $a->nombres }} ({{ $a->cargo_nombre }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Gestión <span class="text-danger">*</span></label>
+                            <input type="number" name="gestion" class="form-control" value="{{ old('gestion', $gestion) }}" min="2020" max="2100" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Mes <span class="text-danger">*</span></label>
+                            <select name="mes" class="form-select" required>
+                                @foreach($meses as $num => $nom)
+                                    <option value="{{ $num }}" {{ (int) old('mes', $mes ?: now()->month) === $num ? 'selected' : '' }}>{{ $nom }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Estado</label>
+                            <select name="estado" class="form-select">
+                                <option value="pendiente" {{ old('estado') === 'pendiente' ? 'selected' : '' }}>Pendiente</option>
+                                <option value="aprobado" {{ old('estado') === 'aprobado' ? 'selected' : '' }}>Aprobado</option>
+                                <option value="rechazado" {{ old('estado') === 'rechazado' ? 'selected' : '' }}>Rechazado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Fecha de inicio</label>
+                            <input type="date" name="fecha_inicio" class="form-control" value="{{ old('fecha_inicio') }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Fecha de fin</label>
+                            <input type="date" name="fecha_fin" class="form-control" value="{{ old('fecha_fin') }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Monto (Bs) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" min="0.01" name="monto" class="form-control" placeholder="0.00" value="{{ old('monto') }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Plataforma</label>
+                            <select name="plataforma" class="form-select">
+                                <option value="">— Seleccionar —</option>
+                                <option value="Facebook" {{ old('plataforma') === 'Facebook' ? 'selected' : '' }}>Facebook Ads</option>
+                                <option value="Instagram" {{ old('plataforma') === 'Instagram' ? 'selected' : '' }}>Instagram Ads</option>
+                                <option value="TikTok" {{ old('plataforma') === 'TikTok' ? 'selected' : '' }}>TikTok Ads</option>
+                                <option value="Google" {{ old('plataforma') === 'Google' ? 'selected' : '' }}>Google Ads</option>
+                                <option value="Otro" {{ old('plataforma') === 'Otro' ? 'selected' : '' }}>Otro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Programa</label>
+                            <select name="programa_id" class="form-select">
+                                <option value="">— Sin programa —</option>
+                                @foreach($programas as $prg)
+                                    <option value="{{ $prg->id }}" {{ (string) old('programa_id') === (string) $prg->id ? 'selected' : '' }}>{{ $prg->nombre }} ({{ $prg->codigo }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Descripción <span class="text-danger">*</span></label>
+                            <textarea name="descripcion" rows="2" class="form-control" placeholder="Ej: Publicación pagada Facebook 3 días" required>{{ old('descripcion') }}</textarea>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Nombre de la campaña</label>
+                            <input type="text" name="campana_nombre" class="form-control" placeholder="Ej: Diplomado en Auditoría" value="{{ old('campana_nombre') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Enlace de la campaña</label>
+                            <input type="url" name="enlace_campana" class="form-control" placeholder="https://www.facebook.com/ads/..." value="{{ old('enlace_campana') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Página de Facebook</label>
+                            <input type="url" name="pagina_facebook" class="form-control" placeholder="https://www.facebook.com/tupagina" value="{{ old('pagina_facebook') }}">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Observaciones</label>
+                            <textarea name="observaciones" rows="2" class="form-control" placeholder="Notas internas (opcional)">{{ old('observaciones') }}</textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Comprobante (PDF o imagen, máx 5MB)</label>
+                            <input type="file" name="archivo" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp">
+                            <small class="text-muted fs-11">Límite del servidor: {{ ini_get('upload_max_filesize') ?: 'no definido' }}.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Comprobante de débito (PDF o imagen, máx 5MB)</label>
+                            <input type="file" name="archivo_debito" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp">
+                            <small class="text-muted fs-11">Límite del servidor: {{ ini_get('upload_max_filesize') ?: 'no definido' }}.</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning"><i class="ri-save-line me-1"></i>Registrar gasto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 {{-- Modal Editar --}}
 <div class="modal fade" id="modalEditAutogestion" tabindex="-1" aria-hidden="true">
@@ -365,9 +487,13 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('click', function(e) {
         var btn = e.target.closest('.btn-preview-file');
         if (!btn) return;
-        var url = btn.getAttribute('data-url');
+        var url = btn.getAttribute('data-url') || btn.getAttribute('href');
+        if (!url || url === 'javascript:void(0)') return;
+        e.preventDefault();
         var title = btn.getAttribute('title') || 'Archivo';
-        var ext = url.split('.').pop().toLowerCase();
+        // La extensión se pasa en data-ext: la URL ya no la termina en .pdf/.jpg
+        // porque los archivos se sirven por una ruta autenticada.
+        var ext = (btn.getAttribute('data-ext') || url.split('.').pop() || '').toLowerCase();
         document.getElementById('filePreviewTitle').textContent = title;
         var content = document.getElementById('filePreviewContent');
         if (['jpg','jpeg','png','webp'].includes(ext)) {
@@ -428,14 +554,19 @@ document.addEventListener('DOMContentLoaded', function() {
             var asesorName = (g.asesor ? g.asesor.apellidos + ', ' + g.asesor.nombres : '');
             document.getElementById('modalEditAsesorName').textContent = asesorName;
 
-            var storageUrl = '{{ asset('storage') }}';
+            // Los archivos se sirven por una ruta autenticada (/archivo/comprobante|debito),
+            // no por enlace directo a /storage, que depende del symlink del servidor.
+            var archivoUrlTpl = '{{ route("admin.marketing.publicidad.autogestion.archivo", ["id" => ":id", "tipo" => "comprobante"]) }}';
+            var debitoUrlTpl = '{{ route("admin.marketing.publicidad.autogestion.archivo", ["id" => ":id", "tipo" => "debito"]) }}';
+            var extOf = function(p) { var m = (p || '').split('.'); return m.length > 1 ? m.pop().toLowerCase() : ''; };
+
             var archivoHtml = g.archivo_path
-                ? '<a href="javascript:void(0)" class="file-preview btn-preview-file" data-url="' + storageUrl + '/' + g.archivo_path + '" title="' + (g.archivo_original || '') + '"><i class="ri-attachment-2"></i> ' + (g.archivo_original || 'Ver') + '</a>'
+                ? '<a href="' + archivoUrlTpl.replace(':id', g.id) + '" class="file-preview btn-preview-file" data-ext="' + extOf(g.archivo_original || g.archivo_path) + '" title="' + (g.archivo_original || '') + '"><i class="ri-attachment-2"></i> ' + (g.archivo_original || 'Ver') + '</a>'
                 : '<span class="text-muted">Sin archivo</span>';
             document.getElementById('modalEditArchivoActual').innerHTML = archivoHtml;
 
             var debitoHtml = g.archivo_debito_path
-                ? '<a href="javascript:void(0)" class="file-preview btn-preview-file" data-url="' + storageUrl + '/' + g.archivo_debito_path + '" title="' + (g.archivo_debito_original || '') + '"><i class="ri-bank-card-line"></i> ' + (g.archivo_debito_original || 'Ver') + '</a>'
+                ? '<a href="' + debitoUrlTpl.replace(':id', g.id) + '" class="file-preview btn-preview-file fs-11 text-warning" data-ext="' + extOf(g.archivo_debito_original || g.archivo_debito_path) + '" title="' + (g.archivo_debito_original || '') + '"><i class="ri-bank-card-line"></i> ' + (g.archivo_debito_original || 'Ver') + '</a>'
                 : '<span class="text-muted">Sin archivo</span>';
             document.getElementById('modalEditDebitoActual').innerHTML = debitoHtml;
 

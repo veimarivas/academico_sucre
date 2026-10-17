@@ -38,7 +38,7 @@
         @if($g->archivo_path)
         <div><span class="badge bg-primary px-1 py-0" style="font-size:.62rem!important;"><i class="ri-attachment-2"></i> Comp.</span>
         @if($compOk)
-        <a href="javascript:void(0)" class="file-preview btn-preview-file" data-url="{{ asset('storage/'.$g->archivo_path) }}" title="{{ $g->archivo_original }}">
+        <a href="{{ route('admin.marketing.publicidad.autogestion.archivo', ['id' => $g->id, 'tipo' => 'comprobante']) }}" class="file-preview btn-preview-file" data-ext="{{ pathinfo($g->archivo_original ?? $g->archivo_path, PATHINFO_EXTENSION) }}" title="{{ $g->archivo_original }}">
             <i class="ri-attachment-2"></i> Ver
         </a>
         @else
@@ -49,7 +49,7 @@
         @if($g->archivo_debito_path)
         <div class="mt-1"><span class="badge bg-warning text-dark px-1 py-0" style="font-size:.62rem!important;"><i class="ri-bank-card-line"></i> Débito</span>
         @if($debOk)
-        <a href="javascript:void(0)" class="file-preview btn-preview-file fs-11 text-warning" data-url="{{ asset('storage/'.$g->archivo_debito_path) }}" title="{{ $g->archivo_debito_original }}">
+        <a href="{{ route('admin.marketing.publicidad.autogestion.archivo', ['id' => $g->id, 'tipo' => 'debito']) }}" class="file-preview btn-preview-file fs-11 text-warning" data-ext="{{ pathinfo($g->archivo_debito_original ?? $g->archivo_debito_path, PATHINFO_EXTENSION) }}" title="{{ $g->archivo_debito_original }}">
             <i class="ri-bank-card-line"></i> Ver
         </a>
         @else

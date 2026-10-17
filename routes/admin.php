@@ -331,6 +331,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::get('/marketing/publicidad/presupuestos/reporte', [PublicidadController::class, 'reportePdf'])->name('marketing.publicidad.presupuestos.reporte');
         Route::get('/marketing/publicidad/comprobantes/{asesor}', [PublicidadController::class, 'comprobantesAsesor'])->name('marketing.publicidad.comprobantes');
         Route::get('/marketing/publicidad/autogestion', [PublicidadController::class, 'autogestionIndex'])->name('marketing.publicidad.autogestion');
+        Route::post('/marketing/publicidad/autogestion', [PublicidadController::class, 'storeAutogestion'])->middleware('permission:marketing.publicidad.subir')->name('marketing.publicidad.autogestion.store');
+        Route::get('/marketing/publicidad/autogestion/{id}/archivo/{tipo}', [PublicidadController::class, 'verArchivoAutogestion'])->name('marketing.publicidad.autogestion.archivo');
         Route::get('/marketing/publicidad/autogestion/{id}/edit', [PublicidadController::class, 'editAutogestion'])->name('marketing.publicidad.autogestion.edit');
         Route::post('/marketing/publicidad/autogestion/{id}/update', [PublicidadController::class, 'updateAutogestion'])->middleware('permission:marketing.publicidad.subir')->name('marketing.publicidad.autogestion.update');
         Route::delete('/marketing/publicidad/autogestion/{id}', [PublicidadController::class, 'destroyAutogestion'])->middleware('permission:marketing.publicidad.subir')->name('marketing.publicidad.autogestion.destroy');

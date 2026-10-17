@@ -1987,7 +1987,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!btn) return;
         e.preventDefault();
         const url = btn.dataset.url;
-        const ext = url.split('.').pop().toLowerCase();
+        // La extensión viene en data-ext: la URL ya no la termina en .pdf/.jpg
+        // porque los archivos de autogestión se sirven por ruta autenticada.
+        const ext = (btn.dataset.ext || url.split('.').pop() || '').toLowerCase();
         const content = document.getElementById('filePreviewContent');
         if (['jpg','jpeg','png','webp'].includes(ext)) {
             content.innerHTML = '<img src="' + url + '" class="img-fluid" style="max-height:80vh;object-fit:contain;" alt="Comprobante">';
