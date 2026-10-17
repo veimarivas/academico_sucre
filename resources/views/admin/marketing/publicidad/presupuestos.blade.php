@@ -4,177 +4,137 @@
 
 @push('css')
 <style>
-/* ─── Variables & Animations ─── */
-:root {
-    --transition-speed: 0.3s;
-}
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(15px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-@keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-}
+.mkt-page { --pres-line: #eceff4; --pres-ink: #1e293b; --pres-muted: #6b7280; --pres-soft: #fafbfd; }
 
-/* ─── Hero Section ─── */
-.pub-hero { 
-    position: relative; 
-    background: linear-gradient(135deg, #12345b 0%, #1c486c 45%, #0a6a90 100%); 
-    border-radius: 18px; 
-    padding: 1.8rem 2rem; 
-    color: #fff; 
-    overflow: hidden; 
-    box-shadow: 0 18px 40px -22px rgba(18,52,91,.75); 
-    margin-bottom: 1.5rem; 
-    z-index: 1;
+/* ─── Hero ─── */
+.pub-hero {
+    position: relative;
+    background: linear-gradient(135deg, #12345b 0%, #1c486c 45%, #0a6a90 100%);
+    border-radius: 18px;
+    padding: 1.7rem 1.9rem;
+    color: #fff;
+    overflow: hidden;
+    box-shadow: 0 18px 40px -24px rgba(18,52,91,.8);
+    margin-bottom: 1.5rem;
 }
 .pub-hero::after {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: radial-gradient(circle at top right, rgba(255,255,255,0.15), transparent 40%),
-                radial-gradient(circle at bottom left, rgba(0,0,0,0.15), transparent 40%);
-    z-index: -1;
+    background: radial-gradient(circle at top right, rgba(255,255,255,.16), transparent 42%),
+                radial-gradient(circle at bottom left, rgba(0,0,0,.18), transparent 42%);
+    pointer-events: none;
 }
-.pub-hero .hero-icon { 
-    width: 64px; height: 64px; 
-    display: inline-flex; align-items: center; justify-content: center; 
-    background: rgba(255,255,255,0.15); 
-    border: 1px solid rgba(255,255,255,0.3); 
-    backdrop-filter: blur(8px);
-    border-radius: 18px; 
-    font-size: 2rem; 
-    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+.pub-hero .hero-icon {
+    width: 60px; height: 60px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.14);
+    border: 1px solid rgba(255,255,255,.28);
+    border-radius: 16px;
+    font-size: 1.9rem;
 }
-.pub-hero h4 { color: #fff; font-weight: 800; font-size: 1.5rem; margin: 0; letter-spacing: -0.5px; }
-.pub-hero .hero-sub { color: rgba(255,255,255,0.9); font-size: 0.95rem; margin: 0; font-weight: 500; }
+.pub-hero h4 { color: #fff; font-weight: 800; font-size: 1.45rem; margin: 0; letter-spacing: -.5px; }
+.pub-hero .hero-sub { color: rgba(255,255,255,.88); font-size: .93rem; margin: 0; font-weight: 500; }
 .pub-hero .breadcrumb { background: transparent; padding: 0; margin: 0; }
-.pub-hero .breadcrumb-item, .pub-hero .breadcrumb-item a { color: rgba(255,255,255,0.75); font-size: 0.85rem; font-weight: 500; transition: color var(--transition-speed); }
+.pub-hero .breadcrumb-item, .pub-hero .breadcrumb-item a { color: rgba(255,255,255,.75); font-size: .82rem; font-weight: 500; }
 .pub-hero .breadcrumb-item a:hover { color: #fff; }
 .pub-hero .breadcrumb-item.active { color: #fff; font-weight: 700; }
-.pub-hero .breadcrumb-item + .breadcrumb-item::before { color: rgba(255,255,255,0.5); }
+.pub-hero .breadcrumb-item + .breadcrumb-item::before { color: rgba(255,255,255,.5); }
 
-/* ─── Cards & Panels ─── */
-.filter-card, .card-panel { 
-    border: none; 
-    border-radius: 16px; 
-    background: #fff; 
-    box-shadow: 0 6px 24px -8px rgba(64,81,137,0.12); 
-    transition: box-shadow var(--transition-speed);
+/* ─── Resumen ─── */
+.stat-card {
+    border: 1px solid var(--pres-line);
+    border-radius: 14px;
+    background: #fff;
+    transition: transform .25s ease, box-shadow .25s ease;
 }
-[data-layout-mode="dark"] .filter-card, [data-layout-mode="dark"] .card-panel { background: #1a1d21; box-shadow: 0 6px 24px -8px rgba(0,0,0,0.3); }
-.filter-card .card-header { background: transparent; border-bottom: 1px solid rgba(0,0,0,0.05); padding: 1.25rem 1.5rem; }
-[data-layout-mode="dark"] .filter-card .card-header { border-bottom-color: rgba(255,255,255,0.05); }
-.form-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 700; color: #878a99; margin-bottom: 0.4rem; }
+.stat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 26px -18px rgba(16,24,40,.5); }
+.stat-card .stat-label { font-size: .66rem; text-transform: uppercase; letter-spacing: .06em; color: var(--pres-muted); font-weight: 700; margin-bottom: .3rem; }
+.stat-card .stat-value { font-size: 1.3rem; font-weight: 800; color: var(--pres-ink); letter-spacing: -.4px; font-variant-numeric: tabular-nums; }
+.stat-card .stat-icon { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 1.3rem; }
 
-/* ─── Stat Cards ─── */
-.stat-card { 
-    border: 1px solid rgba(0,0,0,0.04); 
-    border-radius: 16px; 
-    background: #fff; 
-    overflow: hidden; 
-    position: relative; 
-    transition: all var(--transition-speed) cubic-bezier(0.25, 0.8, 0.25, 1);
-    box-shadow: 0 4px 15px -5px rgba(0,0,0,0.05);
-    animation: fadeInUp 0.5s ease backwards;
-}
-.stat-card:nth-child(1) { animation-delay: 0.1s; }
-.stat-card:nth-child(2) { animation-delay: 0.2s; }
-.stat-card:nth-child(3) { animation-delay: 0.3s; }
-.stat-card:nth-child(4) { animation-delay: 0.4s; }
+/* ─── Filtros ─── */
+.filter-card { border: 1px solid var(--pres-line); border-radius: 14px; background: #fff; }
+.filter-card .card-header { background: transparent; border-bottom: 1px solid var(--pres-line); padding: 1rem 1.25rem; }
+.form-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--pres-muted); margin-bottom: .35rem; }
 
-.stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 25px -8px rgba(64,81,137,0.25);
+/* ─── Acordeón de periodos ─── */
+.period-list { display: flex; flex-direction: column; gap: 1rem; }
+.period-card {
+    background: #fff;
+    border: 1px solid var(--pres-line);
+    border-radius: 14px;
+    overflow: hidden;
 }
-.stat-card::before { 
-    content: ""; position: absolute; top: 0; left: 0; width: 5px; height: 100%; 
-    background: var(--stat-accent, #405189); 
-    border-radius: 5px 0 0 5px;
+.period-head { display: flex; align-items: center; gap: 1rem; padding: .9rem 1.1rem; cursor: pointer; user-select: none; flex-wrap: wrap; }
+.period-head:hover { background: var(--pres-soft); }
+.period-head:focus-visible { outline: 2px solid #405189; outline-offset: -2px; }
+.period-icon {
+    width: 42px; height: 42px; flex: 0 0 42px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 12px; background: linear-gradient(135deg, #405189, #5e72b8);
+    color: #fff; font-size: 1.2rem; box-shadow: 0 4px 12px -5px rgba(64,81,137,.7);
 }
-[data-layout-mode="dark"] .stat-card { background: #212529; border-color: rgba(255,255,255,0.05); }
-[data-layout-mode="dark"] .stat-card:hover { box-shadow: 0 12px 25px -8px rgba(0,0,0,0.5); }
-.stat-card .stat-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: #878a99; font-weight: 700; margin-bottom: 0.5rem; }
-.stat-card .stat-value { font-size: 1.35rem; font-weight: 800; color: #212529; line-height: 1.2; letter-spacing: -0.5px; }
-[data-layout-mode="dark"] .stat-card .stat-value { color: #f3f3f9; }
-.stat-card .stat-icon { 
-    width: 48px; height: 48px; 
-    display: inline-flex; align-items: center; justify-content: center; 
-    border-radius: 14px; font-size: 1.4rem; 
-    background: rgba(0,0,0,0.03); /* Fallback */
-}
+.period-title h6 { font-size: 1rem; font-weight: 700; letter-spacing: -.01em; color: var(--pres-ink); margin: 0; }
+.period-sub { font-size: .72rem; color: var(--pres-muted); margin-top: 1px; }
+.period-metrics { display: flex; align-items: center; gap: 1.5rem; margin-left: auto; flex-wrap: wrap; }
+.pm { display: flex; flex-direction: column; align-items: flex-end; }
+.pm-label { font-size: .6rem; text-transform: uppercase; letter-spacing: .06em; color: var(--pres-muted); font-weight: 700; }
+.pm-value { font-size: .92rem; font-weight: 700; color: var(--pres-ink); font-variant-numeric: tabular-nums; }
+.bar { width: 108px; height: 7px; background: #e9edf2; border-radius: 99px; overflow: hidden; margin-top: 4px; }
+.bar > span { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #0ab39c, #299cdb); transform-origin: left center; transform: scaleX(var(--v, 0)); animation: barIn .6s cubic-bezier(.2, .8, .2, 1) both; }
+.bar.warn > span { background: linear-gradient(90deg, #f7b84b, #f06548); }
+@keyframes barIn { from { transform: scaleX(0); } to { transform: scaleX(var(--v, 0)); } }
+@media (prefers-reduced-motion: reduce) { .bar > span { animation: none; } }
+.pm-pct { font-size: .7rem; font-weight: 700; color: var(--pres-muted); margin-top: 3px; font-variant-numeric: tabular-nums; }
+.period-status { font-size: .68rem; font-weight: 700; padding: .3rem .65rem; border-radius: 99px; white-space: nowrap; }
+.period-status.open { background: #e7f8f4; color: #067a68; }
+.period-status.closed { background: #eef0f4; color: #5a6472; }
+.period-chevron { font-size: 1.4rem; color: #9aa4b2; transition: transform .3s ease; }
+.period-head[aria-expanded="true"] .period-chevron { transform: rotate(180deg); }
+.period-body { border-top: 1px solid var(--pres-line); }
 
-/* ─── Table Design ─── */
-.tabla-pres { width: 100%; border-collapse: separate; border-spacing: 0; }
-.tabla-pres th, .tabla-pres td { vertical-align: middle; padding: 0.85rem 0.75rem; border-bottom: 1px solid #f1f3f5; }
-.tabla-pres thead th { 
-    background: #f3f6f9 !important; 
-    font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; 
-    color: #495057; border-bottom: none; 
-}
-[data-layout-mode="dark"] .tabla-pres th, [data-layout-mode="dark"] .tabla-pres td { border-bottom-color: #2a2f34; }
-[data-layout-mode="dark"] .tabla-pres thead th { background: #1a1d20 !important; color: #ced4da; }
-.tabla-pres tbody tr { transition: all var(--transition-speed) ease; }
-.tabla-pres tbody tr:hover { background-color: rgba(64,81,137,0.03); }
-[data-layout-mode="dark"] .tabla-pres tbody tr:hover { background-color: rgba(255,255,255,0.02); }
+/* ─── Bloque de quincena ─── */
+.q-block + .q-block { border-top: 1px dashed #e6eaf0; }
+.q-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .7rem 1.1rem; background: var(--pres-soft); flex-wrap: wrap; }
+.q-sum { font-size: .72rem; color: var(--pres-muted); }
+.q-sum b { color: var(--pres-ink); font-variant-numeric: tabular-nums; }
+.q-empty { padding: 1.4rem 1.1rem; text-align: center; color: var(--pres-muted); font-size: .82rem; }
 
-/* Group Period Row */
-.group-period { background: linear-gradient(to right, #f0f4ff, transparent); border-left: 4px solid #405189; }
-[data-layout-mode="dark"] .group-period { background: linear-gradient(to right, #1a1f2e, transparent); }
-.group-period > td { border-bottom: 2px solid #e2e8f0; }
-[data-layout-mode="dark"] .group-period > td { border-bottom-color: #2a2f34; }
-.group-period .period-icon { 
-    width: 40px; height: 40px; 
-    display: inline-flex; align-items: center; justify-content: center; 
-    background: linear-gradient(135deg, #405189, #5e72b8); 
-    color: #fff; border-radius: 12px; font-size: 1.15rem; 
-    box-shadow: 0 4px 10px rgba(64,81,137,0.3);
-}
-.group-period strong { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.3px; color: #1e293b; }
-[data-layout-mode="dark"] .group-period strong { color: #f1f5f9; }
+.badge-q1, .badge-q2 { font-weight: 700; padding: .3rem .7rem; font-size: .7rem; border-radius: 99px; letter-spacing: .02em; }
+.badge-q1 { background: #e6efff; color: #1d4ed8; }
+.badge-q2 { background: #fff3d6; color: #a76a06; }
 
-/* Tags & Badges */
-.badge-q1, .badge-q2 { font-weight: 700; padding: 0.35rem 0.8rem; font-size: 0.72rem; letter-spacing: 0.3px; }
-.badge-q1 { background: #dbeafe; color: #1d4ed8; }
-.badge-q2 { background: #fef3c7; color: #b45309; }
-[data-layout-mode="dark"] .badge-q1 { background: rgba(29,78,216,0.2); color: #93c5fd; }
-[data-layout-mode="dark"] .badge-q2 { background: rgba(180,83,9,0.2); color: #fbbf24; }
+/* ─── Tabla de presupuestos ─── */
+.pres-table { margin: 0; }
+.pres-table thead th {
+    font-size: .63rem; text-transform: uppercase; letter-spacing: .05em; color: #6b7280;
+    font-weight: 700; border-bottom: 1px solid var(--pres-line); background: #fff;
+    padding: .55rem .9rem; white-space: nowrap;
+}
+.pres-table tbody td { padding: .68rem .9rem; border-bottom: 1px solid #f2f4f8; vertical-align: middle; font-size: .82rem; color: #2b3445; }
+.pres-table tbody tr:hover { background: var(--pres-soft); }
+.num { font-variant-numeric: tabular-nums; }
+.amount-strong { font-weight: 700; color: var(--pres-ink); }
+.pres-asesor { display: flex; align-items: center; gap: .6rem; }
+.pres-avatar { width: 32px; height: 32px; flex: 0 0 32px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; background: #fff7e6; color: #c47f17; font-size: .95rem; }
+.pres-name { font-weight: 600; color: var(--pres-ink); display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+.pres-sub { font-size: .68rem; color: var(--pres-muted); }
+.chip { display: inline-flex; align-items: center; gap: .25rem; padding: .12rem .5rem; border-radius: 99px; font-size: .66rem; font-weight: 700; background: #eef2fb; color: #3b4c86; font-variant-numeric: tabular-nums; }
+.chip-deriv { background: #fff2d6; color: #9a6206; }
+.q-total-row td { background: #f8f9fc; font-weight: 700; font-size: .82rem; color: var(--pres-ink); padding: .6rem .9rem; border-top: 1px solid var(--pres-line); }
+.empty-row td { text-align: center; color: var(--pres-muted); padding: 1.1rem; font-size: .8rem; }
 
-.tag-asesor { 
-    display: inline-flex; align-items: center; gap: 6px; 
-    padding: 0.25rem 0.85rem; border-radius: 99px; 
-    font-size: 0.78rem; font-weight: 600; 
-    transition: transform var(--transition-speed);
-}
-.tag-asesor:hover { transform: translateY(-1px); }
-.tag-asesor-q1 { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
-.tag-asesor-q2 { background: #fffbeb; border: 1px solid #fde68a; color: #b45309; }
-[data-layout-mode="dark"] .tag-asesor-q1 { background: rgba(29,78,216,0.1); border-color: rgba(147,197,253,0.2); color: #93c5fd; }
-[data-layout-mode="dark"] .tag-asesor-q2 { background: rgba(180,83,9,0.1); border-color: rgba(251,191,36,0.2); color: #fbbf24; }
-.tag-asesor i { font-size: 0.85rem; opacity: 0.8; }
-
-/* Progress Bar */
-.bar-progress { 
-    width: 120px; height: 8px; 
-    background: #e2e8f0; border-radius: 99px; 
-    overflow: hidden; position: relative;
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
-}
-.bar-progress > span { 
-    display: block; height: 100%; 
-    background: linear-gradient(90deg, #0ab39c, #299cdb); 
-    border-radius: 99px; 
-    position: relative;
-}
-.bar-progress > span::after {
-    content: ''; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-    background-size: 200% 100%;
-    animation: shimmer 2s infinite linear;
-}
-.bar-progress.warn > span { background: linear-gradient(90deg, #f7b84b, #f06548); }
-[data-layout-mode="dark"] .bar-progress { background: #334155; }
+/* ─── Modo oscuro ─── */
+[data-layout-mode="dark"] .stat-card, [data-layout-mode="dark"] .filter-card, [data-layout-mode="dark"] .period-card { background: #1a1d21; border-color: #2a2f34; }
+[data-layout-mode="dark"] .period-head:hover, [data-layout-mode="dark"] .pres-table tbody tr:hover, [data-layout-mode="dark"] .q-head, [data-layout-mode="dark"] .q-total-row td { background: #20242a; }
+[data-layout-mode="dark"] .stat-card .stat-label, [data-layout-mode="dark"] .form-label, [data-layout-mode="dark"] .period-sub, [data-layout-mode="dark"] .q-sum, [data-layout-mode="dark"] .pres-sub, [data-layout-mode="dark"] .pm-label { color: #9099a8; }
+[data-layout-mode="dark"] .stat-card .stat-value, [data-layout-mode="dark"] .period-title h6, [data-layout-mode="dark"] .pm-value, [data-layout-mode="dark"] .pres-name, [data-layout-mode="dark"] .amount-strong, [data-layout-mode="dark"] .q-total-row td, [data-layout-mode="dark"] .q-sum b { color: #eceff4; }
+[data-layout-mode="dark"] .pres-table thead th { background: #1a1d21; color: #9099a8; }
+[data-layout-mode="dark"] .pres-table tbody td { color: #cdd3dc; border-bottom-color: #262b31; }
+[data-layout-mode="dark"] .q-block + .q-block, [data-layout-mode="dark"] .period-body { border-color: #2a2f34; }
+[data-layout-mode="dark"] .chip { background: #232a3a; color: #a9baf0; }
+[data-layout-mode="dark"] .chip-deriv { background: #3a2f16; color: #f0c070; }
 </style>
 @endpush
 
@@ -187,7 +147,7 @@
                 <div class="hero-icon"><i class="ri-wallet-3-line"></i></div>
                 <div>
                     <h4>Presupuestos de Publicidad</h4>
-                    <p class="hero-sub">Asignaciones presupuestarias agrupadas por periodo</p>
+                    <p class="hero-sub">Asignaciones por asesor, agrupadas por periodo</p>
                 </div>
             </div>
             <ol class="breadcrumb m-0">
@@ -199,13 +159,6 @@
         </div>
     </div>
 </div>
-
-@if(session('success'))
-<div class="alert alert-success alert-dismissible fade show" role="alert">
-    <i class="ri-check-double-line me-1"></i>{{ session('success') }}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-</div>
-@endif
 
 {{-- Resumen global --}}
 @php
@@ -223,7 +176,7 @@
 @endphp
 <div class="row mb-4">
     <div class="col-xl-3 col-md-6 mb-3">
-        <div class="stat-card h-100" style="--stat-accent:#405189;">
+        <div class="stat-card h-100">
             <div class="card-body p-3">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
@@ -237,7 +190,7 @@
         </div>
     </div>
     <div class="col-xl-3 col-md-6 mb-3">
-        <div class="stat-card h-100" style="--stat-accent:#0ab39c;">
+        <div class="stat-card h-100">
             <div class="card-body p-3">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
@@ -246,11 +199,12 @@
                     </div>
                     <div class="stat-icon bg-soft-success text-success"><i class="ri-money-dollar-circle-line"></i></div>
                 </div>
+                <div class="fs-11 text-muted mt-1">{{ $resTotalRecibos }} comprobante(s)</div>
             </div>
         </div>
     </div>
     <div class="col-xl-3 col-md-6 mb-3">
-        <div class="stat-card h-100" style="--stat-accent:#299cdb;">
+        <div class="stat-card h-100">
             <div class="card-body p-3">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
@@ -259,19 +213,21 @@
                     </div>
                     <div class="stat-icon bg-soft-info text-info"><i class="ri-checkbox-circle-line"></i></div>
                 </div>
+                <div class="fs-11 text-muted mt-1">&nbsp;</div>
             </div>
         </div>
     </div>
     <div class="col-xl-3 col-md-6 mb-3">
-        <div class="stat-card h-100" style="--stat-accent:#f7b84b;">
+        <div class="stat-card h-100">
             <div class="card-body p-3">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
-                        <p class="stat-label">Comprobantes cargados</p>
-                        <h4 class="stat-value mb-0">{{ $resTotalRecibos }}</h4>
+                        <p class="stat-label">Sin gastos (eliminables)</p>
+                        <h4 class="stat-value mb-0">{{ $totalEliminables }}</h4>
                     </div>
-                    <div class="stat-icon bg-soft-warning text-warning"><i class="ri-receipt-line"></i></div>
+                    <div class="stat-icon bg-soft-warning text-warning"><i class="ri-delete-bin-6-line"></i></div>
                 </div>
+                <div class="fs-11 text-muted mt-1">Presupuestos sin comprobantes</div>
             </div>
         </div>
     </div>
@@ -281,7 +237,7 @@
 <div class="row mb-4">
     <div class="col-12">
         <div class="card filter-card mb-0">
-            <div class="card-header d-flex align-items-center gap-2">
+            <div class="card-header d-flex align-items-center gap-2 flex-wrap">
                 <i class="ri-equalizer-line text-primary"></i>
                 <h5 class="card-title mb-0 fs-14 fw-semibold">Filtros</h5>
                 <a href="{{ route('admin.marketing.publicidad.index') }}" class="btn btn-sm btn-soft-info ms-auto">
@@ -290,7 +246,7 @@
             </div>
             <div class="card-body">
                 <form method="GET" action="{{ route('admin.marketing.publicidad.presupuestos') }}" class="row g-3 align-items-end">
-                    <div class="col-md-2">
+                    <div class="col-md-3">
                         <label class="form-label">Gestión</label>
                         <select name="gestion" class="form-select" onchange="this.form.submit()">
                             <option value="">Todas</option>
@@ -299,7 +255,12 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-10 d-flex align-items-end justify-content-end">
+                    <div class="col-md-9 d-flex align-items-end justify-content-end gap-2">
+                        @if($totalEliminables > 0)
+                        <span class="badge bg-soft-warning text-warning fs-11 px-2 py-2">
+                            <i class="ri-information-line me-1"></i>{{ $totalEliminables }} presupuesto(s) sin gastos
+                        </span>
+                        @endif
                         <a href="{{ route('admin.marketing.publicidad.presupuestos') }}" class="btn btn-soft-secondary btn-sm">
                             <i class="ri-refresh-line me-1"></i>Limpiar filtro
                         </a>
@@ -310,240 +271,277 @@
     </div>
 </div>
 
-{{-- Tabla de presupuestos --}}
-<div class="row">
-    <div class="col-12">
-        <div class="card card-panel mb-0">
-            <div class="card-header d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center gap-2">
-                    <i class="ri-wallet-3-line text-primary"></i>
-                    <h5 class="card-title mb-0 fs-14 fw-semibold">Asignaciones por periodo</h5>
-                </div>
-                @if($grupos->isNotEmpty())
-                <span class="badge bg-soft-primary fs-11 px-2 py-1">{{ $resTotalPeriodos }} periodo(s)</span>
-                @endif
+{{-- Listado por periodo --}}
+@if($grupos->isEmpty())
+<div class="card filter-card">
+    <div class="card-body text-center py-5">
+        <i class="ri-inbox-2-line ri-3x text-muted d-block mb-3"></i>
+        <h5 class="fw-bold text-dark mb-1">Sin presupuestos registrados</h5>
+        <p class="text-muted mb-0">Aún no se han asignado presupuestos de publicidad.</p>
+    </div>
+</div>
+@else
+<div class="period-list">
+    @foreach($grupos as $key => $g)
+    @php
+        $totalAsignado = ($g->q1->total_asignado ?? 0) + ($g->q2->total_asignado ?? 0);
+        $totalGastado = ($g->q1->total_gastado ?? 0) + ($g->q2->total_gastado ?? 0);
+        $totalAprobado = ($g->q1->total_aprobado ?? 0) + ($g->q2->total_aprobado ?? 0);
+        $totalComprobantes = ($g->q1->total_comprobantes ?? 0) + ($g->q2->total_comprobantes ?? 0);
+        $totalPresupuestos = ($g->q1->total_presupuestos ?? 0) + ($g->q2->total_presupuestos ?? 0);
+        $gastoPct = $totalAsignado > 0 ? min(100, round(($totalGastado / $totalAsignado) * 100, 1)) : 0;
+        $cerradoPeriodo = ($g->q1->periodo_cerrado ?? false) || ($g->q2->periodo_cerrado ?? false);
+    @endphp
+    <div class="period-card">
+        <div class="period-head" data-bs-toggle="collapse" data-bs-target="#periodo-{{ $key }}" role="button" tabindex="0" aria-expanded="true" aria-controls="periodo-{{ $key }}">
+            <span class="period-icon"><i class="ri-calendar-event-line"></i></span>
+            <div class="period-title">
+                <h6>{{ $meses[$g->mes] }} <span class="text-muted fw-normal">{{ $g->gestion }}</span></h6>
+                <div class="period-sub">{{ $totalPresupuestos }} presupuesto(s) · {{ $totalComprobantes }} comprobante(s)</div>
             </div>
-            <div class="card-body p-0">
-                @if($grupos->isEmpty())
-                <div class="text-center py-5">
-                    <i class="ri-inbox-2-line ri-3x text-muted d-block mb-3"></i>
-                    <h5 class="fw-bold text-dark">Sin presupuestos registrados</h5>
-                    <p class="text-muted mb-0">Aún no se han asignado presupuestos de publicidad.</p>
+            <div class="period-metrics">
+                <div class="pm"><span class="pm-label">Asignado</span><span class="pm-value text-primary">Bs {{ number_format($totalAsignado, 2) }}</span></div>
+                <div class="pm"><span class="pm-label">Gastado</span><span class="pm-value">Bs {{ number_format($totalGastado, 2) }}</span></div>
+                <div class="pm"><span class="pm-label">Aprobado</span><span class="pm-value text-success">Bs {{ number_format($totalAprobado, 2) }}</span></div>
+                <div class="pm">
+                    <span class="pm-label">Avance</span>
+                    <div class="bar {{ $gastoPct > 100 ? 'warn' : '' }}"><span style="--v:{{ $gastoPct / 100 }};"></span></div>
+                    <span class="pm-pct">{{ $gastoPct }}%</span>
                 </div>
-                @else
-                <div class="table-responsive">
-                    <table class="table tabla-pres mb-0">
-                        <thead>
-                            <tr>
-                                <th style="width:130px;">Periodo</th>
-                                <th style="width:80px;">Quincena</th>
-                                <th>Asesores principales</th>
-                                <th class="text-end" style="width:100px;">Asignado</th>
-                                <th class="text-end" style="width:100px;">Gastado</th>
-                                <th class="text-end" style="width:100px;">Aprobado</th>
-                                <th class="text-center" style="width:60px;">Recibos</th>
-                                <th class="text-center" style="width:80px;">Estado</th>
-                                <th class="text-center" style="width:130px;"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($grupos as $key => $g)
-                            @php
-                                $totalAsignado = ($g->q1->total_asignado ?? 0) + ($g->q2->total_asignado ?? 0);
-                                $totalGastado = ($g->q1->total_gastado ?? 0) + ($g->q2->total_gastado ?? 0);
-                                $totalAprobado = ($g->q1->total_aprobado ?? 0) + ($g->q2->total_aprobado ?? 0);
-                                $totalAprobadoObs = ($g->q1->total_aprobado_obs ?? 0) + ($g->q2->total_aprobado_obs ?? 0);
-                                $totalComprobantes = ($g->q1->total_comprobantes ?? 0) + ($g->q2->total_comprobantes ?? 0);
-                                $gastoPct = $totalAsignado > 0 ? min(100, round(($totalGastado / $totalAsignado) * 100, 1)) : 0;
-                            @endphp
-                            {{-- Fila de grupo (gestión - mes) --}}
-                            <tr class="group-period">
-                                <td colspan="9">
-                                    <div class="d-flex align-items-center gap-3 px-2 py-1">
-                                        <span class="period-icon"><i class="ri-calendar-line"></i></span>
-                                        <strong class="fs-14">{{ $meses[$g->mes] }} {{ $g->gestion }}</strong>
-                                        @if($gastoPct > 0)
-                                        <div class="bar-progress {{ $gastoPct > 100 ? 'warn' : '' }} ms-2">
-                                            <span style="width:{{ $gastoPct }}%;"></span>
-                                        </div>
-                                        <span class="text-muted fs-11">{{ $gastoPct }}%</span>
-                                        @endif
-                                    </div>
-                                </td>
-                            </tr>
+            </div>
+            <span class="period-status {{ $cerradoPeriodo ? 'closed' : 'open' }}">
+                <i class="ri-{{ $cerradoPeriodo ? 'lock-line' : 'lock-unlock-line' }} me-1"></i>{{ $cerradoPeriodo ? 'Cerrado' : 'Abierto' }}
+            </span>
+            <i class="ri-arrow-down-s-line period-chevron"></i>
+        </div>
 
-                            {{-- Fila Q1 --}}
-                            @if($g->q1)
-                            @php $q = $g->q1; @endphp
-                            <tr>
-                                <td></td>
-                                <td><span class="badge badge-q1 fs-11 px-3 py-2 rounded-pill">Q1 (1-15)</span></td>
-                                <td>
-                                    @if($q->principales->isNotEmpty())
-                                        <div class="d-flex flex-wrap gap-1">
-                                        @foreach($q->principales as $pr)
-                                            <span class="tag-asesor tag-asesor-q1">
-                                                <i class="ri-user-star-line" style="font-size:.65rem;"></i>
-                                                {{ $pr->apellidos }}, {{ $pr->nombres }}
-                                                <span style="font-weight:400;color:#6b7280;font-size:.65rem;">({{ $pr->cargo_nombre }})</span>
-                                            </span>
-                                        @endforeach
-                                        </div>
-                                    @else
-                                        <span class="text-muted fst-italic fs-12">—</span>
-                                    @endif
-                                </td>
-                                <td class="text-end fw-semibold">Bs {{ number_format($q->total_asignado, 2) }}</td>
-                                <td class="text-end">Bs {{ number_format($q->total_gastado, 2) }}</td>
-                                <td class="text-end text-success fw-semibold">Bs {{ number_format($q->total_aprobado, 2) }}</td>
-                                <td class="text-center">{{ $q->total_comprobantes }}</td>
-                                <td class="text-center">
-                                    @if($q->periodo_cerrado)
-                                        <span class="badge bg-soft-secondary text-secondary fs-10 px-2 py-1"><i class="ri-lock-line me-1"></i>Cerrado</span>
-                                    @else
-                                        <span class="badge bg-soft-success text-success fs-10 px-2 py-1"><i class="ri-lock-unlock-line me-1"></i>Abierto</span>
-                                    @endif
-                                </td>
-                                <td class="text-center">
-                                    <div class="d-flex align-items-center gap-1 justify-content-center">
-                                        <a href="{{ route('admin.marketing.publicidad.index', ['gestion' => $q->gestion, 'mes' => $q->mes, 'quincena' => $q->quincena]) }}" class="btn btn-sm btn-soft-primary" title="Ver detalle de Q{{ $q->quincena }}">
-                                            <i class="ri-eye-line"></i>
-                                        </a>
-                                        @can('marketing.publicidad.presupuestos')
-                                        <button type="button" class="btn btn-sm {{ $q->periodo_cerrado ? 'btn-soft-secondary' : 'btn-soft-warning' }} btn-toggle-periodo"
-                                                data-gestion="{{ $q->gestion }}"
-                                                data-mes="{{ $q->mes }}"
-                                                data-quincena="{{ $q->quincena }}"
-                                                data-cerrado="{{ $q->periodo_cerrado ? '1' : '0' }}"
-                                                title="{{ $q->periodo_cerrado ? 'Abrir periodo' : 'Cerrar periodo' }}">
-                                            <i class="ri-{{ $q->periodo_cerrado ? 'lock-unlock' : 'lock' }}-line"></i>
-                                        </button>
-                                        @endcan
-                                        @if($q->periodo_cerrado)
-                                        <a href="{{ route('admin.marketing.publicidad.presupuestos.reporte', ['gestion' => $q->gestion, 'mes' => $q->mes, 'quincena' => $q->quincena]) }}" class="btn btn-sm btn-soft-success" title="Generar reporte PDF">
-                                            <i class="ri-file-pdf-line"></i>
-                                        </a>
-                                        @endif
-                                    </div>
-                                </td>
-                            </tr>
+        <div id="periodo-{{ $key }}" class="collapse show">
+            <div class="period-body">
+                @foreach([['k' => 'q1', 'cls' => 'q1', 'label' => 'Q1', 'rango' => '1 – 15'], ['k' => 'q2', 'cls' => 'q2', 'label' => 'Q2', 'rango' => '16 – fin']] as $meta)
+                @php $q = $g->{$meta['k']}; @endphp
+                <div class="q-block">
+                    <div class="q-head">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="badge badge-{{ $meta['cls'] }}">{{ $meta['label'] }} · {{ $meta['rango'] }}</span>
+                            @if($q)
+                            <span class="q-sum">Asignado <b>Bs {{ number_format($q->total_asignado, 2) }}</b> · Gastado <b>Bs {{ number_format($q->total_gastado, 2) }}</b> · Aprobado <b>Bs {{ number_format($q->total_aprobado, 2) }}</b></span>
+                            @if($q->periodo_cerrado)
+                            <span class="period-status closed"><i class="ri-lock-line me-1"></i>Cerrado</span>
                             @else
-                            <tr>
-                                <td></td>
-                                <td><span class="badge badge-q1 fs-11 px-3 py-2 rounded-pill">Q1 (1-15)</span></td>
-                                <td colspan="7" class="text-muted fst-italic fs-12">Sin presupuesto asignado</td>
-                            </tr>
+                            <span class="period-status open"><i class="ri-lock-unlock-line me-1"></i>Abierto</span>
                             @endif
+                            @endif
+                        </div>
+                        @if($q)
+                        <div class="d-flex align-items-center gap-1">
+                            <a href="{{ route('admin.marketing.publicidad.index', ['gestion' => $q->gestion, 'mes' => $q->mes, 'quincena' => $q->quincena]) }}" class="btn btn-sm btn-soft-primary" title="Ver detalle de comprobantes">
+                                <i class="ri-eye-line me-1"></i>Ver detalle
+                            </a>
+                            @can('marketing.publicidad.presupuestos')
+                            <button type="button" class="btn btn-sm {{ $q->periodo_cerrado ? 'btn-soft-secondary' : 'btn-soft-warning' }} btn-toggle-periodo"
+                                    data-gestion="{{ $q->gestion }}"
+                                    data-mes="{{ $q->mes }}"
+                                    data-quincena="{{ $q->quincena }}"
+                                    data-cerrado="{{ $q->periodo_cerrado ? '1' : '0' }}"
+                                    title="{{ $q->periodo_cerrado ? 'Abrir periodo' : 'Cerrar periodo' }}">
+                                <i class="ri-{{ $q->periodo_cerrado ? 'lock-unlock' : 'lock' }}-line"></i>
+                            </button>
+                            @endcan
+                            @if($q->periodo_cerrado)
+                            <a href="{{ route('admin.marketing.publicidad.presupuestos.reporte', ['gestion' => $q->gestion, 'mes' => $q->mes, 'quincena' => $q->quincena]) }}" class="btn btn-sm btn-soft-success" title="Generar reporte PDF">
+                                <i class="ri-file-pdf-line"></i>
+                            </a>
+                            @endif
+                        </div>
+                        @endif
+                    </div>
 
-                            {{-- Fila Q2 --}}
-                            @if($g->q2)
-                            @php $q = $g->q2; @endphp
-                            <tr>
-                                <td></td>
-                                <td><span class="badge badge-q2 fs-11 px-3 py-2 rounded-pill">Q2 (16-fin)</span></td>
-                                <td>
-                                    @if($q->principales->isNotEmpty())
-                                        <div class="d-flex flex-wrap gap-1">
-                                        @foreach($q->principales as $pr)
-                                            <span class="tag-asesor tag-asesor-q2">
-                                                <i class="ri-user-star-line" style="font-size:.65rem;"></i>
-                                                {{ $pr->apellidos }}, {{ $pr->nombres }}
-                                                <span style="font-weight:400;color:#6b7280;font-size:.65rem;">({{ $pr->cargo_nombre }})</span>
-                                            </span>
-                                        @endforeach
+                    @if($q)
+                    <div class="table-responsive">
+                        <table class="table pres-table align-middle">
+                            <thead>
+                                <tr>
+                                    <th style="min-width:230px;">Asesor</th>
+                                    <th class="text-end" style="width:130px;">Asignado</th>
+                                    <th class="text-end" style="width:110px;">Gastado</th>
+                                    <th class="text-end" style="width:120px;">Aprobado</th>
+                                    <th class="text-center" style="width:80px;">Recibos</th>
+                                    <th class="text-center" style="width:100px;">Estado</th>
+                                    <th class="text-center" style="width:110px;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($q->presupuestos ?? collect() as $p)
+                                <tr>
+                                    <td>
+                                        <div class="pres-asesor">
+                                            <span class="pres-avatar"><i class="ri-user-star-line"></i></span>
+                                            <div>
+                                                <div class="pres-name">
+                                                    @if($p->ase_apellidos)
+                                                        {{ $p->ase_apellidos }}, {{ $p->ase_nombres }}
+                                                    @else
+                                                        <span class="fst-italic text-muted" style="font-weight:400;">Sin asesor asignado</span>
+                                                    @endif
+                                                    @if($p->presupuesto_origen_id)
+                                                        <span class="chip chip-deriv"><i class="ri-share-forward-line"></i>Derivado</span>
+                                                    @endif
+                                                </div>
+                                                @if($p->sup_apellidos)
+                                                    <div class="pres-sub">Supervisor: {{ $p->sup_apellidos }}, {{ $p->sup_nombres }}</div>
+                                                @endif
+                                            </div>
                                         </div>
-                                    @else
-                                        <span class="text-muted fst-italic fs-12">—</span>
-                                    @endif
-                                </td>
-                                <td class="text-end fw-semibold">Bs {{ number_format($q->total_asignado, 2) }}</td>
-                                <td class="text-end">Bs {{ number_format($q->total_gastado, 2) }}</td>
-                                <td class="text-end text-success fw-semibold">Bs {{ number_format($q->total_aprobado, 2) }}
-                                    @if(($q->total_aprobado_obs ?? 0) > 0)
-                                    <br><span class="text-info fs-11"><i class="ri-chat-4-line"></i> {{ number_format($q->total_aprobado_obs, 2) }}</span>
-                                    @endif
-                                </td>
-                                <td class="text-center">{{ $q->total_comprobantes }}</td>
-                                <td class="text-center">
-                                    @if($q->periodo_cerrado)
-                                        <span class="badge bg-soft-secondary text-secondary fs-10 px-2 py-1"><i class="ri-lock-line me-1"></i>Cerrado</span>
-                                    @else
-                                        <span class="badge bg-soft-success text-success fs-10 px-2 py-1"><i class="ri-lock-unlock-line me-1"></i>Abierto</span>
-                                    @endif
-                                </td>
-                                <td class="text-center">
-                                    <div class="d-flex align-items-center gap-1 justify-content-center">
-                                        <a href="{{ route('admin.marketing.publicidad.index', ['gestion' => $q->gestion, 'mes' => $q->mes, 'quincena' => $q->quincena]) }}" class="btn btn-sm btn-soft-primary" title="Ver detalle de Q{{ $q->quincena }}">
-                                            <i class="ri-eye-line"></i>
-                                        </a>
-                                        @can('marketing.publicidad.presupuestos')
-                                        <button type="button" class="btn btn-sm {{ $q->periodo_cerrado ? 'btn-soft-secondary' : 'btn-soft-warning' }} btn-toggle-periodo"
-                                                data-gestion="{{ $q->gestion }}"
-                                                data-mes="{{ $q->mes }}"
-                                                data-quincena="{{ $q->quincena }}"
-                                                data-cerrado="{{ $q->periodo_cerrado ? '1' : '0' }}"
-                                                title="{{ $q->periodo_cerrado ? 'Abrir periodo' : 'Cerrar periodo' }}">
-                                            <i class="ri-{{ $q->periodo_cerrado ? 'lock-unlock' : 'lock' }}-line"></i>
-                                        </button>
-                                        @endcan
-                                        @if($q->periodo_cerrado)
-                                        <a href="{{ route('admin.marketing.publicidad.presupuestos.reporte', ['gestion' => $q->gestion, 'mes' => $q->mes, 'quincena' => $q->quincena]) }}" class="btn btn-sm btn-soft-success" title="Generar reporte PDF">
-                                            <i class="ri-file-pdf-line"></i>
-                                        </a>
+                                    </td>
+                                    <td class="text-end num">
+                                        <span class="amount-strong">Bs {{ number_format($p->monto_asignado, 2) }}</span>
+                                        @if($p->monto_derivado_total > 0)
+                                            <div class="pres-sub">de Bs {{ number_format($p->monto_asignado + $p->monto_derivado_total, 2) }} · derivó {{ number_format($p->monto_derivado_total, 2) }}</div>
                                         @endif
-                                    </div>
-                                </td>
-                            </tr>
-                            @else
-                            <tr>
-                                <td></td>
-                                <td><span class="badge badge-q2 fs-11 px-3 py-2 rounded-pill">Q2 (16-fin)</span></td>
-                                <td colspan="7" class="text-muted fst-italic fs-12">Sin presupuesto asignado</td>
-                            </tr>
-                            @endif
-
-                            {{-- Totales del grupo --}}
-                            @php
-                                $totalPendiente = ($g->q1->total_pendiente ?? 0) + ($g->q2->total_pendiente ?? 0);
-                            @endphp
-                            <tr style="background:#f8f9fc;">
-                                <td colspan="3" class="text-end fw-bold fs-13 text-dark py-2">
-                                    <i class="ri-calculator-line me-1 text-muted"></i>Total {{ $meses[$g->mes] }} {{ $g->gestion }}
-                                </td>
-                                <td class="text-end fw-bold fs-14 text-primary py-2">Bs {{ number_format($totalAsignado, 2) }}</td>
-                                <td class="text-end fw-bold fs-14 py-2">Bs {{ number_format($totalGastado, 2) }}</td>
-                                <td class="text-end fw-bold fs-14 text-success py-2">Bs {{ number_format($totalAprobado, 2) }}
-                                    @if($totalAprobadoObs > 0)
-                                    <br><span class="text-info fs-11"><i class="ri-chat-4-line"></i> {{ number_format($totalAprobadoObs, 2) }}</span>
-                                    @endif
-                                </td>
-                                <td class="text-center fw-bold py-2">{{ $totalComprobantes }}</td>
-                                <td colspan="2" class="py-2"></td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                                    </td>
+                                    <td class="text-end num">
+                                        <span class="{{ (float) $p->total_gastado > 0 ? '' : 'text-muted' }}">Bs {{ number_format($p->total_gastado, 2) }}</span>
+                                    </td>
+                                    <td class="text-end num">
+                                        <span class="text-success fw-semibold">Bs {{ number_format($p->total_aprobado, 2) }}</span>
+                                        @if($p->total_aprobado_obs > 0)
+                                            <div class="pres-sub text-info">+ Bs {{ number_format($p->total_aprobado_obs, 2) }} c/obs</div>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="chip">{{ $p->total_comprobantes }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if($p->periodo_cerrado)
+                                            <span class="pres-sub"><i class="ri-lock-line"></i> Cerrado</span>
+                                        @elseif($p->estado === 'activo')
+                                            <span class="badge bg-soft-success text-success fs-10 px-2 py-1">Activo</span>
+                                        @else
+                                            <span class="badge bg-soft-secondary text-secondary fs-10 px-2 py-1">Cerrado</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-flex align-items-center gap-1 justify-content-center">
+                                            <a href="{{ route('admin.marketing.publicidad.index', ['gestion' => $p->gestion, 'mes' => $p->mes, 'quincena' => $p->quincena]) }}" class="btn btn-sm btn-icon btn-soft-primary" title="Ver comprobantes del periodo">
+                                                <i class="ri-eye-line"></i>
+                                            </a>
+                                            @can('marketing.publicidad.presupuestos')
+                                            @if($p->puede_eliminar)
+                                            <button type="button" class="btn btn-sm btn-icon btn-soft-danger btn-eliminar-pres"
+                                                    data-id="{{ $p->id }}"
+                                                    data-asesor="{{ $p->ase_apellidos ? $p->ase_apellidos . ', ' . $p->ase_nombres : 'Sin asesor asignado' }}"
+                                                    data-periodo="{{ $meses[$p->mes] }} {{ $p->gestion }} · Q{{ $p->quincena }}"
+                                                    data-monto="{{ number_format($p->monto_asignado, 2) }}"
+                                                    title="Eliminar presupuesto sin gastos">
+                                                <i class="ri-delete-bin-6-line"></i>
+                                            </button>
+                                            @else
+                                            <button type="button" class="btn btn-sm btn-icon btn-soft-secondary" disabled
+                                                    title="{{ $p->total_comprobantes > 0 ? 'Tiene comprobantes: no se puede eliminar' : ($p->num_derivados > 0 ? 'Tiene derivaciones: no se puede eliminar' : ($p->periodo_cerrado ? 'El periodo está cerrado' : 'No se puede eliminar')) }}">
+                                                <i class="ri-delete-bin-6-line"></i>
+                                            </button>
+                                            @endif
+                                            @endcan
+                                        </div>
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr class="empty-row">
+                                    <td colspan="7"><i class="ri-inbox-2-line me-1"></i>Sin presupuestos asignados en esta quincena</td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                            <tfoot>
+                                <tr class="q-total-row">
+                                    <td>Total {{ $meta['label'] }} · {{ $meses[$g->mes] }} {{ $g->gestion }}</td>
+                                    <td class="text-end num text-primary">Bs {{ number_format($q->total_asignado, 2) }}</td>
+                                    <td class="text-end num">Bs {{ number_format($q->total_gastado, 2) }}</td>
+                                    <td class="text-end num text-success">Bs {{ number_format($q->total_aprobado, 2) }}</td>
+                                    <td class="text-center num">{{ $q->total_comprobantes }}</td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    @else
+                    <div class="q-empty"><i class="ri-inbox-2-line me-1"></i>Sin presupuesto asignado en esta quincena</div>
+                    @endif
                 </div>
-                @endif
+                @endforeach
             </div>
         </div>
     </div>
+    @endforeach
 </div>
+@endif
+
+@can('marketing.publicidad.presupuestos')
+{{-- Modal eliminar presupuesto sin gastos --}}
+<div class="modal fade" id="modalEliminarPresupuesto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" id="formEliminarPresupuesto">
+                @csrf
+                @method('DELETE')
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="ri-delete-bin-6-line text-danger me-1"></i>Eliminar presupuesto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">¿Eliminar este presupuesto <strong>sin gastos registrados</strong>?</p>
+                    <div class="p-3 rounded fs-12" id="eliminarPresDesc" style="background:#f8f9fc;border:1px solid #eceff4;"></div>
+                    <p class="text-muted fs-12 mb-0 mt-3">
+                        <i class="ri-information-line me-1"></i>Solo se permite eliminar presupuestos sin comprobantes, sin derivaciones y con el periodo abierto. Si el presupuesto era una derivación, el monto se devolverá al presupuesto origen.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger"><i class="ri-delete-bin-6-line me-1"></i>Eliminar presupuesto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endcan
 </div>{{-- /mkt-page --}}
 @endsection
 
 @push('js')
 <script>
+// Accesibilidad: abrir/cerrar el acordeón de periodo con teclado
+document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var head = e.target.closest('.period-head');
+    if (!head) return;
+    e.preventDefault();
+    head.click();
+});
+
 document.addEventListener('click', function (e) {
-    const btn = e.target.closest('.btn-toggle-periodo');
+    // Eliminar presupuesto sin gastos
+    var del = e.target.closest('.btn-eliminar-pres');
+    if (del) {
+        var form = document.getElementById('formEliminarPresupuesto');
+        if (!form) return;
+        form.action = '{{ route("admin.marketing.publicidad.presupuesto.destroy", ":id") }}'.replace(':id', del.dataset.id);
+        document.getElementById('eliminarPresDesc').innerHTML =
+            '<div><i class="ri-user-star-line me-1 text-warning"></i>' + del.dataset.asesor + '</div>' +
+            '<div class="mt-1"><i class="ri-calendar-event-line me-1 text-muted"></i>' + del.dataset.periodo + '</div>' +
+            '<div class="mt-1"><i class="ri-wallet-3-line me-1 text-primary"></i>Asignado: <strong>Bs ' + del.dataset.monto + '</strong></div>';
+        new bootstrap.Modal(document.getElementById('modalEliminarPresupuesto')).show();
+        return;
+    }
+
+    // Abrir / cerrar periodo
+    var btn = e.target.closest('.btn-toggle-periodo');
     if (!btn) return;
-    const gestion = btn.dataset.gestion;
-    const mes = btn.dataset.mes;
-    const quincena = btn.dataset.quincena;
-    const cerrado = btn.dataset.cerrado === '1';
-    const nuevaAccion = cerrado ? 'abrir' : 'cerrar';
+    var gestion = btn.dataset.gestion;
+    var mes = btn.dataset.mes;
+    var quincena = btn.dataset.quincena;
+    var cerrado = btn.dataset.cerrado === '1';
+    var nuevaAccion = cerrado ? 'abrir' : 'cerrar';
     if (!confirm('¿Estás seguro de ' + nuevaAccion + ' el periodo ' + gestion + '/' + mes + ' Q' + quincena + '?')) return;
-    const formData = new FormData();
+    var formData = new FormData();
     formData.append('_token', '{{ csrf_token() }}');
     formData.append('gestion', gestion);
     formData.append('mes', mes);

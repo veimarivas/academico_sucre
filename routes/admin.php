@@ -345,6 +345,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::post('/marketing/publicidad/presupuestos', [PublicidadController::class, 'storePresupuesto'])->middleware('permission:marketing.publicidad.presupuestos')->name('marketing.publicidad.presupuesto.store');
     Route::post('/marketing/publicidad/presupuestos/{id}/reembolsar', [PublicidadController::class, 'reembolsar'])->middleware('permission:marketing.publicidad.presupuestos')->name('marketing.publicidad.presupuesto.reembolsar');
     Route::put('/marketing/publicidad/presupuestos/{id}', [PublicidadController::class, 'updatePresupuesto'])->middleware('permission:marketing.publicidad.presupuestos')->name('marketing.publicidad.presupuesto.update');
+    Route::delete('/marketing/publicidad/presupuestos/{id}', [PublicidadController::class, 'destroyPresupuesto'])->middleware('permission:marketing.publicidad.presupuestos')->name('marketing.publicidad.presupuesto.destroy');
 
     // === Seguridad (Spatie) — solo Super Admin ===
     Route::prefix('seguridad')->name('seguridad.')->middleware('role:Super Admin')->group(function () {

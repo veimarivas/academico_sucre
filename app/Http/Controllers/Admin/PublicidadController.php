@@ -297,8 +297,80 @@ class PublicidadController extends Controller
             }
         }
 
+        // ── Detalle por presupuesto (uno por asesor) para el interior de cada quincena ──
+        // Los comprobantes se vinculan por presupuesto_id, así que el gasto y lo aprobado
+        // se calculan por asignación y no por periodo.
+        $compsSub = DB::table('marketing_comprobantes_publicidad')
+            ->whereNotNull('presupuesto_id')
+            ->select(
+                'presupuesto_id',
+                DB::raw('COUNT(*) as n'),
+                DB::raw('COALESCE(SUM(CASE WHEN estado = "aprobado_obs" THEN COALESCE(monto_aprobado, monto) ELSE monto END), 0) as gastado'),
+                DB::raw('COALESCE(SUM(CASE WHEN estado = "aprobado" THEN monto WHEN estado = "aprobado_obs" THEN COALESCE(monto_aprobado, monto) ELSE 0 END), 0) as aprobado'),
+                DB::raw('COALESCE(SUM(CASE WHEN estado = "aprobado_obs" THEN COALESCE(monto_aprobado, monto) ELSE 0 END), 0) as aprobado_obs'),
+                DB::raw('COALESCE(SUM(CASE WHEN estado = "pendiente" THEN monto ELSE 0 END), 0) as pendiente')
+            )
+            ->groupBy('presupuesto_id');
+
+        $derivSub = DB::table('marketing_presupuestos_publicidad')
+            ->whereNotNull('presupuesto_origen_id')
+            ->select(
+                'presupuesto_origen_id',
+                DB::raw('COUNT(*) as n_deriv'),
+                DB::raw('COALESCE(SUM(monto_asignado), 0) as monto_derivado')
+            )
+            ->groupBy('presupuesto_origen_id');
+
+        $detalle = DB::table('marketing_presupuestos_publicidad as p')
+            ->leftJoin('asesores as a', 'a.id', '=', 'p.asesor_id')
+            ->leftJoin('asesores as s', 's.id', '=', 'p.supervisor_id')
+            ->leftJoinSub($compsSub, 'c', 'c.presupuesto_id', '=', 'p.id')
+            ->leftJoinSub($derivSub, 'd', 'd.presupuesto_origen_id', '=', 'p.id')
+            ->select(
+                'p.id', 'p.gestion', 'p.mes', 'p.quincena', 'p.monto_asignado', 'p.monto_reembolsado',
+                'p.estado', 'p.periodo_cerrado', 'p.presupuesto_origen_id', 'p.asesor_id', 'p.supervisor_id',
+                'p.observaciones', 'p.archivo_derivacion_path', 'p.archivo_derivacion_original',
+                'a.nombres as ase_nombres', 'a.apellidos as ase_apellidos',
+                's.nombres as sup_nombres', 's.apellidos as sup_apellidos',
+                DB::raw('COALESCE(c.n, 0) as total_comprobantes'),
+                DB::raw('COALESCE(c.gastado, 0) as total_gastado'),
+                DB::raw('COALESCE(c.aprobado, 0) as total_aprobado'),
+                DB::raw('COALESCE(c.aprobado_obs, 0) as total_aprobado_obs'),
+                DB::raw('COALESCE(c.pendiente, 0) as total_pendiente'),
+                DB::raw('COALESCE(d.n_deriv, 0) as num_derivados'),
+                DB::raw('COALESCE(d.monto_derivado, 0) as monto_derivado_total')
+            )
+            ->when($gestionFiltro, fn($q) => $q->where('p.gestion', (int) $gestionFiltro))
+            ->orderBy('p.gestion', 'desc')
+            ->orderBy('p.mes', 'desc')
+            ->orderBy('p.quincena', 'desc')
+            ->orderBy('a.apellidos')
+            ->orderBy('a.nombres')
+            ->get();
+
+        // Se puede eliminar un presupuesto solo si no tiene gastos, ni derivaciones,
+        // y su periodo sigue abierto.
+        $detalle->each(function ($x) {
+            $x->puede_eliminar = ((int) $x->total_comprobantes === 0)
+                && ((int) $x->num_derivados === 0)
+                && !$x->periodo_cerrado;
+        });
+
+        $presupuestosPorPeriodo = $detalle->groupBy(fn($x) => $x->gestion . '-' . $x->mes . '-' . $x->quincena);
+        $totalEliminables = $detalle->where('puede_eliminar', true)->count();
+
+        // Adjuntar el detalle a cada quincena del grupo
+        foreach ($grupos as $gr) {
+            foreach (['q1', 'q2'] as $qk) {
+                if ($gr->$qk) {
+                    $pk = $gr->$qk->gestion . '-' . $gr->$qk->mes . '-' . $gr->$qk->quincena;
+                    $gr->$qk->presupuestos = $presupuestosPorPeriodo->get($pk, collect());
+                }
+            }
+        }
+
         return view('admin.marketing.publicidad.presupuestos', compact(
-            'grupos', 'gestiones', 'meses', 'gestionFiltro'
+            'grupos', 'gestiones', 'meses', 'gestionFiltro', 'totalEliminables'
         ));
     }
 
@@ -1336,6 +1408,56 @@ class PublicidadController extends Controller
         $presupuesto->update($updateData);
 
         return back()->with('success', 'Presupuesto derivado actualizado correctamente.');
+    }
+
+    /**
+     * Elimina un presupuesto asignado que no registró ningún gasto.
+     * Solo se permite si no tiene comprobantes, ni derivaciones, y el periodo está abierto.
+     * Si el presupuesto era una derivación, el monto se devuelve al presupuesto origen.
+     */
+    public function destroyPresupuesto(Request $request, int $id)
+    {
+        $presupuesto = PresupuestoPublicidad::findOrFail($id);
+
+        if (ComprobantePublicidad::where('presupuesto_id', $presupuesto->id)->exists()) {
+            return back()->with('error', 'No se puede eliminar: el presupuesto ya tiene comprobantes registrados.');
+        }
+
+        if (PresupuestoPublicidad::where('presupuesto_origen_id', $presupuesto->id)->exists()) {
+            return back()->with('error', 'No se puede eliminar: el presupuesto tiene derivaciones. Elimina primero las derivaciones.');
+        }
+
+        if ($presupuesto->periodo_cerrado) {
+            return back()->with('error', 'No se puede eliminar: el periodo está cerrado.');
+        }
+
+        $monto = (float) $presupuesto->monto_asignado;
+        $origenId = $presupuesto->presupuesto_origen_id;
+        $archivo = $presupuesto->archivo_derivacion_path;
+
+        DB::transaction(function () use ($presupuesto, $monto, $origenId) {
+            if ($origenId) {
+                DB::table('marketing_presupuestos_publicidad')
+                    ->where('id', $origenId)
+                    ->increment('monto_asignado', $monto);
+            }
+
+            $presupuesto->delete();
+        });
+
+        if ($archivo) {
+            Storage::disk('public')->delete($archivo);
+        }
+
+        $msg = $origenId
+            ? 'Presupuesto sin gastos eliminado. Se devolvieron Bs ' . number_format($monto, 2) . ' al presupuesto origen.'
+            : 'Presupuesto sin gastos eliminado correctamente.';
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => $msg]);
+        }
+
+        return back()->with('success', $msg);
     }
 
     public function reembolsar(Request $request, int $id)
