@@ -282,6 +282,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('/profile/programa/{programa}/inscritos', [ProfileAdminController::class, 'inscritosPrograma'])->name('profile.programa-inscritos');
     Route::put('/profile/password', [ProfileAdminController::class, 'updatePassword'])->name('profile.password.update');
     Route::get('/profile/publicidad-data', [ProfileAdminController::class, 'publicidadData'])->name('profile.publicidad-data');
+    Route::get('/profile/ofertas-data', [ProfileAdminController::class, 'ofertasData'])->name('profile.ofertas-data');
+    Route::get('/profile/inscripciones-data', [ProfileAdminController::class, 'inscripcionesData'])->name('profile.inscripciones-data');
     Route::post('/profile/publicidad/autogestion', [ProfileAdminController::class, 'storeGastoAutogestion'])->name('profile.publicidad.autogestion.store');
 
     // === Marketing (Super Admin, Contabilidad, Gerencia/Supervisor Marketing) ===

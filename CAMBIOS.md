@@ -214,6 +214,37 @@ contraseña) muestran la marca correcta en móvil.
 
 ---
 
+## 12. Perfil: carga diferida y rediseño de pestañas (2026-10-18)
+
+Archivos: `app/Http/Controllers/Admin/ProfileAdminController.php`, `routes/admin.php`,
+`resources/views/admin/profile/index.blade.php`,
+`resources/views/admin/profile/_tab_ofertas.blade.php` (nuevo),
+`resources/views/admin/profile/_tab_inscripciones.blade.php` (nuevo).
+
+- **Carga inicial más liviana (`/admin/profile`)**: antes se ejecutaban todas las
+  consultas pesadas (ofertas con subconsultas correlacionadas, series de puntos e
+  inscritos reales, agregados por programa) al abrir el perfil, incluso para quien no
+  es de marketing. Ahora `index()` solo resuelve lo necesario (usuario, gestiones,
+  asesor vinculado, responsable y un contador ligero de ofertas) y el resto se carga
+  **por AJAX** al abrir cada pestaña:
+  - `GET /admin/profile/ofertas-data` → pestaña **“Ofertas en inscripción”**.
+  - `GET /admin/profile/inscripciones-data` → pestaña **“Inscripciones”** (KPIs,
+    gráficos y programas). Los filtros de gestión/tipo ahora recargan por AJAX sin
+    recargar la página.
+  - La pestaña **“Presupuesto publicidad”** ya cargaba por AJAX; se mantiene.
+- Las consultas se extrajeron a métodos privados (`buildOfertas()`,
+  `buildInscripcionesData()`) y se eliminó la consulta `inscritosPorPrograma`, que no
+  se usaba (el modal ya trae la lista por AJAX). Los dos cálculos de “reales” (conteo y
+  puntos) se unificaron en **una sola consulta**.
+- Resultado medido en local (usuario de marketing con 2.688 inscripciones):
+  carga inicial de ~435 ms a ~55 ms y de ~556 KB a ~180 KB de HTML; el trabajo pesado
+  pasa a la pestaña que se abre.
+- **Rediseño de las pestañas**: ícono en chip redondeado, estado activo con degradado y
+  sombra, hover con elevación, mejor comportamiento en móvil y animación sutil al
+  mostrar cada panel.
+
+---
+
 ## Notas
 
 - Si un usuario ve solo “Conexión” en baileys_esam, es porque su número aún no está vinculado.

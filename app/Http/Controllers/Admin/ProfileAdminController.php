@@ -20,17 +20,33 @@ class ProfileAdminController extends Controller
         $user = Auth::user();
         $gestion = $request->get('gestion', now()->format('Y'));
         $tipo = $request->get('tipo', 'general');
-
-        // Filtrar por asesor si el usuario tiene asesor_id asignado
         $asesorId = $user->asesor_id ?? null;
 
-        $scopeTipo = fn($q) => match ($tipo) {
-            'upi' => $q->where('programas.tipo_id', 6),
-            'upi-auto' => $q->where('programas.tipo_id', 7),
-            'otros' => $q->whereNotIn('programas.tipo_id', [6, 7]),
-            default => $q,
-        };
+        $gestiones = $this->getGestiones($asesorId);
 
+        // Contador ligero para el badge de "Ofertas": su listado completo se carga por AJAX,
+        // de modo que la carga inicial del perfil no ejecuta las consultas pesadas.
+        $ofertasCount = $user->canAccessMarketing()
+            ? DB::table('programas')->where('estado_id', 4)->count()
+            : 0;
+
+        $asesorNombre = $this->getAsesorNombre($asesorId);
+
+        // Responsable vinculado al usuario
+        $responsable = null;
+        if (!empty($user->responsable_id)) {
+            $responsable = DB::table('responsables')->where('id', $user->responsable_id)->first();
+        }
+
+        return view('admin.profile.index', compact(
+            'user', 'gestion', 'tipo', 'gestiones', 'ofertasCount',
+            'asesorId', 'asesorNombre', 'responsable'
+        ));
+    }
+
+    /** Gestiones que tienen inscripciones (alimenta los filtros del perfil). */
+    private function getGestiones($asesorId)
+    {
         $gestionesQuery = DB::table('inscripciones')
             ->whereNotNull('fecha_inscripcion');
 
@@ -48,9 +64,39 @@ class ProfileAdminController extends Controller
             $gestiones = collect([(int) now()->format('Y')]);
         }
 
-        // Ofertas académicas en estado "Inscripciones" (estado_id = 4)
+        return $gestiones;
+    }
 
-        $ofertas = DB::table('programas')
+    /** Nombre completo del asesor vinculado al usuario, si lo tiene. */
+    private function getAsesorNombre($asesorId)
+    {
+        if (!$asesorId) {
+            return null;
+        }
+
+        $asesor = DB::table('asesores')->where('id', $asesorId)->first();
+
+        return $asesor ? trim($asesor->nombres . ' ' . $asesor->apellidos) : null;
+    }
+
+    /** Filtro por tipo de programa reutilizable entre las consultas del perfil. */
+    private function scopeTipo(string $tipo)
+    {
+        return fn($q) => match ($tipo) {
+            'upi' => $q->where('programas.tipo_id', 6),
+            'upi-auto' => $q->where('programas.tipo_id', 7),
+            'otros' => $q->whereNotIn('programas.tipo_id', [6, 7]),
+            default => $q,
+        };
+    }
+
+    /**
+     * Ofertas académicas en estado "Inscripciones" (estado_id = 4).
+     * Se usa en la pestaña "Ofertas", cargada por AJAX.
+     */
+    private function buildOfertas()
+    {
+        return DB::table('programas')
             ->join('tipos', 'programas.tipo_id', '=', 'tipos.id')
             ->leftJoin('estados', 'programas.estado_id', '=', 'estados.id')
             ->leftJoin('areas_programas', 'programas.id', '=', 'areas_programas.programa_id')
@@ -115,7 +161,15 @@ class ProfileAdminController extends Controller
             ->orderBy('programas.gestion', 'desc')
             ->orderBy('programas.nombre', 'asc')
             ->get();
+    }
 
+    /**
+     * Agregados de inscripciones/puntos/reales para la pestaña "Inscripciones".
+     * Extraído de index() para poder cargarse por AJAX sin repetir la lógica.
+     */
+    private function buildInscripcionesData($gestion, $tipo, $asesorId)
+    {
+        $scopeTipo = $this->scopeTipo($tipo);
         $filtrarPorAsesor = $asesorId !== null;
 
         // --- Inscritos por mes, desglosados por tipo de programa ---
@@ -238,23 +292,24 @@ class ProfileAdminController extends Controller
              ), 0) >= (inscripciones.monto_programa - COALESCE(inscripciones.descuento_colegiatura, 0)) / (SELECT GREATEST(COUNT(*), 1) FROM modulos WHERE modulos.programa_id = inscripciones.programa_id))
         ";
 
-        // --- Puntos Reales por mes ---
-        $puntosRealesPorTipoMesQ = DB::table('inscripciones')
+        // --- Reales por mes y tipo (una sola consulta calcula conteo y puntos) ---
+        $realesPorTipoMesQ = DB::table('inscripciones')
             ->join('programas', 'inscripciones.programa_id', '=', 'programas.id')
             ->leftJoin('tipos', 'programas.tipo_id', '=', 'tipos.id')
             ->whereYear('inscripciones.fecha_inscripcion', $gestion)
             ->when($scopeTipo);
 
         if ($filtrarPorAsesor) {
-            $puntosRealesPorTipoMesQ->where('inscripciones.asesor_id', $asesorId);
+            $realesPorTipoMesQ->where('inscripciones.asesor_id', $asesorId);
         }
 
-        $puntosRealesPorTipoMesQ->whereRaw("({$realesCond})");
+        $realesPorTipoMesQ->whereRaw("({$realesCond})");
 
-        $puntosRealesPorTipoMes = $puntosRealesPorTipoMesQ
+        $realesPorTipoMes = $realesPorTipoMesQ
             ->select(
                 DB::raw('MONTH(inscripciones.fecha_inscripcion) as mes'),
                 DB::raw("COALESCE(tipos.nombre, 'Sin tipo') as tipo_nombre"),
+                DB::raw('COUNT(*) as total'),
                 DB::raw('COALESCE(SUM(tipos.puntos), 0) as puntos')
             )
             ->groupBy(DB::raw('MONTH(inscripciones.fecha_inscripcion)'), 'tipos.nombre')
@@ -264,11 +319,13 @@ class ProfileAdminController extends Controller
             ->groupBy('mes');
 
         $puntosRealesPorMesTipo = [];
+        $realesInscritosPorMesTipo = [];
         $realesTiposSet = collect();
-        foreach ($puntosRealesPorTipoMes as $mes => $filas) {
+        foreach ($realesPorTipoMes as $mes => $filas) {
             foreach ($filas as $f) {
                 $realesTiposSet->push($f->tipo_nombre);
                 $puntosRealesPorMesTipo[(int)$mes][$f->tipo_nombre] = (float)$f->puntos;
+                $realesInscritosPorMesTipo[(int)$mes][$f->tipo_nombre] = (int)$f->total;
             }
         }
         $realesTipoLabels = $realesTiposSet->unique()->sort()->values()->toArray();
@@ -285,41 +342,6 @@ class ProfileAdminController extends Controller
                 'color' => $puntosTipoColores[$i % count($puntosTipoColores)],
             ];
         }
-
-        // --- Reales por mes desglosados por tipo ---
-        $realesInscritosPorTipoMesQ = DB::table('inscripciones')
-            ->join('programas', 'inscripciones.programa_id', '=', 'programas.id')
-            ->leftJoin('tipos', 'programas.tipo_id', '=', 'tipos.id')
-            ->whereYear('inscripciones.fecha_inscripcion', $gestion)
-            ->when($scopeTipo);
-
-        if ($filtrarPorAsesor) {
-            $realesInscritosPorTipoMesQ->where('inscripciones.asesor_id', $asesorId);
-        }
-
-        $realesInscritosPorTipoMesQ->whereRaw("({$realesCond})");
-
-        $realesInscritosPorTipoMes = $realesInscritosPorTipoMesQ
-            ->select(
-                DB::raw('MONTH(inscripciones.fecha_inscripcion) as mes'),
-                DB::raw("COALESCE(tipos.nombre, 'Sin tipo') as tipo_nombre"),
-                DB::raw('COUNT(*) as total')
-            )
-            ->groupBy(DB::raw('MONTH(inscripciones.fecha_inscripcion)'), 'tipos.nombre')
-            ->orderBy('mes')
-            ->orderBy('tipo_nombre')
-            ->get()
-            ->groupBy('mes');
-
-        $realesInscritosPorMesTipo = [];
-        $realesInscritosTiposSet = collect();
-        foreach ($realesInscritosPorTipoMes as $mes => $filas) {
-            foreach ($filas as $f) {
-                $realesInscritosTiposSet->push($f->tipo_nombre);
-                $realesInscritosPorMesTipo[(int)$mes][$f->tipo_nombre] = (int)$f->total;
-            }
-        }
-        $realesInscritosTipoLabels = $realesInscritosTiposSet->unique()->sort()->values()->toArray();
 
         $realesInscritosTipoSeries = [];
         foreach ($tipoInscritosLabels as $i => $tipoLabel) {
@@ -522,65 +544,8 @@ class ProfileAdminController extends Controller
             return $p;
         });
 
-        // --- Inscritos detallados por programa ---
-        $inscritosDetalleQ = DB::table('inscripciones')
-            ->join('programas', 'inscripciones.programa_id', '=', 'programas.id')
-            ->join('participantes', 'inscripciones.participante_id', '=', 'participantes.id')
-            ->leftJoin('asesores', 'inscripciones.asesor_id', '=', 'asesores.id')
-            ->leftJoinSub($deudasAgg, 'deudas_agg', function ($join) {
-                $join->on('inscripciones.participante_id', '=', 'deudas_agg.participante_id');
-            })
-            ->leftJoinSub($modulosCount, 'modulos_count', function ($join) {
-                $join->on('inscripciones.programa_id', '=', 'modulos_count.programa_id');
-            })
-            ->whereYear('inscripciones.fecha_inscripcion', $gestion)
-            ->whereIn('inscripciones.programa_id', $programaIds)
-            ->when($scopeTipo);
-
-        if ($filtrarPorAsesor) {
-            $inscritosDetalleQ->where('inscripciones.asesor_id', $asesorId);
-        }
-
-        $inscritosPorPrograma = $inscritosDetalleQ
-            ->select(
-                'inscripciones.programa_id',
-                'inscripciones.contado',
-                'inscripciones.estado',
-                'inscripciones.baja_operativa',
-                'inscripciones.baja_academica',
-                'inscripciones.fecha_inscripcion',
-                'inscripciones.matricula',
-                'inscripciones.descuento_matricula',
-                'inscripciones.monto_programa',
-                'inscripciones.descuento_colegiatura',
-                'programas.modulo_cero',
-                'participantes.ci',
-                'participantes.nombres',
-                'participantes.apellidos',
-                'asesores.nombres as asesor_nombres',
-                'asesores.apellidos as asesor_apellidos',
-                DB::raw("(inscripciones.matricula - COALESCE(inscripciones.descuento_matricula, 0)) as matricula_requerido"),
-                'deudas_agg.matricula_pagado',
-                'deudas_agg.colegiatura_pagado',
-                'deudas_agg.colegiatura_primer_monto',
-                'modulos_count.num_modulos',
-                DB::raw("CASE
-                    WHEN (inscripciones.contado = 0
-                        AND COALESCE(deudas_agg.matricula_pagado, 0) >= (inscripciones.matricula - COALESCE(inscripciones.descuento_matricula, 0))
-                        AND COALESCE(deudas_agg.colegiatura_primer_monto, 0) > 0)
-                    OR (inscripciones.contado = 1
-                        AND (inscripciones.monto_programa - COALESCE(inscripciones.descuento_colegiatura, 0)) > 0
-                        AND COALESCE(deudas_agg.colegiatura_pagado, 0) >= (inscripciones.monto_programa - COALESCE(inscripciones.descuento_colegiatura, 0)) / COALESCE(modulos_count.num_modulos, 1))
-                    THEN 1 ELSE 0 END as es_real")
-            )
-            ->orderBy('participantes.apellidos')
-            ->orderBy('participantes.nombres')
-            ->get()
-            ->groupBy('programa_id');
-
         $totalReales = (int) $porPrograma->sum('inscritos_reales');
         $resumen = [
-            'total_ofertas' => $ofertas->count(),
             'total_inscritos' => (int) $porPrograma->sum('total'),
             'total_programas' => $porPrograma->count(),
             'total_activos'  => (int) $porPrograma->sum('activos'),
@@ -590,26 +555,55 @@ class ProfileAdminController extends Controller
             'total_puntos_reales' => (float) $porPrograma->sum('puntos_reales'),
         ];
 
-        // Nombre del asesor si está filtrado
-        $asesorNombre = null;
-        if ($asesorId) {
-            $asesor = DB::table('asesores')->where('id', $asesorId)->first();
-            $asesorNombre = $asesor ? trim($asesor->nombres . ' ' . $asesor->apellidos) : null;
-        }
-
-        // Responsable vinculado al usuario
-        $responsable = null;
-        if (!empty($user->responsable_id)) {
-            $responsable = DB::table('responsables')->where('id', $user->responsable_id)->first();
-        }
-
-        return view('admin.profile.index', compact(
-            'user', 'ofertas', 'porPrograma', 'inscritosPorPrograma',
-            'resumen', 'gestion', 'gestiones', 'mesesData', 'asesorId', 'asesorNombre',
-            'responsable', 'tipo',
+        return compact(
+            'porPrograma', 'resumen', 'mesesData',
             'puntosTipoSeries', 'inscritosTipoSeries', 'puntosRealesTipoSeries',
             'realesInscritosTipoSeries', 'noRealesInscritosTipoSeries'
-        ));
+        );
+    }
+
+    /** Pestaña "Ofertas" (marketing): listado + contador, cargada por AJAX. */
+    public function ofertasData(Request $request)
+    {
+        $this->authorizeMarketing();
+
+        $ofertas = $this->buildOfertas();
+
+        return response()->json([
+            'success' => true,
+            'count' => DB::table('programas')->where('estado_id', 4)->count(),
+            'html' => view('admin.profile._tab_ofertas', compact('ofertas'))->render(),
+        ]);
+    }
+
+    /** Pestaña "Inscripciones" (marketing): KPIs, gráficos y programas, cargada por AJAX. */
+    public function inscripcionesData(Request $request)
+    {
+        $this->authorizeMarketing();
+
+        $user = Auth::user();
+        $gestion = $request->get('gestion', now()->format('Y'));
+        $tipo = $request->get('tipo', 'general');
+        $asesorId = $user->asesor_id ?? null;
+
+        $data = $this->buildInscripcionesData($gestion, $tipo, $asesorId);
+
+        return response()->json([
+            'success' => true,
+            'charts' => [
+                'meses' => $data['mesesData'],
+                'puntos' => $data['puntosTipoSeries'],
+                'puntosReales' => $data['puntosRealesTipoSeries'],
+                'reales' => $data['realesInscritosTipoSeries'],
+                'noReales' => $data['noRealesInscritosTipoSeries'],
+            ],
+            'html' => view('admin.profile._tab_inscripciones', array_merge($data, [
+                'gestion' => $gestion,
+                'tipo' => $tipo,
+                'gestiones' => $this->getGestiones($asesorId),
+                'asesorNombre' => $this->getAsesorNombre($asesorId),
+            ]))->render(),
+        ]);
     }
 
     /**

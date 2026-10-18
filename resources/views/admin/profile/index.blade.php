@@ -147,41 +147,70 @@ canvas.chart-canvas { width:100% !important; height:300px !important; }
 
 /* Tabs */
 .profile-tabs-wrap {
-    background:#fff;
+    position:relative;
+    background:linear-gradient(180deg,#ffffff, #fafbff);
     border:1px solid #eef0f4;
-    border-radius:14px;
-    box-shadow:0 4px 18px -10px rgba(64,81,137,.18);
-    padding:.4rem;
-    margin-bottom:1.25rem;
+    border-radius:16px;
+    box-shadow:0 8px 24px -16px rgba(64,81,137,.45);
+    padding:.45rem;
+    margin-bottom:1.35rem;
     overflow-x:auto;
     overflow-y:hidden;
     -webkit-overflow-scrolling:touch;
+    scrollbar-width:thin;
 }
 .profile-tabs-wrap::-webkit-scrollbar { height:5px; }
 .profile-tabs-wrap::-webkit-scrollbar-thumb { background:#dfe3ec; border-radius:999px; }
 [data-layout-mode="dark"] .profile-tabs-wrap { background:#1d2125; border-color:#2a2f34; }
-.profile-tabs { border:0; margin:0; padding:0; flex-wrap:nowrap; gap:.25rem; }
+.profile-tabs { border:0; margin:0; padding:0; flex-wrap:nowrap; gap:.3rem; }
 .profile-tabs .nav-link {
-    display:inline-flex; align-items:center; gap:.5rem; white-space:nowrap;
-    color:#5d6478; font-weight:700; font-size:.82rem;
-    padding:.6rem 1rem; border:0; border-radius:10px; background:transparent;
-    transition:color .18s ease, background .18s ease, box-shadow .18s ease;
+    position:relative;
+    display:inline-flex; align-items:center; gap:.55rem; white-space:nowrap;
+    color:#5d6478; font-weight:700; font-size:.82rem; letter-spacing:.1px;
+    padding:.55rem 1rem .55rem .6rem; border:1px solid transparent; border-radius:12px; background:transparent;
+    transition:color .18s ease, background .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.profile-tabs .nav-link i {
+    margin:0; font-size:1.06rem;
+    display:inline-flex; align-items:center; justify-content:center;
+    width:1.65rem; height:1.65rem; border-radius:9px;
+    background:#eef1f8; color:#405189;
+    transition:background .18s ease, color .18s ease, transform .18s ease;
 }
 [data-layout-mode="dark"] .profile-tabs .nav-link { color:#c3cfe2; }
-.profile-tabs .nav-link:hover { color:#405189; background:#f1f4fb; }
+[data-layout-mode="dark"] .profile-tabs .nav-link i { background:#252b31; color:#8fb0d8; }
+.profile-tabs .nav-link:hover { color:#405189; background:#f4f6fc; transform:translateY(-1px); }
+.profile-tabs .nav-link:hover i { background:#dfe6f5; transform:scale(1.05); }
 [data-layout-mode="dark"] .profile-tabs .nav-link:hover { color:#fff; background:#252b31; }
+[data-layout-mode="dark"] .profile-tabs .nav-link:hover i { background:#2f3742; color:#fff; }
 .profile-tabs .nav-link.active {
     color:#fff;
-    background:linear-gradient(135deg,#405189 0%,#5e72b8 100%);
-    box-shadow:0 8px 18px -10px rgba(64,81,137,.75);
+    background:linear-gradient(135deg,#405189 0%,#5e72b8 62%,#4a5fa0 100%);
+    border-color:rgba(255,255,255,.14);
+    box-shadow:0 12px 24px -12px rgba(64,81,137,.85);
 }
-.profile-tabs .nav-link i { margin:0; font-size:1.02rem; }
+.profile-tabs .nav-link.active i { background:rgba(255,255,255,.22); color:#fff; }
 .profile-tabs .nav-link .tab-count {
-    font-size:.66rem; font-weight:800; line-height:1;
-    padding:.2em .55em; border-radius:999px;
+    font-size:.65rem; font-weight:800; line-height:1;
+    padding:.22em .58em; border-radius:999px;
     background:#e8f7ef; color:#0a8f74; border:1px solid #b7e8d6;
 }
 .profile-tabs .nav-link.active .tab-count { background:rgba(255,255,255,.25); color:#fff; border-color:rgba(255,255,255,.45); }
+
+/* Pestañas internas (Mis programas) */
+.prof-page .resp-prof-tabs {
+    box-shadow: inset 0 1px 2px rgba(64,81,137,.06);
+}
+.prof-page .resp-prof-tab.active { box-shadow: 0 8px 18px -12px rgba(64,81,137,.9); }
+
+/* Animación al mostrar el contenido de una pestaña */
+.tab-content > .tab-pane.active { animation: profTabIn .25s ease; }
+@keyframes profTabIn { from { opacity:0; transform: translateY(4px); } to { opacity:1; transform:none; } }
+
+@media (max-width: 575.98px) {
+    .profile-tabs .nav-link { padding:.5rem .7rem .5rem .5rem; font-size:.78rem; }
+    .profile-tabs .nav-link i { width:1.5rem; height:1.5rem; font-size:.98rem; }
+}
 
 /* Barra de herramientas de cada pestaña */
 .tab-toolbar {
@@ -769,44 +798,6 @@ canvas.chart-canvas { width:100% !important; height:300px !important; }
     </ol>
 </div>
 
-@if($puedeMarketing)
-{{-- KPIs (área de marketing) --}}
-<div class="row g-2 mb-3">
-    <div class="col-lg-3 col-md-6">
-        <div class="kpi" style="--k-accent:#0ab39c;">
-            <div class="d-flex align-items-center justify-content-between">
-                <div><div class="k-lbl">Ofertas activas</div><div class="k-val">{{ $resumen['total_ofertas'] }}</div><div class="k-sub">en inscripciones</div></div>
-                <span class="k-ic" style="--k-bg:#ecfdf5; --k-color:#0ab39c;"><i class="ri-megaphone-line"></i></span>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6">
-        <div class="kpi" style="--k-accent:#299cdb;">
-            <div class="d-flex align-items-center justify-content-between">
-                <div><div class="k-lbl">Total inscritos</div><div class="k-val">{{ $resumen['total_inscritos'] }}</div><div class="k-sub">en {{ $gestion }}</div></div>
-                <span class="k-ic" style="--k-bg:#f0f9ff; --k-color:#299cdb;"><i class="ri-team-line"></i></span>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6">
-        <div class="kpi" style="--k-accent:#405189;">
-            <div class="d-flex align-items-center justify-content-between">
-                <div><div class="k-lbl">Activos</div><div class="k-val">{{ $resumen['total_activos'] }}</div><div class="k-sub">inscritos activos</div></div>
-                <span class="k-ic" style="--k-bg:#eef1f8; --k-color:#405189;"><i class="ri-check-line"></i></span>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6">
-        <div class="kpi" style="--k-accent:#f7b84b;">
-            <div class="d-flex align-items-center justify-content-between">
-                <div><div class="k-lbl">Programas</div><div class="k-val">{{ $resumen['total_programas'] }}</div><div class="k-sub">con inscritos</div></div>
-                <span class="k-ic" style="--k-bg:#fffbeb; --k-color:#f7b84b;"><i class="ri-booklet-line"></i></span>
-            </div>
-        </div>
-    </div>
-</div>
-@endif
-
 {{-- Tabs --}}
 <div class="profile-tabs-wrap">
 <ul class="nav profile-tabs" role="tablist">
@@ -815,7 +806,7 @@ canvas.chart-canvas { width:100% !important; height:300px !important; }
     @endif
     <li class="nav-item"><button class="nav-link @if(!$responsable) active @endif" data-bs-toggle="tab" data-bs-target="#tab-info" type="button"><i class="ri-user-3-line"></i> Información</button></li>
     @if($puedeMarketing)
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-ofertas" type="button"><i class="ri-megaphone-line"></i> Ofertas en inscripción <span class="tab-count">{{ $ofertas->count() }}</span></button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-ofertas" type="button"><i class="ri-megaphone-line"></i> Ofertas en inscripción <span class="tab-count" id="tabOfertasCount">{{ $ofertasCount ?? 0 }}</span></button></li>
     <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-inscripciones" type="button"><i class="ri-team-line"></i> Inscripciones</button></li>
     <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-publicidad" type="button"><i class="ri-shopping-cart-2-line"></i> Presupuesto publicidad</button></li>
     @endif
@@ -922,409 +913,25 @@ canvas.chart-canvas { width:100% !important; height:300px !important; }
         </div>
     </div>
 
-    {{-- ============ TAB OFERTAS (solo marketing) ============ --}}
+    {{-- ============ TAB OFERTAS (solo marketing) — carga diferida ============ --}}
     @if($puedeMarketing)
     <div class="tab-pane fade" id="tab-ofertas">
-        <div class="tab-toolbar">
-            <div>
-                <p class="tb-title"><i class="ri-megaphone-line"></i> Ofertas académicas en inscripción</p>
-                <p class="tb-sub">Programas abiertos con estado de inscripciones activo.</p>
+        <div id="ofertas-content">
+            <div class="prof-tab-loading text-center py-5">
+                <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div>
+                <p class="mt-2 text-muted mb-0">Cargando ofertas...</p>
             </div>
-            <span class="badge bg-success-subtle text-success-emphasis">{{ $ofertas->count() }} programa(s)</span>
         </div>
-        @if($ofertas->isEmpty())
-            <div class="empty-state">
-                <div class="empty-icon"><i class="ri-megaphone-line"></i></div>
-                <h5 class="text-dark fw-bold mb-1">Sin ofertas activas</h5>
-                <p class="text-muted mb-0">No hay programas en estado "Inscripciones" actualmente.</p>
-            </div>
-        @else
-            @include('admin.programas.partials.table', ['programas' => $ofertas, 'soloVer' => true])
-        @endif
     </div>
-    @endif
 
-    {{-- ============ TAB INSCRIPCIONES (solo marketing) ============ --}}
-    @if($puedeMarketing)
-    @php $mesesNombres = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']; @endphp
+    {{-- ============ TAB INSCRIPCIONES (solo marketing) — carga diferida ============ --}}
     <div class="tab-pane fade" id="tab-inscripciones">
-        <div class="tab-toolbar">
-            <div>
-                <p class="tb-title"><i class="ri-team-line"></i> Inscripciones — Gestión {{ $gestion }}</p>
-                <p class="tb-sub">Inscritos, puntos y conversión real por mes y programa.</p>
-            </div>
-            <form method="GET" action="{{ route('admin.profile') }}" class="d-flex align-items-center flex-wrap gap-2">
-                <span class="tb-label">Gestión</span>
-                <select name="gestion" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
-                    @foreach($gestiones as $g)
-                        <option value="{{ $g }}" @selected((int)$g === (int)$gestion)>{{ $g }}</option>
-                    @endforeach
-                </select>
-                <span class="tb-label">Tipo</span>
-                <select name="tipo" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
-                    <option value="general" @selected($tipo === 'general')>General</option>
-                    <option value="upi" @selected($tipo === 'upi')>Solo UPI Diplomados</option>
-                    <option value="upi-auto" @selected($tipo === 'upi-auto')>UPI Autogestionados</option>
-                    <option value="otros" @selected($tipo === 'otros')>Programas Sucre central</option>
-                </select>
-            </form>
-        </div>
-
-        {{-- KPIs --}}
-        <div class="row g-2 mb-3">
-            <div class="col-lg col-md-6">
-                <div class="kpi" style="--k-accent:#299cdb;">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div><div class="k-lbl">Total inscritos</div><div class="k-val">{{ $resumen['total_inscritos'] }}</div><div class="k-sub">en {{ $gestion }}</div></div>
-                        <span class="k-ic" style="--k-bg:#f0f9ff; --k-color:#299cdb;"><i class="ri-team-line"></i></span>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg col-md-6">
-                <div class="kpi" style="--k-accent:#0ab39c;">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div><div class="k-lbl">Activos</div><div class="k-val">{{ $resumen['total_activos'] }}</div><div class="k-sub">inscritos activos</div></div>
-                        <span class="k-ic" style="--k-bg:#ecfdf5; --k-color:#0ab39c;"><i class="ri-check-line"></i></span>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg col-md-6">
-                <div class="kpi" style="--k-accent:#405189;">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div><div class="k-lbl">Programas</div><div class="k-val">{{ $resumen['total_programas'] }}</div><div class="k-sub">con inscritos</div></div>
-                        <span class="k-ic" style="--k-bg:#eef1f8; --k-color:#405189;"><i class="ri-booklet-line"></i></span>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg col-md-6">
-                <div class="kpi" style="--k-accent:#f7b84b;">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div><div class="k-lbl">Puntos totales</div><div class="k-val">{{ number_format($resumen['total_puntos'], 1, ',', '.') }}</div><div class="k-sub">en {{ $gestion }}</div></div>
-                        <span class="k-ic" style="--k-bg:#fffbeb; --k-color:#f7b84b;"><i class="ri-star-line"></i></span>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg col-md-6">
-                <div class="kpi" style="--k-accent:#0ab39c;">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div><div class="k-lbl">Puntos Reales</div>
-                            <div class="k-val">{{ number_format($resumen['total_puntos_reales'], 1, ',', '.') }}
-                                <small class="text-muted" style="font-size:.65rem;font-weight:600;">
-                                    ({{ $resumen['total_puntos'] > 0 ? round($resumen['total_puntos_reales'] / $resumen['total_puntos'] * 100) : 0 }}%)
-                                </small>
-                            </div>
-                            <div class="k-sub">de inscritos reales</div>
-                        </div>
-                        <span class="k-ic" style="--k-bg:#ecfdf5; --k-color:#0ab39c;"><i class="ri-checkbox-circle-line"></i></span>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg col-md-6">
-                <div class="kpi" style="--k-accent:#0ab39c;">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div><div class="k-lbl">Inscritos Reales</div>
-                            <div class="k-val">{{ $resumen['total_reales'] }}
-                                <small class="text-muted" style="font-size:.65rem;font-weight:600;">
-                                    ({{ $resumen['total_inscritos'] > 0 ? round($resumen['total_reales'] / $resumen['total_inscritos'] * 100) : 0 }}%)
-                                </small>
-                            </div>
-                            <div class="k-sub">con pagos al día</div>
-                        </div>
-                        <span class="k-ic" style="--k-bg:#ecfdf5; --k-color:#0ab39c;"><i class="ri-check-double-line"></i></span>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg col-md-6">
-                <div class="kpi" style="--k-accent:#f06548;">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div><div class="k-lbl">No Reales</div>
-                            <div class="k-val">{{ $resumen['total_no_reales'] }}
-                                <small class="text-muted" style="font-size:.65rem;font-weight:600;">
-                                    ({{ $resumen['total_inscritos'] > 0 ? round($resumen['total_no_reales'] / $resumen['total_inscritos'] * 100) : 0 }}%)
-                                </small>
-                            </div>
-                            <div class="k-sub">con pagos pendientes</div>
-                        </div>
-                        <span class="k-ic" style="--k-bg:#fef2f2; --k-color:#f06548;"><i class="ri-close-circle-line"></i></span>
-                    </div>
-                </div>
+        <div id="inscripciones-content" data-gestion="{{ $gestion }}" data-tipo="{{ $tipo }}">
+            <div class="prof-tab-loading text-center py-5">
+                <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div>
+                <p class="mt-2 text-muted mb-0">Cargando inscripciones...</p>
             </div>
         </div>
-
-        {{-- Gráfico de inscripciones por mes --}}
-        <div class="chart-card mb-3">
-            <div class="chart-card-title">
-                <i class="ri-bar-chart-grouped-line"></i> Inscripciones por Mes — Gestión {{ $gestion }}
-                @if($asesorNombre)
-                    <span class="text-muted ms-auto" style="font-size:.72rem; text-transform:none; letter-spacing:0;">
-                        Asesor: <strong>{{ $asesorNombre }}</strong>
-                    </span>
-                @endif
-            </div>
-            <div class="chart-wrapper">
-                <div id="chartInscritosMes" style="height:300px;"></div>
-            </div>
-        </div>
-
-        {{-- Desglose de inscritos por tipo --}}
-        @php $inscritosTipoTotal = collect($inscritosTipoSeries)->sum(fn($s) => array_sum($s['data'])); @endphp
-        @if($inscritosTipoTotal > 0)
-        <div class="chart-card mb-3">
-            <div class="chart-card-title" style="margin-bottom:0; border:0; padding-bottom:0;">
-                <i class="ri-price-tag-3-line"></i> Inscritos por Tipo — {{ $gestion }}
-                <span class="text-muted ms-auto" style="font-size:.72rem; text-transform:none; letter-spacing:0;">{{ $inscritosTipoTotal }} inscrito(s)</span>
-            </div>
-            <div class="m-chip-row">
-                @foreach(range(1, 12) as $m)
-                    @php $idx = $m - 1; @endphp
-                    @if(collect($inscritosTipoSeries)->sum(fn($s) => $s['data'][$idx]) > 0)
-                        <div class="m-chip">
-                            <div class="m-chip-title">{{ $mesesNombres[$idx] }}</div>
-                            @foreach($inscritosTipoSeries as $serie)
-                                @if(($serie['data'][$idx] ?? 0) > 0)
-                                    <div class="m-chip-item">
-                                        <span style="display:flex; align-items:center; gap:4px;">
-                                            <span class="m-chip-dot" style="background:{{ $serie['color'] }};"></span>
-                                            <span class="m-chip-name">{{ $serie['name'] }}</span>
-                                        </span>
-                                        <span class="m-chip-val">{{ $serie['data'][$idx] }}</span>
-                                    </div>
-                                @endif
-                            @endforeach
-                        </div>
-                    @endif
-                @endforeach
-            </div>
-        </div>
-        @endif
-
-        {{-- Gráfico de puntos por mes --}}
-        <div class="chart-card mb-3">
-            <div class="chart-card-title">
-                <i class="ri-star-line"></i> Puntos por Mes — Gestión {{ $gestion }}
-                @if($asesorNombre)
-                    <span class="text-muted ms-auto" style="font-size:.72rem; text-transform:none; letter-spacing:0;">
-                        Asesor: <strong>{{ $asesorNombre }}</strong>
-                    </span>
-                @endif
-            </div>
-            <div id="chartPuntosMes" style="height:300px;"></div>
-            <div class="m-chip-row">
-                @foreach(range(1, 12) as $m)
-                    @php $idx = $m - 1; @endphp
-                    @if(collect($puntosTipoSeries)->sum(fn($s) => $s['data'][$idx]) > 0)
-                        <div class="m-chip">
-                            <div class="m-chip-title">{{ $mesesNombres[$idx] }}</div>
-                            @foreach($puntosTipoSeries as $serie)
-                                @if(($serie['data'][$idx] ?? 0) > 0)
-                                    <div class="m-chip-item">
-                                        <span style="display:flex; align-items:center; gap:4px;">
-                                            <span class="m-chip-dot" style="background:{{ $serie['color'] }};"></span>
-                                            <span class="m-chip-name">{{ $serie['name'] }}</span>
-                                        </span>
-                                        <span class="m-chip-val">{{ number_format($serie['data'][$idx], 1, ',', '.') }}</span>
-                                    </div>
-                                @endif
-                            @endforeach
-                        </div>
-                    @endif
-                @endforeach
-            </div>
-        </div>
-
-        {{-- Gráfico de Puntos Reales por Mes --}}
-        <div class="chart-card mb-3">
-            <div class="chart-card-title">
-                <i class="ri-checkbox-circle-line"></i> Puntos Reales por Mes — Gestión {{ $gestion }}
-                @if($asesorNombre)
-                    <span class="text-muted ms-auto" style="font-size:.72rem; text-transform:none; letter-spacing:0;">
-                        Asesor: <strong>{{ $asesorNombre }}</strong>
-                    </span>
-                @endif
-            </div>
-            <div class="chart-wrapper">
-                <div id="chartPuntosRealesMes" style="height:300px;"></div>
-            </div>
-            <div class="m-chip-row">
-                @foreach(range(1, 12) as $m)
-                    @php $idx = $m - 1; @endphp
-                    @if(collect($puntosRealesTipoSeries)->sum(fn($s) => $s['data'][$idx]) > 0)
-                        <div class="m-chip">
-                            <div class="m-chip-title">{{ $mesesNombres[$idx] }}</div>
-                            @foreach($puntosRealesTipoSeries as $serie)
-                                @if(($serie['data'][$idx] ?? 0) > 0)
-                                    <div class="m-chip-item">
-                                        <span style="display:flex; align-items:center; gap:4px;">
-                                            <span class="m-chip-dot" style="background:{{ $serie['color'] }};"></span>
-                                            <span class="m-chip-name">{{ $serie['name'] }}</span>
-                                        </span>
-                                        <span class="m-chip-val">{{ number_format($serie['data'][$idx], 1, ',', '.') }}</span>
-                                    </div>
-                                @endif
-                            @endforeach
-                        </div>
-                    @endif
-                @endforeach
-            </div>
-        </div>
-
-        {{-- Gráfico de Inscritos Reales vs No Reales por Mes --}}
-        <div class="chart-card mb-3">
-            <div class="chart-card-title">
-                <i class="ri-check-double-line"></i> Inscritos Reales vs No Reales por Tipo — Gestión {{ $gestion }}
-                @if($asesorNombre)
-                    <span class="text-muted ms-auto" style="font-size:.72rem; text-transform:none; letter-spacing:0;">
-                        Asesor: <strong>{{ $asesorNombre }}</strong>
-                    </span>
-                @endif
-            </div>
-            <div class="chart-wrapper">
-                <div id="chartRealesMes" style="height:300px;"></div>
-            </div>
-            <div class="m-chip-row">
-                @foreach(range(1, 12) as $m)
-                    @php $idx = $m - 1;
-                        $mesTotal = collect($realesInscritosTipoSeries)->sum(fn($s) => $s['data'][$idx]) + collect($noRealesInscritosTipoSeries)->sum(fn($s) => $s['data'][$idx]);
-                    @endphp
-                    @if($mesTotal > 0)
-                        <div class="m-chip">
-                            <div class="m-chip-title">{{ $mesesNombres[$idx] }}</div>
-                            @foreach($realesInscritosTipoSeries as $serie)
-                                @if(($serie['data'][$idx] ?? 0) > 0)
-                                    <div class="m-chip-item">
-                                        <span style="display:flex; align-items:center; gap:4px;">
-                                            <span class="m-chip-dot" style="background:{{ $serie['color'] }};"></span>
-                                            <span class="m-chip-name" style="color:#0ab39c;">R: {{ $serie['name'] }}</span>
-                                        </span>
-                                        <span class="m-chip-val" style="color:#0ab39c;">{{ $serie['data'][$idx] }}</span>
-                                    </div>
-                                @endif
-                            @endforeach
-                            @foreach($noRealesInscritosTipoSeries as $serie)
-                                @if(($serie['data'][$idx] ?? 0) > 0)
-                                    <div class="m-chip-item">
-                                        <span style="display:flex; align-items:center; gap:4px;">
-                                            <span class="m-chip-dot" style="background:{{ $serie['color'] }};opacity:.5;"></span>
-                                            <span class="m-chip-name" style="color:#f06548;">NR: {{ $serie['name'] }}</span>
-                                        </span>
-                                        <span class="m-chip-val" style="color:#f06548;">{{ $serie['data'][$idx] }}</span>
-                                    </div>
-                                @endif
-                            @endforeach
-                        </div>
-                    @endif
-                @endforeach
-            </div>
-        </div>
-
-        {{-- Inscritos por programa --}}
-        <div class="tab-toolbar">
-            <div>
-                <p class="tb-title"><i class="ri-booklet-line"></i> Inscritos por programa</p>
-                <p class="tb-sub">{{ $porPrograma->count() }} programa(s) — {{ $resumen['total_inscritos'] }} inscrito(s) — {{ number_format($resumen['total_puntos'], 1, ',', '.') }} pts</p>
-            </div>
-        </div>
-
-        @if($porPrograma->count() === 0)
-            <div class="empty-state">
-                <div class="empty-icon"><i class="ri-inbox-2-line"></i></div>
-                <h5 class="text-dark fw-bold mb-1">Sin inscripciones en este periodo</h5>
-                <p class="text-muted mb-0">No hay inscripciones registradas para la gestión {{ $gestion }}.</p>
-            </div>
-        @else
-            <div class="row g-2">
-                @foreach($porPrograma as $p)
-                    <div class="col-xl-4 col-lg-6">
-                        <div class="prog-card">
-                            <div class="prog-card-body">
-                                <span class="prog-card-icon"><i class="ri-graduation-cap-line"></i></span>
-                                <div class="prog-card-info">
-                                    <div class="prog-card-name">{{ $p->nombre }}</div>
-                                    <div class="prog-card-meta">
-                                        <i class="ri-hashtag"></i> {{ $p->codigo }}
-                                        @if($p->tipo_nombre) · <i class="ri-price-tag-3-line"></i> {{ $p->tipo_nombre }} @endif
-                                        · <i class="ri-calendar-2-line"></i> {{ $p->gestion }}
-                                    </div>
-                                </div>
-                                <div class="prog-card-count">
-                                    <div class="num">{{ $p->total }}</div>
-                                    <div class="lbl">inscritos</div>
-                                    <div style="font-size:.68rem;color:#8b5cf6;font-weight:700;margin-top:1px;">
-                                        <i class="ri-star-line"></i> {{ number_format($p->puntos, 1, ',', '.') }} pts
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="prog-pills">
-                                @if($p->activos > 0)<span class="prog-pill pp-act"><i class="ri-check-line"></i> {{ $p->activos }} activos</span>@endif
-                                @if($p->retirados > 0)<span class="prog-pill pp-ret"><i class="ri-close-line"></i> {{ $p->retirados }} retirados</span>@endif
-                                @if($p->contado > 0)<span class="prog-pill pp-con"><i class="ri-bank-card-line"></i> {{ $p->contado }} contado</span>@endif
-                                @if($p->regular > 0)<span class="prog-pill pp-reg"><i class="ri-funds-line"></i> {{ $p->regular }} regular</span>@endif
-                                <span class="prog-pill" style="background:#ecfdf5;color:#0ab39c;"><i class="ri-check-double-line"></i> {{ (int)($p->inscritos_reales ?? 0) }} reales</span>
-                            </div>
-                            <div class="prog-card-footer">
-                                <button type="button" class="btn-ver-inscritos" data-bs-toggle="modal" data-bs-target="#modalPerfilInsc-{{ $p->id }}">
-                                    <i class="ri-eye-line"></i> Ver inscritos ({{ $p->total }})
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-
-            {{-- Modales: lista de inscritos por programa --}}
-            @foreach($porPrograma as $p)
-                @php $listaInsc = $inscritosPorPrograma->get($p->id, collect()); @endphp
-                <div class="modal fade" id="modalPerfilInsc-{{ $p->id }}" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-                        <div class="modal-content" style="border:0;border-radius:16px;overflow:hidden;box-shadow:0 30px 60px -15px rgba(0,0,0,.25);">
-                            <div class="modal-header" style="background:linear-gradient(135deg,#405189 0%,#5e72b8 50%,#299cdb 100%);color:#fff;border:0;padding:1.1rem 1.5rem;position:relative;overflow:hidden;">
-                                <div style="position:relative;z-index:1;">
-                                    <div class="d-flex align-items-center gap-3 mb-1">
-                                        <div style="width:42px;height:42px;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.25);border-radius:12px;font-size:1.2rem;color:#fff;">
-                                            <i class="ri-team-line"></i>
-                                        </div>
-                                        <div>
-                                            <h5 class="modal-title text-white mb-0" style="font-weight:700;font-size:1rem;">
-                                                {{ $p->nombre }}
-                                            </h5>
-                                            <div style="font-size:.72rem;opacity:.88;display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:2px;">
-                                                <span><i class="ri-hashtag"></i> {{ $p->codigo }}</span>
-                                                @if($p->tipo_nombre)<span><i class="ri-price-tag-3-line"></i> {{ $p->tipo_nombre }}</span>@endif
-                                                <span><i class="ri-calendar-2-line"></i> {{ $p->gestion }}</span>
-                                                <span><i class="ri-group-line"></i> {{ $p->total }} inscrito(s)</span>
-                                                <span><i class="ri-check-double-line" style="color:#7dffb3;"></i> {{ (int)($p->inscritos_reales ?? 0) }} reales</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body" style="background:#f8f9fc;padding:1rem;" data-inscritos-body data-url="{{ route('admin.profile.programa-inscritos', $p->id) }}?gestion={{ $gestion }}&tipo={{ $tipo }}">
-                                <div class="text-center py-5 text-muted">
-                                    <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div>
-                                    <p class="mt-2 mb-0">Cargando inscritos...</p>
-                                </div>
-                            </div>
-                            <div class="modal-footer" style="border-top:1px solid #eef0f4;padding:.75rem 1.25rem;background:#fff;">
-                                <div style="font-size:.72rem;display:flex;flex-wrap:wrap;gap:5px;align-items:center;">
-                                    <span class="text-muted" style="font-weight:600;text-transform:uppercase;letter-spacing:.3px;font-size:.6rem;">Plan:</span>
-                                    @if($p->contado > 0)<span class="plan-pill plan-con" style="font-size:.62rem;padding:2px 8px;border-radius:5px;"><i class="ri-bank-card-line"></i> {{ $p->contado }} Contado</span>@endif
-                                    @if($p->regular > 0)<span class="plan-pill plan-reg" style="font-size:.62rem;padding:2px 8px;border-radius:5px;"><i class="ri-funds-line"></i> {{ $p->regular }} Regular</span>@endif
-                                    @php
-                                        $realesCount = (int)($p->inscritos_reales ?? 0);
-                                        $noRealesCount = $p->total - $realesCount;
-                                    @endphp
-                                    <span class="text-muted" style="font-size:.62rem;">|</span>
-                                    @if($realesCount > 0)<span style="font-size:.62rem;padding:2px 8px;border-radius:5px;background:#ecfdf5;color:#0ab39c;border:1px solid #a7f3d0;"><i class="ri-check-double-line"></i> {{ $realesCount }} Reales</span>@endif
-                                    @if($noRealesCount > 0)<span style="font-size:.62rem;padding:2px 8px;border-radius:5px;background:#fef2f2;color:#f06548;border:1px solid #fecaca;"><i class="ri-close-circle-line"></i> {{ $noRealesCount }} No Reales</span>@endif
-                                </div>
-                                <button type="button" class="btn btn-sm" style="background:#f1f3f5;color:#495057;border-radius:8px;font-size:.72rem;font-weight:600;padding:.35rem .9rem;border:1px solid #eef0f4;" data-bs-dismiss="modal">Cerrar</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endforeach
-        @endif
     </div>
     @endif
 
@@ -1692,10 +1299,11 @@ document.addEventListener('DOMContentLoaded', function () {
     // Renderizar gráficos al mostrar el tab inscripciones
     const tabInsc = document.querySelector('[data-bs-target="#tab-inscripciones"]');
 
-    function renderApexCharts() {
+    function renderApexCharts(chartData) {
+        if (!chartData) return;
         if (document.getElementById('chartInscritosMes') && !document.getElementById('chartInscritosMes').dataset.rendered) {
             document.getElementById('chartInscritosMes').dataset.rendered = '1';
-            const data = @json($mesesData);
+            const data = chartData.meses;
 
             new ApexCharts(document.getElementById('chartInscritosMes'), {
                 chart: { height: 300, toolbar: { show: false }, fontFamily: 'inherit' },
@@ -1742,7 +1350,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const elPuntos = document.getElementById('chartPuntosMes');
         if (elPuntos && !elPuntos.dataset.rendered) {
             elPuntos.dataset.rendered = '1';
-            const tipoSeries = @json($puntosTipoSeries);
+            const tipoSeries = chartData.puntos;
             if (tipoSeries.length > 0) {
                 const stackedSeries = tipoSeries.map(s => ({ name: s.name, data: s.data, type: 'column' }));
                 const totalData = Array.from({ length: 12 }, (_, i) =>
@@ -1790,7 +1398,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const elPuntosReales = document.getElementById('chartPuntosRealesMes');
         if (elPuntosReales && !elPuntosReales.dataset.rendered) {
             elPuntosReales.dataset.rendered = '1';
-            const tipoSeriesReales = @json($puntosRealesTipoSeries);
+            const tipoSeriesReales = chartData.puntosReales;
             if (tipoSeriesReales.length > 0) {
                 const stackedSeriesReales = tipoSeriesReales.map(s => ({ name: s.name, data: s.data, type: 'column' }));
                 const totalDataReales = Array.from({ length: 12 }, (_, i) =>
@@ -1838,9 +1446,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const elReales = document.getElementById('chartRealesMes');
         if (elReales && !elReales.dataset.rendered) {
             elReales.dataset.rendered = '1';
-            const seriesRealesTipo = @json($realesInscritosTipoSeries);
-            const seriesNoRealesTipo = @json($noRealesInscritosTipoSeries);
-            const totalInsc = @json($mesesData['total']);
+            const seriesRealesTipo = chartData.reales;
+            const seriesNoRealesTipo = chartData.noReales;
+            const totalInsc = chartData.meses.total;
 
             function lightenHex(hex, pct) {
                 const r = parseInt(hex.slice(1,3), 16), g = parseInt(hex.slice(3,5), 16), b = parseInt(hex.slice(5,7), 16);
@@ -1884,7 +1492,76 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    if (tabInsc) tabInsc.addEventListener('shown.bs.tab', renderApexCharts);
+    // ===== Ofertas tab: carga diferida =====
+    function profTabSpinner(msg) {
+        return '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div><p class="mt-2 text-muted mb-0">' + msg + '</p></div>';
+    }
+    function profTabError(msg) {
+        return '<div class="text-center text-danger py-5"><i class="ri-error-warning-line ri-2x d-block mb-2"></i>' + msg + '</div>';
+    }
+
+    const tabOfertas = document.querySelector('[data-bs-target="#tab-ofertas"]');
+    function cargarOfertas() {
+        const content = document.getElementById('ofertas-content');
+        if (!content || content.dataset.loaded === '1') return;
+        content.dataset.loaded = '1';
+        content.innerHTML = profTabSpinner('Cargando ofertas...');
+        fetch('{{ route("admin.profile.ofertas-data") }}', { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (!d || !d.success) { content.innerHTML = profTabError('No se pudieron cargar las ofertas.'); return; }
+                content.innerHTML = d.html || '';
+                if (typeof d.count !== 'undefined') {
+                    const badge = document.getElementById('tabOfertasCount');
+                    if (badge) badge.textContent = d.count;
+                }
+            })
+            .catch(function () { content.innerHTML = profTabError('Error de conexión.'); });
+    }
+    if (tabOfertas) tabOfertas.addEventListener('shown.bs.tab', cargarOfertas);
+
+    // ===== Inscripciones tab: carga diferida + filtros por AJAX =====
+    const inscContent = document.getElementById('inscripciones-content');
+    function cargarInscripciones(force) {
+        if (!inscContent) return;
+        if (inscContent.dataset.loaded === '1' && !force) {
+            if (window.__profInscData) renderApexCharts(window.__profInscData);
+            return;
+        }
+        inscContent.dataset.loaded = '1';
+        const params = new URLSearchParams();
+        const selG = document.querySelector('.prof-filtro[data-filtro="gestion"]');
+        const selT = document.querySelector('.prof-filtro[data-filtro="tipo"]');
+        params.set('gestion', selG ? selG.value : (inscContent.dataset.gestion || ''));
+        params.set('tipo', selT ? selT.value : (inscContent.dataset.tipo || 'general'));
+        inscContent.innerHTML = profTabSpinner('Cargando inscripciones...');
+        fetch('{{ route("admin.profile.inscripciones-data") }}?' + params.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (!d || !d.success) { inscContent.innerHTML = profTabError('No se pudieron cargar las inscripciones.'); return; }
+                inscContent.innerHTML = d.html || '';
+                window.__profInscData = d.charts || null;
+                renderApexCharts(window.__profInscData);
+            })
+            .catch(function () { inscContent.innerHTML = profTabError('Error de conexión.'); });
+    }
+    if (tabInsc) tabInsc.addEventListener('shown.bs.tab', function () { cargarInscripciones(false); });
+    if (inscContent) {
+        inscContent.addEventListener('change', function (e) {
+            if (e.target && e.target.classList.contains('prof-filtro')) {
+                cargarInscripciones(true);
+            }
+        });
+    }
+
+    // Abrir la pestaña indicada por el hash de la URL (p. ej. desde el menú superior:
+    // #tab-ofertas, #tab-password). Los paneles diferidos se cargan al mostrarse.
+    (function () {
+        var hash = window.location.hash || '';
+        if (!/^#tab-[a-z0-9-]+$/i.test(hash)) return;
+        var btn = document.querySelector('.profile-tabs [data-bs-target="' + hash + '"]');
+        if (btn) new bootstrap.Tab(btn).show();
+    })();
 
     // ===== Publicidad tab: load content =====
     function cargarPublicidad() {
