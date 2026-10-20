@@ -1,14 +1,13 @@
 @php
     $nivel = $nivel ?? 'raiz';
-    $esDerivado = $nivel === 'derivado';
-    $totalDerivados = ($p->derivados ?? collect())->count();
+    $derivados = $p->derivados ?? collect();
+    $totalDerivados = (int) ($p->num_derivados ?? $derivados->sum('cantidad'));
+    $totalAsesores = $derivados->count();
 @endphp
-<tr @class(['row-derivado' => $esDerivado, 'ultimo-derivado' => $esDerivado && !empty($ultimoDerivado)])>
+<tr class="row-raiz">
     <td>
-        <div @class(['pres-asesor', 'deriv-cell' => $esDerivado])>
-            <span @class(['pres-avatar', 'pres-avatar-sm' => $esDerivado])>
-                <i class="{{ $esDerivado ? 'ri-corner-down-right-line' : 'ri-user-star-line' }}"></i>
-            </span>
+        <div class="pres-asesor">
+            <span class="pres-avatar"><i class="ri-user-star-line"></i></span>
             <div>
                 <div class="pres-name">
                     @if($p->ase_apellidos)
@@ -16,10 +15,8 @@
                     @else
                         <span class="fst-italic text-muted" style="font-weight:400;">Sin asesor asignado</span>
                     @endif
-                    @if($esDerivado)
-                        <span class="chip chip-deriv"><i class="ri-share-forward-line"></i>Derivado</span>
-                    @elseif($totalDerivados > 0)
-                        <span class="chip"><i class="ri-share-forward-line"></i>{{ $totalDerivados }} derivación(es)</span>
+                    @if($totalAsesores > 0)
+                        <span class="chip"><i class="ri-share-forward-line"></i>{{ $totalAsesores }} asesor(es) · {{ $totalDerivados }} derivación(es)</span>
                     @endif
                 </div>
                 @if($p->sup_apellidos)
@@ -30,7 +27,7 @@
     </td>
     <td class="text-end num">
         <span class="amount-strong">Bs {{ number_format($p->monto_asignado, 2) }}</span>
-        @if(!$esDerivado && $p->monto_derivado_total > 0)
+        @if($totalDerivados > 0)
             <div class="pres-sub">Original Bs {{ number_format($p->monto_asignado + $p->monto_derivado_total, 2) }} · derivó Bs {{ number_format($p->monto_derivado_total, 2) }}</div>
         @endif
     </td>
@@ -72,7 +69,7 @@
             </button>
             @else
             <button type="button" class="btn btn-sm btn-icon btn-soft-secondary" disabled
-                    title="{{ $p->total_comprobantes > 0 ? 'Tiene comprobantes: no se puede eliminar' : ($p->num_derivados > 0 ? 'Tiene derivaciones: no se puede eliminar' : ($p->periodo_cerrado ? 'El periodo está cerrado' : 'No se puede eliminar')) }}">
+                    title="{{ $p->total_comprobantes > 0 ? 'Tiene comprobantes: no se puede eliminar' : ($totalDerivados > 0 ? 'Tiene derivaciones: no se puede eliminar' : ($p->periodo_cerrado ? 'El periodo está cerrado' : 'No se puede eliminar')) }}">
                 <i class="ri-delete-bin-6-line"></i>
             </button>
             @endif

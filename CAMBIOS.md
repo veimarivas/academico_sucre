@@ -270,6 +270,37 @@ Archivo: `resources/views/admin/programas/show.blade.php`.
 
 ---
 
+## 14. Presupuestos de publicidad: derivaciones agrupadas por asesor (2026-10-20)
+
+Ruta: `/admin/marketing/publicidad/presupuestos`.
+Archivos: `app/Http/Controllers/Admin/PublicidadController.php`,
+`resources/views/admin/marketing/publicidad/presupuestos.blade.php`,
+`_presupuesto_fila.blade.php` y nuevo `_presupuesto_derivado_fila.blade.php`.
+
+- **Corregido**: si el asesor principal derivaba **2 veces al mismo asesor** se listaban
+  **2 filas** con montos parciales. Ahora se muestra **una sola fila por asesor**, con el
+  **total** de lo asignado (p. ej. Bs 150.00 = Bs 100.00 + Bs 50.00) y, desplegando el
+  detalle, **cada asignación individual** (monto, reembolsado, gastado, aprobado, pendiente,
+  nº de recibos, observaciones, archivo de derivación, fecha/hora, estado y su acción de
+  eliminación cuando corresponda), más una fila **Σ** con los totales del grupo.
+- **Controlador**: nuevo método privado `agruparDerivadosPorAsesor()` que agrupa las
+  derivaciones de cada presupuesto raíz por `asesor_id` y consolida supervisores, montos,
+  comprobantes y estado. Los totales de la fila (subtotal por monto) se recalculan desde el
+  agrupamiento; el chip de la fila raíz ahora informa “N asesor(es) · M derivación(es)”.
+- **IDs únicos**: cada grupo recibe `der-{periodo}-{origen}-{asesor}` para que los botones de
+  detalle no colisionen cuando el mismo asesor aparece bajo varias raíces o periodos.
+- **Derivaciones “huérfanas”** (origen fuera del periodo/filtro): se seguían mostrando como
+  fila propia, ahora también agrupadas por asesor y con el chip *Origen #n fuera de este periodo*.
+- **Visualización**: panel de detalle tipo tarjeta (cabecera ámbar con origen y total,
+  tabla zebra con tipografía tabular, totales al pie), animación al desplegar, botón de
+  detalle con chevron que gira, soporte de **modo oscuro** y `prefers-reduced-motion`.
+- **Acciones por fila derivada**: ver comprobantes del asesor (`?asesor_id=`), previsualizar
+  el archivo de derivación (modal con imagen/PDF/descarga) y desplegar el detalle.
+- Sin cambios de rutas, permisos (`marketing.publicidad.presupuestos`) ni de base de datos;
+  el reporte PDF (`reportePdf`) mantiene su propia consulta y no se ve afectado.
+
+---
+
 ## Notas
 
 - Si un usuario ve solo “Conexión” en baileys_esam, es porque su número aún no está vinculado.

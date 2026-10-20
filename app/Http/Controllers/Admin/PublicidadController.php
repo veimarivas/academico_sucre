@@ -330,6 +330,7 @@ class PublicidadController extends Controller
                 'p.id', 'p.gestion', 'p.mes', 'p.quincena', 'p.monto_asignado', 'p.monto_reembolsado',
                 'p.estado', 'p.periodo_cerrado', 'p.presupuesto_origen_id', 'p.asesor_id', 'p.supervisor_id',
                 'p.observaciones', 'p.archivo_derivacion_path', 'p.archivo_derivacion_original',
+                'p.created_at',
                 'a.nombres as ase_nombres', 'a.apellidos as ase_apellidos',
                 's.nombres as sup_nombres', 's.apellidos as sup_apellidos',
                 DB::raw('COALESCE(c.n, 0) as total_comprobantes'),
@@ -376,7 +377,12 @@ class PublicidadController extends Controller
 
                 $idsRaiz = $raices->pluck('id')->map(fn($v) => (int) $v)->all();
                 foreach ($raices as $raiz) {
-                    $raiz->derivados = $porOrigen->get($raiz->id, collect())->values();
+                    // Una sola fila por asesor derivado, con el detalle de cada
+                    // asignación (si se derivó 2 veces, se ve 1 fila con 2 registros).
+                    $derivados = $this->agruparDerivadosPorAsesor($porOrigen->get($raiz->id, collect()), (int) $raiz->id, false, $pk);
+                    $raiz->derivados = $derivados;
+                    $raiz->num_derivados = (int) $derivados->sum('cantidad');
+                    $raiz->monto_derivado_total = (float) $derivados->sum('monto_asignado');
                 }
 
                 // Derivaciones cuyo origen no está en este listado (por el filtro de
@@ -385,9 +391,8 @@ class PublicidadController extends Controller
                 $sueltos = collect();
                 foreach ($porOrigen as $origenId => $hijos) {
                     if (!in_array((int) $origenId, $idsRaiz, true)) {
-                        foreach ($hijos as $h) {
-                            $h->derivados = collect();
-                            $sueltos->push($h);
+                        foreach ($this->agruparDerivadosPorAsesor($hijos, (int) $origenId, true, $pk) as $grupo) {
+                            $sueltos->push($grupo);
                         }
                     }
                 }
@@ -399,6 +404,68 @@ class PublicidadController extends Controller
         return view('admin.marketing.publicidad.presupuestos', compact(
             'grupos', 'gestiones', 'meses', 'gestionFiltro', 'totalEliminables'
         ));
+    }
+
+    /**
+     * Agrupa las derivaciones de un presupuesto por asesor: si el asesor principal
+     * derivó 2 veces al mismo asesor, se muestra **una** fila con el total y, dentro
+     * del detalle, cada asignación individual.
+     */
+    private function agruparDerivadosPorAsesor($hijos, ?int $origenId = null, bool $sinOrigen = false, string $periodo = '')
+    {
+        return $hijos
+            ->groupBy(fn($h) => $h->asesor_id ? (int) $h->asesor_id : 'sin_asesor')
+            ->map(function ($items, $key) {
+                $items = $items->sortBy(fn($i) => (string) $i->created_at)->values();
+                $first = $items->first();
+
+                // Un mismo asesor puede tener varias asignaciones con distinto supervisor.
+                $supervisores = $items
+                    ->filter(fn($i) => !empty($i->sup_apellidos))
+                    ->map(fn($i) => (object) [
+                        'id' => (int) $i->supervisor_id,
+                        'apellidos' => $i->sup_apellidos,
+                        'nombres' => $i->sup_nombres,
+                    ])
+                    ->unique('id')
+                    ->values();
+
+                $principalSup = $supervisores->first();
+                $totalComprobantes = (int) $items->sum('total_comprobantes');
+
+                return (object) [
+                    'asesor_id'         => $first->asesor_id,
+                    'ase_nombres'       => $first->ase_nombres,
+                    'ase_apellidos'     => $first->ase_apellidos,
+                    'supervisores'      => $supervisores,
+                    'sup_nombres'       => $principalSup->nombres ?? null,
+                    'sup_apellidos'     => $principalSup->apellidos ?? null,
+                    'cantidad'          => $items->count(),
+                    'monto_asignado'    => (float) $items->sum('monto_asignado'),
+                    'monto_reembolsado' => (float) $items->sum('monto_reembolsado'),
+                    'total_gastado'     => (float) $items->sum('total_gastado'),
+                    'total_aprobado'    => (float) $items->sum('total_aprobado'),
+                    'total_aprobado_obs'=> (float) $items->sum('total_aprobado_obs'),
+                    'total_pendiente'   => (float) $items->sum('total_pendiente'),
+                    'total_comprobantes'=> $totalComprobantes,
+                    'estado'            => $items->contains(fn($i) => $i->estado === 'activo') ? 'activo' : 'cerrado',
+                    'periodo_cerrado'   => (bool) $first->periodo_cerrado,
+                    'puede_eliminar'    => $items->count() === 1
+                        && $totalComprobantes === 0
+                        && ((int) $items->sum('num_derivados') === 0)
+                        && !$first->periodo_cerrado,
+                    'items'             => $items,
+                ];
+            })
+            ->sortByDesc('monto_asignado')
+            ->values()
+            ->each(function ($g) use ($origenId, $sinOrigen, $periodo) {
+                $g->origen_id = $origenId;
+                $g->sin_origen = $sinOrigen;
+                // Id único en la página: periodo + origen + asesor (evita colisiones
+                // cuando el mismo asesor aparece bajo varias raíces o periodos).
+                $g->grupo_id = 'der-' . $periodo . '-' . ($origenId ?? 0) . '-' . ($g->asesor_id ?? 'sin');
+            });
     }
 
     public function autogestionIndex(Request $request)

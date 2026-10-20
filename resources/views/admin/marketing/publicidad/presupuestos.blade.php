@@ -127,14 +127,60 @@
 .deriv-cell { padding-left: 1.5rem; position: relative; }
 .deriv-cell::before { content: ''; position: absolute; left: .5rem; top: 0; bottom: 0; width: 1px; background: #e2e7ef; }
 .deriv-cell::after { content: ''; position: absolute; left: .5rem; top: 50%; width: .8rem; height: 1px; background: #e2e7ef; }
+.deriv-suelto { padding-left: .9rem; position: relative; }
+.deriv-suelto::before { content: ''; position: absolute; left: .15rem; top: .2rem; bottom: .2rem; width: 3px; border-radius: 3px; background: #f6ddae; }
 tr.ultimo-derivado .deriv-cell::before { bottom: 50%; }
 .pres-name { font-weight: 600; color: var(--pres-ink); display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
 .pres-sub { font-size: .75rem; color: var(--pres-muted); }
+.pres-sub-id { color: #94a3b8; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
 .chip { display: inline-flex; align-items: center; gap: .25rem; padding: .16rem .55rem; border-radius: 99px; font-size: .72rem; font-weight: 700; background: #eef2fb; color: #3b4c86; font-variant-numeric: tabular-nums; }
 .chip-deriv { background: #fff2d6; color: #9a6206; }
 .pres-table .badge.fs-10 { font-size: .72rem; }
 .q-total-row td { background: #f8f9fc; font-weight: 700; font-size: .82rem; color: var(--pres-ink); padding: .6rem .9rem; border-top: 1px solid var(--pres-line); }
 .empty-row td { text-align: center; color: var(--pres-muted); padding: 1.1rem; font-size: .8rem; }
+
+/* ─── Detalle de derivaciones (una fila por asesor) ─── */
+.row-detalle-derivado > td { background: #fcfcfd; padding: 0; }
+.deriv-panel {
+    margin: .3rem .9rem .9rem;
+    border: 1px solid #ece3d2;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #fffdf8 0%, #ffffff 55%);
+    overflow: hidden;
+    box-shadow: 0 6px 18px -16px rgba(120,80,10,.55);
+}
+.deriv-panel-head {
+    display: flex; align-items: center; justify-content: space-between; gap: .75rem;
+    flex-wrap: wrap; padding: .6rem .9rem; background: #fff8ea; border-bottom: 1px solid #f2e7d2;
+}
+.dp-title { font-size: .78rem; font-weight: 700; color: #92400e; letter-spacing: .01em; }
+.dp-title i { color: #d97706; }
+.dp-asesor { font-weight: 600; color: #b45309; }
+.dp-meta { font-size: .72rem; color: #9a8f7d; }
+.dp-meta b { color: #7a5c17; font-variant-numeric: tabular-nums; }
+.deriv-detail-table { margin: 0; }
+.deriv-detail-table thead th {
+    font-size: .66rem; text-transform: uppercase; letter-spacing: .05em; color: #a08d6b;
+    font-weight: 700; background: #fff; border-bottom: 1px solid #f0e8d8; padding: .5rem .7rem; white-space: nowrap;
+}
+.deriv-detail-table tbody td {
+    font-size: .78rem; color: #3d4250; border-bottom: 1px dashed #f1f3f7; padding: .55rem .7rem; vertical-align: middle;
+}
+.deriv-detail-table tbody tr:hover > td { background: #fffcf4; }
+.deriv-detail-table tfoot td { background: #fbfaf7; border-top: 1px solid #ece3d2; font-size: .76rem; color: #7a5c17; padding: .5rem .7rem; }
+.deriv-detail-table .num { font-variant-numeric: tabular-nums; }
+.deriv-obs { display: inline-block; max-width: 340px; font-size: .74rem; color: #6b7280; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
+.deriv-fecha-hora { font-size: .68rem; color: #9aa4b2; }
+.chip-warn { background: #fdecd2; color: #a16207; }
+.btn-soft-amber { background: #fdf3e3; color: #b45309; border: 0; }
+.btn-soft-amber:hover { background: #f9e6c8; color: #92400e; }
+.row-detalle-derivado.open > td { animation: derivIn .25s ease both; }
+@keyframes derivIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .row-detalle-derivado.open > td { animation: none; } }
+.btn-detalle-derivado i { transition: transform .25s ease; }
+.btn-detalle-derivado.active i { transform: rotate(180deg); }
+.row-raiz > td { background: #fff; }
+.row-raiz > td { border-bottom: 1px solid var(--pres-line); }
 
 /* ─── Modo oscuro ─── */
 [data-layout-mode="dark"] .stat-card, [data-layout-mode="dark"] .filter-card, [data-layout-mode="dark"] .period-card { background: #1a1d21; border-color: #2a2f34; }
@@ -146,10 +192,28 @@ tr.ultimo-derivado .deriv-cell::before { bottom: 50%; }
 [data-layout-mode="dark"] .row-derivado > td { background: #1e2227; }
 [data-layout-mode="dark"] .row-derivado:hover > td { background: #23282e; }
 [data-layout-mode="dark"] .deriv-cell::before, [data-layout-mode="dark"] .deriv-cell::after { background: #333a42; }
+[data-layout-mode="dark"] .deriv-suelto::before { background: #4a3d1f; }
 [data-layout-mode="dark"] .pres-avatar-sm { background: #3a2f16; color: #f0c070; }
 [data-layout-mode="dark"] .q-block + .q-block, [data-layout-mode="dark"] .period-body .q-block:first-child > .q-head { border-color: #2a2f34; }
 [data-layout-mode="dark"] .chip { background: #232a3a; color: #a9baf0; }
 [data-layout-mode="dark"] .chip-deriv { background: #3a2f16; color: #f0c070; }
+[data-layout-mode="dark"] .row-detalle-derivado > td { background: #17191d; }
+[data-layout-mode="dark"] .deriv-panel { background: linear-gradient(180deg, #1c1a15 0%, #191b1f 55%); border-color: #33302a; box-shadow: none; }
+[data-layout-mode="dark"] .deriv-panel-head { background: #211e18; border-bottom-color: #33302a; }
+[data-layout-mode="dark"] .dp-title { color: #f0c070; }
+[data-layout-mode="dark"] .dp-title i { color: #f0c070; }
+[data-layout-mode="dark"] .dp-asesor { color: #e8b75f; }
+[data-layout-mode="dark"] .dp-meta { color: #9a927f; }
+[data-layout-mode="dark"] .dp-meta b { color: #e0c68c; }
+[data-layout-mode="dark"] .deriv-detail-table thead th { background: #191b1f; color: #9a927f; border-bottom-color: #2c2a26; }
+[data-layout-mode="dark"] .deriv-detail-table tbody td { color: #cdd3dc; border-bottom-color: #23262b; }
+[data-layout-mode="dark"] .deriv-detail-table tbody tr:hover > td { background: #20242a; }
+[data-layout-mode="dark"] .deriv-detail-table tfoot td { background: #1c1a15; border-top-color: #33302a; color: #e0c68c; }
+[data-layout-mode="dark"] .deriv-obs { color: #9aa4b2; }
+[data-layout-mode="dark"] .chip-warn { background: #3a2f16; color: #f0c070; }
+[data-layout-mode="dark"] .btn-soft-amber { background: #3a2f16; color: #f0c070; }
+[data-layout-mode="dark"] .btn-soft-amber:hover { background: #463718; color: #ffd28a; }
+[data-layout-mode="dark"] .row-raiz > td { background: #1a1d21; border-bottom-color: #262b31; }
 </style>
 @endpush
 
@@ -340,7 +404,18 @@ tr.ultimo-derivado .deriv-cell::before { bottom: 50%; }
                             <span class="badge badge-{{ $meta['cls'] }}">{{ $meta['label'] }} · {{ $meta['rango'] }}</span>
                             @if($q)
                             <span class="q-sum">Asignado <b>Bs {{ number_format($q->total_asignado, 2) }}</b> · Gastado <b>Bs {{ number_format($q->total_gastado, 2) }}</b> · Aprobado <b>Bs {{ number_format($q->total_aprobado, 2) }}</b></span>
-                            <span class="chip"><i class="ri-list-check-2"></i>{{ ($q->presupuestos ?? collect())->count() }} principal(es) · {{ ($q->presupuestos ?? collect())->sum(fn($x) => ($x->derivados ?? collect())->count()) }} derivado(s)</span>
+                            @php
+                                $qPrincipales = ($q->presupuestos ?? collect())->filter(fn($x) => !isset($x->grupo_id))->count();
+                                $qAsesores = ($q->presupuestos ?? collect())->sum(function ($x) {
+                                    if (isset($x->grupo_id)) return 1;
+                                    return ($x->derivados ?? collect())->count();
+                                });
+                                $qDerivaciones = ($q->presupuestos ?? collect())->sum(function ($x) {
+                                    if (isset($x->grupo_id)) return (int) $x->cantidad;
+                                    return (int) ($x->num_derivados ?? ($x->derivados ?? collect())->sum('cantidad'));
+                                });
+                            @endphp
+                            <span class="chip"><i class="ri-list-check-2"></i>{{ $qPrincipales }} principal(es) · {{ $qAsesores }} asesor(es) · {{ $qDerivaciones }} derivación(es)</span>
                             @if($q->periodo_cerrado)
                             <span class="period-status closed"><i class="ri-lock-line me-1"></i>Cerrado</span>
                             @else
@@ -388,10 +463,15 @@ tr.ultimo-derivado .deriv-cell::before { bottom: 50%; }
                             </thead>
                             <tbody>
                                 @forelse($q->presupuestos ?? collect() as $p)
-                                @include('admin.marketing.publicidad._presupuesto_fila', ['p' => $p, 'nivel' => 'raiz'])
-                                @foreach($p->derivados ?? collect() as $d)
-                                @include('admin.marketing.publicidad._presupuesto_fila', ['p' => $d, 'nivel' => 'derivado', 'ultimoDerivado' => $loop->last])
-                                @endforeach
+                                @if(isset($p->grupo_id))
+                                    {{-- Derivación sin raíz visible en este periodo: fila agrupada por asesor --}}
+                                    @include('admin.marketing.publicidad._presupuesto_derivado_fila', ['d' => $p, 'raiz' => null, 'meses' => $meses])
+                                @else
+                                    @include('admin.marketing.publicidad._presupuesto_fila', ['p' => $p, 'nivel' => 'raiz'])
+                                    @foreach($p->derivados ?? collect() as $d)
+                                    @include('admin.marketing.publicidad._presupuesto_derivado_fila', ['d' => $d, 'raiz' => $p, 'meses' => $meses, 'ultimoDerivado' => $loop->last])
+                                    @endforeach
+                                @endif
                                 @empty
                                 <tr class="empty-row">
                                     <td colspan="7"><i class="ri-inbox-2-line me-1"></i>Sin presupuestos asignados en esta quincena</td>
@@ -450,6 +530,21 @@ tr.ultimo-derivado .deriv-cell::before { bottom: 50%; }
     </div>
 </div>
 @endcan
+
+{{-- Modal de previsualización de archivo de derivación --}}
+<div class="modal fade" id="modalFilePreview" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="ri-attachment-2 text-info me-1"></i>Archivo de derivación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body bg-light" id="filePreviewContent">
+                <div class="text-center p-4"><i class="ri-loader-4-line ri-2x"></i><p class="mt-2 mb-0">Cargando archivo...</p></div>
+            </div>
+        </div>
+    </div>
+</div>
 </div>{{-- /mkt-page --}}
 @endsection
 
@@ -465,6 +560,39 @@ document.addEventListener('keydown', function (e) {
 });
 
 document.addEventListener('click', function (e) {
+    // Previsualizar archivo de derivación
+    var preview = e.target.closest('.btn-preview-file');
+    if (preview) {
+        var url = preview.dataset.url;
+        var ext = (preview.dataset.ext || url.split('.').pop() || '').toLowerCase();
+        var content = document.getElementById('filePreviewContent');
+        if (content) {
+            if (['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
+                content.innerHTML = '<div class="text-center"><img src="' + url + '" class="img-fluid rounded" style="max-height:80vh;object-fit:contain;" alt="Archivo de derivación"></div>';
+            } else if (ext === 'pdf') {
+                content.innerHTML = '<iframe src="' + url + '" class="w-100 rounded" style="height:80vh;border:none;"></iframe>';
+            } else {
+                content.innerHTML = '<div class="text-center p-4"><i class="ri-file-download-line ri-2x"></i><p class="mt-2"><a href="' + url + '" target="_blank" class="btn btn-primary"><i class="ri-download-line me-1"></i>Descargar archivo</a></p></div>';
+            }
+        }
+        var modal = document.getElementById('modalFilePreview');
+        if (modal) new bootstrap.Modal(modal).show();
+        return;
+    }
+
+    // Abrir / cerrar el detalle de asignaciones de un asesor derivado
+    var det = e.target.closest('.btn-detalle-derivado');
+    if (det) {
+        var fila = document.querySelector('[data-der-detalle="' + det.dataset.der + '"]');
+        if (!fila) return;
+        var abierto = fila.style.display !== 'none';
+        fila.style.display = abierto ? 'none' : '';
+        fila.classList.toggle('open', !abierto);
+        det.classList.toggle('active', !abierto);
+        det.setAttribute('aria-expanded', abierto ? 'false' : 'true');
+        return;
+    }
+
     // Eliminar presupuesto sin gastos
     var del = e.target.closest('.btn-eliminar-pres');
     if (del) {
@@ -508,6 +636,11 @@ document.addEventListener('click', function (e) {
         }
     })
     .catch(() => alert('Error de conexión.'));
+});
+
+document.getElementById('modalFilePreview')?.addEventListener('hidden.bs.modal', function () {
+    var el = document.getElementById('filePreviewContent');
+    if (el) el.innerHTML = '<div class="text-center p-4"><i class="ri-loader-4-line ri-2x"></i><p class="mt-2 mb-0">Cargando archivo...</p></div>';
 });
 </script>
 @endpush
