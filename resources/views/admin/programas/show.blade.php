@@ -8695,6 +8695,172 @@ function showToast(msg, type) {
     el.addEventListener('hidden.bs.toast', function () { el.remove(); });
 }
 
+// ---- WhatsApp Masivo ----
+// Listener propio: el modal funciona aunque otro bloque de la página falle.
+document.addEventListener('DOMContentLoaded', function () {
+    let whatsappMensajes = [];
+    let whatsappModuloId = null;
+
+    // Participantes marcados en el modal (los dados de baja empiezan sin marcar).
+    function waSeleccionados() {
+        return Array.prototype.map.call(
+            document.querySelectorAll('#whatsapp-body .wa-sel:checked'),
+            function (c) { return parseInt(c.value, 10); }
+        );
+    }
+
+    function waActualizarSeleccion() {
+        var checks = document.querySelectorAll('#whatsapp-body .wa-sel:not(:disabled)');
+        var marcados = waSeleccionados().length;
+        var info = document.getElementById('wa-sel-info');
+        if (info) info.textContent = marcados + ' de ' + checks.length + ' seleccionado(s)';
+        var all = document.getElementById('wa-check-all');
+        if (all) {
+            var activos = document.querySelectorAll('#whatsapp-body .wa-sel:not(:disabled):not([data-baja="1"])');
+            var activosMarcados = document.querySelectorAll('#whatsapp-body .wa-sel:not(:disabled):not([data-baja="1"]):checked');
+            all.checked = activos.length > 0 && activos.length === activosMarcados.length;
+            all.indeterminate = activosMarcados.length > 0 && activosMarcados.length < activos.length;
+        }
+    }
+
+    document.addEventListener('change', function (e) {
+        if (e.target.classList && e.target.classList.contains('wa-sel')) {
+            e.target.closest('tr').classList.toggle('opacity-50', !e.target.checked);
+            waActualizarSeleccion();
+        }
+        if (e.target.id === 'wa-check-all') {
+            document.querySelectorAll('#whatsapp-body .wa-sel:not(:disabled):not([data-baja="1"])').forEach(function (c) {
+                c.checked = e.target.checked;
+                c.closest('tr').classList.toggle('opacity-50', !c.checked);
+            });
+            waActualizarSeleccion();
+        }
+    });
+
+    async function enviarWhatsappEsam(tipo, trigger) {
+        if (! whatsappModuloId) return;
+        var n = waSeleccionados().length;
+        if (n === 0) { showToast('Seleccioná al menos un participante.', 'warning'); return; }
+        if (! confirm('¿Enviar por WhatsApp con Seguimiento ESAM a ' + n + ' participante(s) seleccionado(s)' +
+            (tipo === 'aprobado' ? ' (solo aprobados)' : tipo === 'reprobado' ? ' (solo reprobados)' : '') + '?')) return;
+        if (trigger) trigger.disabled = true;
+        try {
+            const res = await fetch('{{ url("admin/programas/modulo") }}/' + whatsappModuloId + '/whatsapp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                },
+                body: JSON.stringify({ tipo: tipo || 'all', participante_ids: waSeleccionados() }),
+            });
+            const data = await res.json().catch(function () { return {}; });
+            if (res.ok && data.success) {
+                var extra = (data.sin_telefono > 0) ? (' · sin teléfono: ' + data.sin_telefono) : '';
+                if (data.batch_id) {
+                    EsamLote.abrir(data.batch_id, 'Notas — Lote #' + data.batch_id + ' · ' + data.total + ' mensaje(s)' + extra);
+                } else {
+                    showToast('Encolados ' + data.total + ' mensaje(s). Lote #' + data.batch_id + extra + '.', 'success');
+                }
+            } else {
+                showToast(data.message || 'No se pudo enviar.', 'danger');
+            }
+        } catch (err) {
+            showToast('Error: ' + err.message, 'danger');
+        } finally {
+            if (trigger) trigger.disabled = false;
+        }
+    }
+
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.btn-whatsapp-masivo');
+        if (!btn) return;
+
+        const moduloId = btn.dataset.moduloId;
+        const moduloNombre = btn.dataset.moduloNombre;
+        whatsappModuloId = moduloId;
+
+        document.getElementById('modalWhatsAppTitle').textContent = 'WhatsApp - ' + moduloNombre;
+        document.getElementById('whatsapp-loading').style.display = 'block';
+        document.getElementById('whatsapp-content').style.display = 'none';
+        document.getElementById('whatsapp-body').innerHTML = '';
+        whatsappMensajes = [];
+
+        new bootstrap.Modal(document.getElementById('modalWhatsAppMasivo')).show();
+
+        fetch('{{ url("admin/programas/modulo") }}/' + moduloId + '/mensajes-whatsapp', {
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            document.getElementById('whatsapp-loading').style.display = 'none';
+            if (!data.success || !data.mensajes || data.mensajes.length === 0) {
+                document.getElementById('whatsapp-body').innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No hay participantes en este módulo</td></tr>';
+                document.getElementById('whatsapp-content').style.display = 'block';
+                waActualizarSeleccion();
+                return;
+            }
+
+            whatsappMensajes = data.mensajes;
+            var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]; }); };
+            var html = '';
+            var hayBajas = false;
+            data.mensajes.forEach(function (m, i) {
+                var sinNota = m.tipo === 'sin_nota';
+                var baja = !!m.baja;
+                if (baja) hayBajas = true;
+                // Activos con nota: marcados. Dados de baja: sin marcar. Sin nota: no se puede enviar.
+                var marcado = !baja && !sinNota;
+                var badgeClass = m.tipo === 'aprobado' ? 'bg-soft-success text-success' : (sinNota ? 'bg-light text-muted' : 'bg-soft-danger text-danger');
+                var waCell = (m.celular && m.texto)
+                    ? '<a href="https://wa.me/' + esc(m.celular) + '?text=' + encodeURIComponent(m.texto) + '" target="_blank" class="btn btn-sm ' + (baja ? 'btn-outline-secondary' : 'btn-success') + ' d-flex align-items-center gap-1" style="width:fit-content;margin:0 auto;">' +
+                        '<i class="ri-whatsapp-line"></i> Abrir WhatsApp</a>'
+                    : '<span class="text-muted fs-11">' + (m.celular ? '—' : 'Sin celular') + '</span>';
+                html += '<tr class="' + (baja ? 'table-danger' : '') + (marcado ? '' : ' opacity-50') + '">' +
+                    '<td class="text-center"><input type="checkbox" class="form-check-input wa-sel" value="' + esc(m.participante_id) + '"' +
+                        (baja ? ' data-baja="1"' : '') + (marcado ? ' checked' : '') + (sinNota ? ' disabled title="Sin nota del módulo"' : '') + '></td>' +
+                    '<td class="text-center text-muted fw-bold">' + (i + 1) + '</td>' +
+                    '<td><span class="fw-semibold ' + (baja ? 'text-danger' : 'text-dark') + '">' + esc(m.apellidos) + ', ' + esc(m.nombres) + '</span>' +
+                        (baja ? '<br><span class="badge bg-danger fs-10"><i class="ri-user-unfollow-line"></i> ' + esc(m.baja) + '</span>' : '') +
+                    '</td>' +
+                    '<td class="text-wrap" style="max-width:400px;font-size:.8rem;">' +
+                        '<span class="badge ' + badgeClass + ' fs-10 me-1">' + (sinNota ? 'sin nota' : esc(m.tipo)) + '</span> ' +
+                        (sinNota ? '<span class="text-muted">Sin nota del módulo: no se le envía mensaje.</span>' : esc(m.texto)) +
+                    '</td>' +
+                    '<td class="text-center">' + waCell + '</td>' +
+                '</tr>';
+            });
+            document.getElementById('whatsapp-body').innerHTML = html;
+            document.getElementById('wa-bajas-info').style.display = hayBajas ? 'block' : 'none';
+            document.getElementById('whatsapp-content').style.display = 'block';
+            waActualizarSeleccion();
+        })
+        .catch(function () {
+            document.getElementById('whatsapp-loading').style.display = 'none';
+            document.getElementById('whatsapp-body').innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4">Error al cargar los datos</td></tr>';
+            document.getElementById('whatsapp-content').style.display = 'block';
+        });
+    });
+
+    document.getElementById('btn-wa-todos')?.addEventListener('click', function () {
+        enviarWhatsappEsam('all', this);
+    });
+
+    document.getElementById('btn-wa-aprobados')?.addEventListener('click', function () {
+        enviarWhatsappEsam('aprobado', this);
+    });
+
+    document.getElementById('btn-wa-reprobados')?.addEventListener('click', function () {
+        enviarWhatsappEsam('reprobado', this);
+    });
+
+    document.getElementById('btn-wa-esam-todos')?.addEventListener('click', function () {
+        enviarWhatsappEsam('all', this);
+    });
+
+});
+
 document.addEventListener('DOMContentLoaded', function () {
     const COLORS = ['#163b6b','#cba135','#1f6fbf','#0d8574','#b7791f','#7d9ec8','#b3243a','#2a5d97','#4c7bb0','#ddb84d'];
     const ES_SUPER_ADMIN = @json($esSuperAdmin);
@@ -8869,6 +9035,7 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     function initCharts() {
+        if (!document.getElementById('chart-estado')) return;
         charts.estado = new Chart(document.getElementById('chart-estado'), {
             type: 'doughnut',
             data: {
@@ -10642,6 +10809,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const $btnSave = document.getElementById('btn-guardar-modulos');
         const $counter = document.getElementById('contador-mods');
 
+        // Sin permiso para agregar módulos, el modal no se renderiza.
+        if (!$modal || !$btnOpen || !$list || !$btnAddRow || !$btnSave || !$counter) return;
+
         function updateCounter() {
             $counter.textContent = $list.querySelectorAll('input[name="nombres[]"]').length;
         }
@@ -11099,6 +11269,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const $eiAsesorSelected = document.getElementById('ei-asesor-selected');
         const $eiAsesorIdInp = document.getElementById('ei-asesor-id');
 
+        // Si el usuario no tiene permiso para cambiar el asesor, el modal no se
+        // renderiza. Salir sin romper el resto de los scripts de la página.
+        if (!$eiModal || !$eiInscId || !$eiAsesorInp || !$eiAsesorDrop || !$eiAsesorSelected || !$eiAsesorIdInp) return;
+
         let eiAsesorTimer = null;
 
         // Abrir modal al hacer clic en el botón de editar
@@ -11256,11 +11430,16 @@ document.addEventListener('DOMContentLoaded', function () {
         const MATRICULA = {{ (float)($programa->matricula ?? 0) }};
         const COLEGIATURA = {{ (float)($programa->colegiatura ?? 0) }};
         const TOTAL_MODS = {{ $modulos->count() }};
-        const MODULOS_NOMBRES = JSON.parse(document.getElementById('ip-modulos-data').value || '[]');
 
         const $modal = document.getElementById('modalInscribirP');
         const $btnOpen = document.getElementById('btn-inscribir-participante');
         const $ci = document.getElementById('ip-ci');
+
+        // Sin permiso de inscripción el modal no se renderiza: salir sin romper
+        // el resto de los scripts (WhatsApp masivo, pagos, etc.).
+        if (!$modal || !$btnOpen || !$ci) return;
+
+        const MODULOS_NOMBRES = JSON.parse(document.getElementById('ip-modulos-data').value || '[]');
         const $ciBox = $ci.parentElement;
         const $result = document.getElementById('ip-result');
         const $secNuevo = document.getElementById('ip-section-nuevo');
@@ -11638,168 +11817,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     })();
     @endif
-    // ---- WhatsApp Masivo ----
-    let whatsappMensajes = [];
-    let whatsappModuloId = null;
-
-    // Participantes marcados en el modal (los dados de baja empiezan sin marcar).
-    function waSeleccionados() {
-        return Array.prototype.map.call(
-            document.querySelectorAll('#whatsapp-body .wa-sel:checked'),
-            function (c) { return parseInt(c.value, 10); }
-        );
-    }
-
-    function waActualizarSeleccion() {
-        var checks = document.querySelectorAll('#whatsapp-body .wa-sel:not(:disabled)');
-        var marcados = waSeleccionados().length;
-        var info = document.getElementById('wa-sel-info');
-        if (info) info.textContent = marcados + ' de ' + checks.length + ' seleccionado(s)';
-        var all = document.getElementById('wa-check-all');
-        if (all) {
-            var activos = document.querySelectorAll('#whatsapp-body .wa-sel:not(:disabled):not([data-baja="1"])');
-            var activosMarcados = document.querySelectorAll('#whatsapp-body .wa-sel:not(:disabled):not([data-baja="1"]):checked');
-            all.checked = activos.length > 0 && activos.length === activosMarcados.length;
-            all.indeterminate = activosMarcados.length > 0 && activosMarcados.length < activos.length;
-        }
-    }
-
-    document.addEventListener('change', function (e) {
-        if (e.target.classList && e.target.classList.contains('wa-sel')) {
-            e.target.closest('tr').classList.toggle('opacity-50', !e.target.checked);
-            waActualizarSeleccion();
-        }
-        if (e.target.id === 'wa-check-all') {
-            document.querySelectorAll('#whatsapp-body .wa-sel:not(:disabled):not([data-baja="1"])').forEach(function (c) {
-                c.checked = e.target.checked;
-                c.closest('tr').classList.toggle('opacity-50', !c.checked);
-            });
-            waActualizarSeleccion();
-        }
-    });
-
-    async function enviarWhatsappEsam(tipo, trigger) {
-        if (! whatsappModuloId) return;
-        var n = waSeleccionados().length;
-        if (n === 0) { showToast('Seleccioná al menos un participante.', 'warning'); return; }
-        if (! confirm('¿Enviar por WhatsApp con Seguimiento ESAM a ' + n + ' participante(s) seleccionado(s)' +
-            (tipo === 'aprobado' ? ' (solo aprobados)' : tipo === 'reprobado' ? ' (solo reprobados)' : '') + '?')) return;
-        if (trigger) trigger.disabled = true;
-        try {
-            const res = await fetch('{{ url("admin/programas/modulo") }}/' + whatsappModuloId + '/whatsapp', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                },
-                body: JSON.stringify({ tipo: tipo || 'all', participante_ids: waSeleccionados() }),
-            });
-            const data = await res.json().catch(function () { return {}; });
-            if (res.ok && data.success) {
-                var extra = (data.sin_telefono > 0) ? (' · sin teléfono: ' + data.sin_telefono) : '';
-                if (data.batch_id) {
-                    EsamLote.abrir(data.batch_id, 'Notas — Lote #' + data.batch_id + ' · ' + data.total + ' mensaje(s)' + extra);
-                } else {
-                    showToast('Encolados ' + data.total + ' mensaje(s). Lote #' + data.batch_id + extra + '.', 'success');
-                }
-            } else {
-                showToast(data.message || 'No se pudo enviar.', 'danger');
-            }
-        } catch (err) {
-            showToast('Error: ' + err.message, 'danger');
-        } finally {
-            if (trigger) trigger.disabled = false;
-        }
-    }
-
-    document.addEventListener('click', function (e) {
-        const btn = e.target.closest('.btn-whatsapp-masivo');
-        if (!btn) return;
-
-        const moduloId = btn.dataset.moduloId;
-        const moduloNombre = btn.dataset.moduloNombre;
-        whatsappModuloId = moduloId;
-
-        document.getElementById('modalWhatsAppTitle').textContent = 'WhatsApp - ' + moduloNombre;
-        document.getElementById('whatsapp-loading').style.display = 'block';
-        document.getElementById('whatsapp-content').style.display = 'none';
-        document.getElementById('whatsapp-body').innerHTML = '';
-        whatsappMensajes = [];
-
-        new bootstrap.Modal(document.getElementById('modalWhatsAppMasivo')).show();
-
-        fetch('{{ url("admin/programas/modulo") }}/' + moduloId + '/mensajes-whatsapp', {
-            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
-        })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-            document.getElementById('whatsapp-loading').style.display = 'none';
-            if (!data.success || !data.mensajes || data.mensajes.length === 0) {
-                document.getElementById('whatsapp-body').innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No hay participantes en este módulo</td></tr>';
-                document.getElementById('whatsapp-content').style.display = 'block';
-                waActualizarSeleccion();
-                return;
-            }
-
-            whatsappMensajes = data.mensajes;
-            var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]; }); };
-            var html = '';
-            var hayBajas = false;
-            data.mensajes.forEach(function (m, i) {
-                var sinNota = m.tipo === 'sin_nota';
-                var baja = !!m.baja;
-                if (baja) hayBajas = true;
-                // Activos con nota: marcados. Dados de baja: sin marcar. Sin nota: no se puede enviar.
-                var marcado = !baja && !sinNota;
-                var badgeClass = m.tipo === 'aprobado' ? 'bg-soft-success text-success' : (sinNota ? 'bg-light text-muted' : 'bg-soft-danger text-danger');
-                var waCell = (m.celular && m.texto)
-                    ? '<a href="https://wa.me/' + esc(m.celular) + '?text=' + encodeURIComponent(m.texto) + '" target="_blank" class="btn btn-sm ' + (baja ? 'btn-outline-secondary' : 'btn-success') + ' d-flex align-items-center gap-1" style="width:fit-content;margin:0 auto;">' +
-                        '<i class="ri-whatsapp-line"></i> Abrir WhatsApp</a>'
-                    : '<span class="text-muted fs-11">' + (m.celular ? '—' : 'Sin celular') + '</span>';
-                html += '<tr class="' + (baja ? 'table-danger' : '') + (marcado ? '' : ' opacity-50') + '">' +
-                    '<td class="text-center"><input type="checkbox" class="form-check-input wa-sel" value="' + esc(m.participante_id) + '"' +
-                        (baja ? ' data-baja="1"' : '') + (marcado ? ' checked' : '') + (sinNota ? ' disabled title="Sin nota del módulo"' : '') + '></td>' +
-                    '<td class="text-center text-muted fw-bold">' + (i + 1) + '</td>' +
-                    '<td><span class="fw-semibold ' + (baja ? 'text-danger' : 'text-dark') + '">' + esc(m.apellidos) + ', ' + esc(m.nombres) + '</span>' +
-                        (baja ? '<br><span class="badge bg-danger fs-10"><i class="ri-user-unfollow-line"></i> ' + esc(m.baja) + '</span>' : '') +
-                    '</td>' +
-                    '<td class="text-wrap" style="max-width:400px;font-size:.8rem;">' +
-                        '<span class="badge ' + badgeClass + ' fs-10 me-1">' + (sinNota ? 'sin nota' : esc(m.tipo)) + '</span> ' +
-                        (sinNota ? '<span class="text-muted">Sin nota del módulo: no se le envía mensaje.</span>' : esc(m.texto)) +
-                    '</td>' +
-                    '<td class="text-center">' + waCell + '</td>' +
-                '</tr>';
-            });
-            document.getElementById('whatsapp-body').innerHTML = html;
-            document.getElementById('wa-bajas-info').style.display = hayBajas ? 'block' : 'none';
-            document.getElementById('whatsapp-content').style.display = 'block';
-            waActualizarSeleccion();
-        })
-        .catch(function () {
-            document.getElementById('whatsapp-loading').style.display = 'none';
-            document.getElementById('whatsapp-body').innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4">Error al cargar los datos</td></tr>';
-            document.getElementById('whatsapp-content').style.display = 'block';
-        });
-    });
-
-    document.getElementById('btn-wa-todos')?.addEventListener('click', function () {
-        enviarWhatsappEsam('all', this);
-    });
-
-    document.getElementById('btn-wa-aprobados')?.addEventListener('click', function () {
-        enviarWhatsappEsam('aprobado', this);
-    });
-
-    document.getElementById('btn-wa-reprobados')?.addEventListener('click', function () {
-        enviarWhatsappEsam('reprobado', this);
-    });
-
-    document.getElementById('btn-wa-esam-todos')?.addEventListener('click', function () {
-        enviarWhatsappEsam('all', this);
-    });
-
     // ===== RENTABILIDAD CALCULATOR =====
     const RENT_INSCRITOS = {{ $rentInscritos }};
     const RENT_INGRESO_NETO = {{ $rentIngresoNeto }};

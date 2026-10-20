@@ -245,6 +245,31 @@ Archivos: `app/Http/Controllers/Admin/ProfileAdminController.php`, `routes/admin
 
 ---
 
+## 13. Show de programa: modal de WhatsApp masivo para responsables (2026-10-20)
+
+Archivo: `resources/views/admin/programas/show.blade.php`.
+
+- **Corregido**: desde `/admin/programas/{id}/show` → pestaña **Módulos**, el botón *WhatsApp*
+  abría el modal para **Super Admin**, pero al hacer clic como **responsable del programa**
+  no pasaba nada (tampoco funcionaban otros botones de la página).
+- **Causa**: todo el JS de la vista corría dentro de **un solo** listener
+  `document.addEventListener('DOMContentLoaded', ...)`. Bloques que solo existen si el usuario
+  tiene cierto permiso (modal de *Editar inscripción/Asesor*, *Inscribir participante*,
+  *Agregar módulos*) hacían `document.getElementById(...).addEventListener(...)` sin verificar
+  que el elemento existiera. Como los permisos de `inscripciones.*` / módulos no los tienen todos
+  los roles, saltaba un `TypeError` que **abortaba el resto del listener**: entre ellos el
+  registro del modal de WhatsApp. Con Super Admin, que tiene todos los permisos, no fallaba.
+- **Solución (1)**: guardas `if (!elemento) return;` al inicio de esos bloques
+  (`modalEditarInscripcion`, `modalInscribirP`, `modalAgregarModulos`) más protección en
+  `initCharts()` cuando no están renderizados los canvases.
+- **Solución (2)**: el bloque de **WhatsApp masivo** se movió a su **propio**
+  `DOMContentLoaded` (al inicio del `<script>`, junto a `showToast`). Un error en otro bloque
+  de la página ya no puede impedir que el modal se registre ni que se envíen los mensajes.
+- La ruta de envío (`POST /admin/programas/modulo/{modulo}/whatsapp`) sigue protegida por
+  `programa.acceso:responsable` y el botón por `puedeWhatsappPrograma()`; sin cambios de backend.
+
+---
+
 ## Notas
 
 - Si un usuario ve solo “Conexión” en baileys_esam, es porque su número aún no está vinculado.
