@@ -1774,8 +1774,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 ' del programa ' + PROGRAMA_NOMBRE +
                 ', módulo ' + MODULO_NOMBRE + '.' +
                 '\n\nPor favor, comuníquese con su responsable para justificar su falta.' +
-                '\n\nÁrea Académica ESAM Sucre Central\n' +
-                'Enviado por: ' + ADMIN_NOMBRE;
+                '\n\nÁrea Académica ESAM Sucre Central' +
+                '\n\nAtte: ' + ADMIN_NOMBRE;
             html += '<tr>' +
                 '<td class="text-center"><div class="form-check"><input class="form-check-input wa-ausente-check" type="checkbox" checked data-idx="' + i + '"></div></td>' +
                 '<td class="text-center text-muted fw-bold">' + (i + 1) + '</td>' +

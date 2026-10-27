@@ -78,23 +78,32 @@ class WhatsappEnvioController extends Controller
             'dry_run' => $dryRun,
         ]);
     }
-    /** Avisos de notas de un módulo. */
+
+    /**
+     * Notas de un módulo por WhatsApp (Seguimiento ESAM). `modo`:
+     * - `regular`: nota del módulo (si reprobó, debe realizar la nivelación).
+     * - `nivelacion`: resultado de la nivelación (si vuelve a reprobar, la 2da
+     *   instancia tiene costo: responsable del programa y área contable).
+     * El texto es el de la vista previa (App\Support\MensajeNotas).
+     */
     public function enviarAcademico(Request $request, $moduloId): JsonResponse
     {
         $tipoFiltro = $request->input('tipo', 'all');
-
         if (! in_array($tipoFiltro, ['all', 'aprobado', 'reprobado'], true)) {
             $tipoFiltro = 'all';
         }
+        $modo = $request->input('modo') === 'nivelacion' ? 'nivelacion' : 'regular';
 
-        $modulo = DB::table('modulos')->where('id', $moduloId)->first();
+        $data = \App\Support\MensajeNotas::construir((int) $moduloId, $modo);
+        $modulo = $data['modulo'];
 
         if (! $modulo) {
             return response()->json(['success' => false, 'message' => 'Módulo no encontrado'], 404);
         }
 
-        $programa = DB::table('programas')->where('id', $modulo->programa_id)->first();
-        $programaNombre = $programa->nombre ?? '';
+        if ($modo === 'nivelacion' && ! $data['tiene_nivelacion']) {
+            return response()->json(['success' => false, 'message' => 'Todavía no se registraron notas de nivelación en este módulo.'], 422);
+        }
 
         $client = app(SeguimientoEsamClient::class);
 
@@ -108,61 +117,30 @@ class WhatsappEnvioController extends Controller
             return response()->json(['success' => false, 'message' => $accountError], 403);
         }
 
-        $tieneNivelacion = DB::table('modulos_participantes')
-            ->where('modulo_id', $moduloId)
-            ->where(function ($q) {
-                $q->whereNotNull('nota_nivelacion')->where('nota_nivelacion', '>', 0);
-            })
-            ->exists();
-
         // Selección del modal (participantes marcados). Sin selección se envía a
-        // todos los que tienen nota, excepto los dados de baja.
+        // todos los que tienen mensaje, excepto los dados de baja.
         $seleccion = collect((array) $request->input('participante_ids', []))
             ->map(fn ($id) => (int) $id)->filter()->unique()->values();
         $conSeleccion = $request->has('participante_ids');
-
-        $participantes = DB::table('modulos_participantes')
-            ->join('participantes', 'modulos_participantes.participante_id', '=', 'participantes.id')
-            ->leftJoin('inscripciones', function ($j) use ($modulo) {
-                $j->on('inscripciones.participante_id', '=', 'participantes.id')
-                    ->where('inscripciones.programa_id', '=', $modulo->programa_id);
-            })
-            ->where('modulos_participantes.modulo_id', $moduloId)
-            ->when($conSeleccion, fn ($q) => $q->whereIn('participantes.id', $seleccion->all() ?: [0]))
-            ->select(
-                'modulos_participantes.id as mp_id',
-                'participantes.id as participante_id',
-                'participantes.nombres',
-                'participantes.apellidos',
-                'participantes.celular',
-                'modulos_participantes.nota_modulo',
-                'modulos_participantes.nota_nivelacion',
-                'inscripciones.estado',
-                'inscripciones.baja_operativa',
-                'inscripciones.baja_academica',
-                'inscripciones.baja_contable'
-            )
-            ->orderBy('participantes.apellidos')
-            ->orderBy('participantes.nombres')
-            ->get()
-            ->unique('mp_id');
+        $programaNombre = $data['programa']->nombre ?? '';
+        $hoy = now()->toDateString();
 
         $items = [];
         $logRows = [];
         $sinTelefono = 0;
 
-        foreach ($participantes as $p) {
-            if (! $conSeleccion && \App\Support\BajaInscripcion::es($p)) {
+        foreach ($data['mensajes'] as $m) {
+            if (! $m['texto']) {
+                continue;
+            }
+            if ($conSeleccion ? ! $seleccion->contains((int) $m['participante_id']) : (bool) $m['baja']) {
+                continue;
+            }
+            if ($tipoFiltro !== 'all' && $m['tipo'] !== $tipoFiltro) {
                 continue;
             }
 
-            $nm = $p->nota_modulo !== null ? (float) $p->nota_modulo : null;
-
-            if ($nm === null || $nm <= 0) {
-                continue;
-            }
-
-            $chatId = $this->chatId($p->celular);
+            $chatId = $this->chatId($m['celular']);
 
             if (! $chatId) {
                 $sinTelefono++;
@@ -170,68 +148,35 @@ class WhatsappEnvioController extends Controller
                 continue;
             }
 
-            $nn = $p->nota_nivelacion !== null ? (float) $p->nota_nivelacion : null;
-            $estado = 'Aprobado';
-            $nivelacionTxt = '';
-
-            if ($tieneNivelacion && $nm < 71) {
-                if ($nn !== null && $nn >= 71) {
-                    $estado = 'Aprobado';
-                    $nivelacionTxt = 'Nivelación: '.number_format($nn, 2).' (Aprobado).';
-                } else {
-                    $estado = 'Reprobado';
-                    $nivelacionTxt = 'Nivelación: '.($nn !== null ? number_format($nn, 2) : 'sin nota').'. Debe solicitar la 2da instancia y realizar el pago extra.';
-                }
-            } elseif ($nm < 71) {
-                $estado = 'Reprobado';
-            }
-
-            if ($tipoFiltro === 'aprobado' && $estado !== 'Aprobado') {
-                continue;
-            }
-
-            if ($tipoFiltro === 'reprobado' && $estado !== 'Reprobado') {
-                continue;
-            }
-
+            $nombre = $m['apellidos'].', '.$m['nombres'];
             $items[] = [
                 'chat_id' => $chatId,
-                'contact_name' => $p->apellidos.', '.$p->nombres,
-                'external_ref' => 'notas:'.$p->mp_id.':'.now()->toDateString(),
-                'variables' => [
-                    'nombre_completo' => $p->apellidos.', '.$p->nombres,
-                    'programa' => $programaNombre,
-                    'modulo' => $modulo->nombre,
-                    'nota' => number_format($nm, 2),
-                    'estado' => $estado,
-                    'nivelacion' => $nivelacionTxt,
-                ],
+                'contact_name' => $nombre,
+                'external_ref' => 'notas:'.$modo.':'.$m['mp_id'].':'.$hoy,
+                'body_override' => $m['texto'],
             ];
-
-            $logRows[] = [
-                'participante_id' => $p->participante_id,
-                'persona' => $p->apellidos.', '.$p->nombres,
-            ];
+            $logRows[] = ['participante_id' => $m['participante_id'], 'persona' => $nombre];
         }
 
         if ($items === []) {
             return response()->json(['success' => false, 'message' => $conSeleccion
-                ? 'Ninguno de los participantes seleccionados tiene nota para notificar en ese grupo.'
+                ? 'Ninguno de los participantes seleccionados tiene un mensaje para enviar.'
                 : 'No hay participantes con nota para notificar.'], 404);
         }
 
         $dryRun = (bool) $request->boolean('dry_run');
-        $nombre = 'Notas — '.$modulo->nombre.' — '.$programaNombre;
+        $nombreLote = ($modo === 'nivelacion' ? 'Nivelación — ' : 'Notas — ').$modulo->nombre.' — '.$programaNombre;
         $meta = [
             'area' => 'academico',
             'tipo' => 'notas',
+            'modo' => $modo,
             'programa_id' => $modulo->programa_id,
             'programa' => $programaNombre,
             'modulo' => $modulo->nombre,
         ];
 
         try {
-            $result = $client->sendBatch($nombre, $items, 'academico', null, $dryRun, null, $account, $meta);
+            $result = $client->sendBatch($nombreLote, $items, 'academico', null, $dryRun, null, $account, $meta);
         } catch (\Throwable $e) {
             return $this->errorEsam($e);
         }
@@ -243,7 +188,7 @@ class WhatsappEnvioController extends Controller
                 'persona' => $r['persona'],
             ], $logRows);
 
-            $this->registrarMensajes($logRows, 'whatsapp_academico', $result['batch_id'] ?? null, $nombre);
+            $this->registrarMensajes($logRows, 'whatsapp_academico', $result['batch_id'] ?? null, $nombreLote);
         }
 
         return response()->json([
@@ -306,7 +251,6 @@ class WhatsappEnvioController extends Controller
         $fecha = $horario->fecha_desarrollo ? Carbon::parse($horario->fecha_desarrollo)->format('d/m/Y') : '';
         $hora = trim(substr((string) $horario->hora_inicio, 0, 5).($horario->hora_fin ? ' - '.substr((string) $horario->hora_fin, 0, 5) : ''));
         $sesion = trim($fecha.($hora !== '' ? ' · '.$hora : ''));
-        $enviaNombre = auth()->user()->fullname ?? auth()->user()->username ?? 'Área Académica';
 
         $items = [];
         $logRows = [];
@@ -336,7 +280,7 @@ class WhatsappEnvioController extends Controller
                 'body_override' => 'Estimado/a '.$nombre.', registró inasistencia en la sesión del '.$sesion
                     .' del programa '.$programa->nombre.', módulo '.$modulo->nombre.'.'
                     ."\n\nPor favor, comuníquese con su responsable para justificar su falta."
-                    ."\n\nÁrea Académica ESAM Sucre Central\nEnviado por: ".$enviaNombre,
+                    ."\n\nÁrea Académica ESAM Sucre Central",
             ];
             $logRows[] = ['inscripcione_id' => (int) ($p->inscripcion_id ?? 0), 'persona' => $nombre];
         }

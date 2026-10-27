@@ -4337,8 +4337,14 @@
                                                                 @endif
                                                                 @if($puedeWhatsappPrograma)
                                                                 @if($m->desarrollo === 'Concluido' && isset($estadoNotasPorModulo[$m->id]) && $estadoNotasPorModulo[$m->id]->con_nota_modulo > 0)
-                                                                <button class="btn btn-sm btn-soft-success d-flex align-items-center gap-1 btn-whatsapp-masivo" data-modulo-id="{{ $m->id }}" data-modulo-nombre="{{ $m->nombre }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Enviar mensajes por WhatsApp">
+                                                                <button class="btn btn-sm btn-soft-success d-flex align-items-center gap-1 btn-whatsapp-masivo" data-modulo-id="{{ $m->id }}" data-modulo-nombre="{{ $m->nombre }}" data-modo="regular" data-bs-toggle="tooltip" data-bs-placement="top" title="Enviar las notas del módulo por WhatsApp">
                                                                     <i class="ri-whatsapp-line"></i> WhatsApp
+                                                                </button>
+                                                                @endif
+                                                                {{-- Notas de nivelación ya registradas: envío masivo del resultado de la nivelación. --}}
+                                                                @if(isset($estadoNotasPorModulo[$m->id]) && $estadoNotasPorModulo[$m->id]->con_nota_nivelacion > 0)
+                                                                <button class="btn btn-sm btn-soft-warning d-flex align-items-center gap-1 btn-whatsapp-masivo" data-modulo-id="{{ $m->id }}" data-modulo-nombre="{{ $m->nombre }}" data-modo="nivelacion" data-bs-toggle="tooltip" data-bs-placement="top" title="Enviar por WhatsApp las notas de nivelación ({{ $estadoNotasPorModulo[$m->id]->con_nota_nivelacion }} registradas)">
+                                                                    <i class="ri-whatsapp-line"></i> Nivelación
                                                                 </button>
                                                                 @endif
                                                                 @endif
@@ -8702,6 +8708,7 @@ function showToast(msg, type) {
 document.addEventListener('DOMContentLoaded', function () {
     let whatsappMensajes = [];
     let whatsappModuloId = null;
+    let whatsappModo = 'regular';
 
     // Participantes marcados en el modal (los dados de baja empiezan sin marcar).
     function waSeleccionados() {
@@ -8744,7 +8751,8 @@ document.addEventListener('DOMContentLoaded', function () {
         var ids = soloIds || waSeleccionados();
         var n = ids.length;
         if (n === 0) { showToast('Seleccioná al menos un participante.', 'warning'); return; }
-        if (! confirm('¿Enviar por WhatsApp con Seguimiento ESAM a ' + n + ' participante(s) seleccionado(s)' +
+        if (! confirm('¿Enviar ' + (whatsappModo === 'nivelacion' ? 'las notas de NIVELACIÓN' : 'las notas del módulo') +
+            ' por WhatsApp con Seguimiento ESAM a ' + n + ' participante(s) seleccionado(s)' +
             (tipo === 'aprobado' ? ' (solo aprobados)' : tipo === 'reprobado' ? ' (solo reprobados)' : '') + '?')) return;
         if (trigger) trigger.disabled = true;
         try {
@@ -8756,13 +8764,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     'X-Requested-With': 'XMLHttpRequest',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                 },
-                body: JSON.stringify({ tipo: tipo || 'all', participante_ids: ids }),
+                body: JSON.stringify({ tipo: tipo || 'all', modo: whatsappModo, participante_ids: ids }),
             });
             const data = await res.json().catch(function () { return {}; });
             if (res.ok && data.success) {
                 var extra = (data.sin_telefono > 0) ? (' · sin teléfono: ' + data.sin_telefono) : '';
                 if (data.batch_id) {
-                    EsamLote.abrir(data.batch_id, 'Notas — Lote #' + data.batch_id + ' · ' + data.total + ' mensaje(s)' + extra);
+                    EsamLote.abrir(data.batch_id, (whatsappModo === 'nivelacion' ? 'Nivelación' : 'Notas') + ' — Lote #' + data.batch_id + ' · ' + data.total + ' mensaje(s)' + extra);
                 } else {
                     showToast('Encolados ' + data.total + ' mensaje(s). Lote #' + data.batch_id + extra + '.', 'success');
                 }
@@ -8788,8 +8796,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const moduloId = btn.dataset.moduloId;
         const moduloNombre = btn.dataset.moduloNombre;
         whatsappModuloId = moduloId;
+        whatsappModo = btn.dataset.modo === 'nivelacion' ? 'nivelacion' : 'regular';
 
-        document.getElementById('modalWhatsAppTitle').textContent = 'WhatsApp - ' + moduloNombre;
+        document.getElementById('modalWhatsAppTitle').textContent = (whatsappModo === 'nivelacion' ? 'WhatsApp · Notas de nivelación - ' : 'WhatsApp · Notas del módulo - ') + moduloNombre;
         document.getElementById('whatsapp-loading').style.display = 'block';
         document.getElementById('whatsapp-content').style.display = 'none';
         document.getElementById('whatsapp-body').innerHTML = '';
@@ -8797,7 +8806,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         new bootstrap.Modal(document.getElementById('modalWhatsAppMasivo')).show();
 
-        fetch('{{ url("admin/programas/modulo") }}/' + moduloId + '/mensajes-whatsapp', {
+        fetch('{{ url("admin/programas/modulo") }}/' + moduloId + '/mensajes-whatsapp?modo=' + whatsappModo, {
             headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
         })
         .then(function (r) { return r.json(); })
@@ -8811,6 +8820,9 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             whatsappMensajes = data.mensajes;
+            var firma = data.firma ? '
+
+Atte: ' + data.firma : '';
             var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]; }); };
             var html = '';
             var hayBajas = false;
@@ -8833,9 +8845,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     '<td><span class="fw-semibold ' + (baja ? 'text-danger' : 'text-dark') + '">' + esc(m.apellidos) + ', ' + esc(m.nombres) + '</span>' +
                         (baja ? '<br><span class="badge bg-danger fs-10"><i class="ri-user-unfollow-line"></i> ' + esc(m.baja) + '</span>' : '') +
                     '</td>' +
-                    '<td class="text-wrap" style="max-width:400px;font-size:.8rem;">' +
-                        '<span class="badge ' + badgeClass + ' fs-10 me-1">' + (sinNota ? 'sin nota' : esc(m.tipo)) + '</span> ' +
-                        (sinNota ? '<span class="text-muted">Sin nota del módulo: no se le envía mensaje.</span>' : esc(m.texto)) +
+                    '<td class="text-wrap" style="max-width:400px;font-size:.8rem;white-space:pre-line;">' +
+                        '<span class="badge ' + badgeClass + ' fs-10 me-1">' + (sinNota ? 'sin nota' : (m.sin_nivelacion ? 'sin nota de nivelación' : esc(m.tipo))) + '</span> ' +
+                        (sinNota ? '<span class="text-muted">Sin nota del módulo: no se le envía mensaje.</span>' : esc(m.texto + firma)) +
                     '</td>' +
                     '<td class="text-center">' + waCell + '</td>' +
                 '</tr>';

@@ -3647,126 +3647,28 @@ class ProgramaController extends Controller
         ]);
     }
 
-    public function mensajesWhatsApp($moduloId)
+    /**
+     * Vista previa de los mensajes de notas de un módulo (`?modo=regular|nivelacion`).
+     * El texto es el mismo que se envía (App\Support\MensajeNotas).
+     */
+    public function mensajesWhatsApp(\Illuminate\Http\Request $request, $moduloId)
     {
-        $modulo = DB::table('modulos')->where('id', $moduloId)->first();
-        if (!$modulo) {
+        $modo = $request->query('modo') === 'nivelacion' ? 'nivelacion' : 'regular';
+        $data = \App\Support\MensajeNotas::construir((int) $moduloId, $modo);
+
+        if (! $data['modulo']) {
             return response()->json(['success' => false, 'message' => 'Módulo no encontrado'], 404);
-        }
-
-        $programa = DB::table('programas')->where('id', $modulo->programa_id)->first();
-        $programaNombre = $programa ? $programa->nombre : '';
-
-        $tieneNivelacion = DB::table('modulos_participantes')
-            ->where('modulo_id', $moduloId)
-            ->where(function ($q) {
-                $q->whereNotNull('nota_nivelacion')->where('nota_nivelacion', '>', 0);
-            })
-            ->exists();
-
-        // Todos los participantes del módulo, también los dados de baja (se
-        // muestran sin seleccionar para que no reciban el envío masivo).
-        $participantes = DB::table('modulos_participantes')
-            ->join('participantes', 'modulos_participantes.participante_id', '=', 'participantes.id')
-            ->leftJoin('inscripciones', function ($j) use ($modulo) {
-                $j->on('inscripciones.participante_id', '=', 'participantes.id')
-                  ->where('inscripciones.programa_id', '=', $modulo->programa_id);
-            })
-            ->where('modulos_participantes.modulo_id', $moduloId)
-            ->select(
-                'participantes.id',
-                'participantes.ci',
-                'participantes.apellidos',
-                'participantes.nombres',
-                'participantes.celular',
-                'modulos_participantes.nota_modulo',
-                'modulos_participantes.nota_nivelacion',
-                'inscripciones.estado',
-                'inscripciones.baja_operativa',
-                'inscripciones.baja_academica',
-                'inscripciones.baja_contable'
-            )
-            ->orderBy('participantes.apellidos')
-            ->orderBy('participantes.nombres')
-            ->get()
-            ->unique('id');
-
-        $mensajes = [];
-        $moduloNombre = $modulo->nombre;
-
-        foreach ($participantes as $p) {
-            $nm = $p->nota_modulo !== null ? (float) $p->nota_modulo : null;
-            $nn = $p->nota_nivelacion !== null ? (float) $p->nota_nivelacion : null;
-            $tieneNotaModulo = $nm !== null && $nm > 0;
-            $baja = \App\Support\BajaInscripcion::motivo($p);
-
-            $celular = preg_replace('/[^0-9]/', '', $p->celular ?? '');
-            if (strlen($celular) === 8) $celular = '591' . $celular;
-
-            if (!$tieneNotaModulo) {
-                $mensajes[] = [
-                    'participante_id' => $p->id,
-                    'nombres' => $p->nombres,
-                    'apellidos' => $p->apellidos,
-                    'celular' => $celular,
-                    'texto' => null,
-                    'tipo' => 'sin_nota',
-                    'baja' => $baja,
-                ];
-                continue;
-            }
-
-            if (!$tieneNivelacion) {
-                if ($nm >= 71) {
-                    $texto = "Hola {$p->nombres} {$p->apellidos}, has aprobado el módulo *{$moduloNombre}* del programa *{$programaNombre}*. Ingresa a la plataforma para verificar tu nota.";
-                } else {
-                    $texto = "Hola {$p->nombres} {$p->apellidos}, tu nota en el módulo *{$moduloNombre}* del programa *{$programaNombre}* es *{$nm}*. Debes estar atento al registro del trabajo de nivelación en la plataforma.";
-                }
-                $mensajes[] = [
-                    'participante_id' => $p->id,
-                    'nombres' => $p->nombres,
-                    'apellidos' => $p->apellidos,
-                    'celular' => $celular,
-                    'texto' => $texto,
-                    'tipo' => $nm >= 71 ? 'aprobado' : 'reprobado',
-                    'baja' => $baja,
-                ];
-            } elseif ($nm >= 71) {
-                // Aprobado directo en un módulo con nivelación: también recibe el aviso.
-                $mensajes[] = [
-                    'participante_id' => $p->id,
-                    'nombres' => $p->nombres,
-                    'apellidos' => $p->apellidos,
-                    'celular' => $celular,
-                    'texto' => "Hola {$p->nombres} {$p->apellidos}, has aprobado el módulo *{$moduloNombre}* del programa *{$programaNombre}*. Ingresa a la plataforma para verificar tu nota.",
-                    'tipo' => 'aprobado',
-                    'baja' => $baja,
-                ];
-            } else {
-                if ($nn !== null && $nn >= 71) {
-                    $texto = "Hola {$p->nombres} {$p->apellidos}, has aprobado la nivelación del módulo *{$moduloNombre}* del programa *{$programaNombre}* con nota *{$nn}*. La nota máxima es 71.";
-                } else {
-                    $notaNiv = $nn !== null ? $nn : 'sin nota';
-                    $texto = "Hola {$p->nombres} {$p->apellidos}, has reprobado la nivelación del módulo *{$moduloNombre}* del programa *{$programaNombre}* con nota *{$notaNiv}*. Debes solicitar la 2da instancia y realizar el pago extra para poder desarrollarlo.";
-                }
-                $mensajes[] = [
-                    'participante_id' => $p->id,
-                    'nombres' => $p->nombres,
-                    'apellidos' => $p->apellidos,
-                    'celular' => $celular,
-                    'texto' => $texto,
-                    'tipo' => ($nn !== null && $nn >= 71) ? 'aprobado' : 'reprobado',
-                    'baja' => $baja,
-                ];
-            }
         }
 
         return response()->json([
             'success' => true,
-            'modulo' => $moduloNombre,
-            'programa' => $programaNombre,
-            'tiene_nivelacion' => $tieneNivelacion,
-            'mensajes' => $mensajes,
+            'modo' => $modo,
+            'modulo' => $data['modulo']->nombre,
+            'programa' => $data['programa']->nombre ?? '',
+            'tiene_nivelacion' => $data['tiene_nivelacion'],
+            'mensajes' => $data['mensajes'],
+            // Firma que Seguimiento ESAM agrega al final de cada mensaje.
+            'firma' => trim((string) (auth()->user()->fullname ?: auth()->user()->username ?: '')),
         ]);
     }
 

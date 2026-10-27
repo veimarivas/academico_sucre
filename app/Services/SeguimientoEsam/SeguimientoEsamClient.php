@@ -58,7 +58,7 @@ class SeguimientoEsamClient
      * @param  array<int, array{chat_id: string, contact_name?: string, variables?: array, body_override?: string, external_ref?: string}>  $items
      */
     /**
-     * @param  array{require_confirmation?: bool, confirm_group?: string, scheduled_at?: string, confirm_description?: string, notify?: bool}  $options
+     * @param  array{require_confirmation?: bool, confirm_group?: string, scheduled_at?: string, confirm_description?: string, notify?: bool, signature?: string|false}  $options
      *         Programación con confirmación: el lote queda «esperando confirmación» en
      *         Seguimiento ESAM y no se envía hasta que el dueño de la línea lo confirme.
      */
@@ -90,6 +90,15 @@ class SeguimientoEsamClient
 
         if ($meta) {
             $payload['meta'] = $meta;
+        }
+
+        // Firma «Atte: nombre completo» al final de cada mensaje (la agrega
+        // Seguimiento ESAM). Los envíos automáticos no tienen usuario: sin firma.
+        $firma = trim((string) ($solicita?->fullname ?: $solicita?->username ?: ''));
+        if ($firma !== '' && ! array_key_exists('signature', $options)) {
+            $payload['signature'] = $firma;
+        } elseif (! empty($options['signature'])) {
+            $payload['signature'] = (string) $options['signature'];
         }
 
         // Reenvío intencional: el usuario confirmó repetir lo ya enviado hoy.
