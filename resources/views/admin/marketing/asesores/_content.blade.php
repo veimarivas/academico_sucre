@@ -108,12 +108,16 @@
                         </thead>
                         <tbody>
                             @foreach(range(1, $ultimoMes) as $m)
-                                @php $mm = $metasAsesor[$m] ?? null; @endphp
-                                @if($mm && (($mm['real'] ?? 0) > 0 || $hayMeta))
+                                @php
+                                    $mm = $metasAsesor[$m] ?? null;
+                                    $metaMes = (float)($mm['meta'] ?? $metaMensual);
+                                    $hayMetaMes = $metaMes > 0;
+                                @endphp
+                                @if($mm && (($mm['real'] ?? 0) > 0 || $hayMetaMes))
                                     @php $real = (float)($mm['real'] ?? 0); $diff = $mm['diff'] ?? 0; $realOtras = (float)($mm['real_otras'] ?? 0); $realSede = $real - $realOtras; @endphp
                                     <tr>
                                         <td class="fw-semibold fs-12">{{ $mesMeta[$m - 1] }} <span class="text-muted">({{ str_pad($m, 2, '0', STR_PAD_LEFT) }})</span></td>
-                                        <td class="text-center fs-12">{{ $hayMeta ? number_format($metaMensual, 0, ',', '.') : '—' }}</td>
+                                        <td class="text-center fs-12">{{ $hayMetaMes ? number_format($metaMes, 0, ',', '.') : '—' }}</td>
                                         <td class="text-center fs-12">{{ number_format($realSede, 1, ',', '.') }}</td>
                                         <td class="text-center fs-12">
                                             @if($realOtras > 0)
@@ -124,12 +128,12 @@
                                         </td>
                                         <td class="text-center fs-12">{{ number_format($real, 1, ',', '.') }}</td>
                                         <td class="text-center">
-                                            @if(!$hayMeta)
+                                            @if(!$hayMetaMes)
                                                 <span class="text-muted fs-12">—</span>
-                                            @elseif($real >= $metaMensual)
-                                                <span class="badge bg-soft-success text-success fs-11">Cumplida (+{{ number_format($real - $metaMensual, 1, ',', '.') }})</span>
+                                            @elseif($real >= $metaMes)
+                                                <span class="badge bg-soft-success text-success fs-11">Cumplida (+{{ number_format($real - $metaMes, 1, ',', '.') }})</span>
                                             @else
-                                                <span class="badge bg-soft-danger text-danger fs-11">Faltó ({{ number_format($metaMensual - $real, 1, ',', '.') }})</span>
+                                                <span class="badge bg-soft-danger text-danger fs-11">Faltó ({{ number_format($metaMes - $real, 1, ',', '.') }})</span>
                                             @endif
                                         </td>
                                     </tr>
@@ -266,10 +270,17 @@
                                 <div style="padding:6px 10px;background:#f8f9fc;border-radius:8px;border:1px solid #eef0f4;min-width:140px;flex:1;">
                                     <div style="font-size:.7rem;font-weight:700;color:#495057;margin-bottom:3px;">{{ $mesesNombres[$idx] }}</div>
                                     @if($gestionFiltro !== '' && !empty($metasAsesor[$m]))
-                                        @php $mre = (float)($metasAsesor[$m]['real'] ?? 0); $diffMeta = $metasAsesor[$m]['diff'] ?? 0; @endphp
-                                        <div style="font-size:.67rem;font-weight:700;margin-bottom:4px;padding:3px 6px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;background:{{ ($mre >= $metaMensual && $hayMeta) ? '#d1fae5' : '#fee2e2' }};color:{{ ($mre >= $metaMensual && $hayMeta) ? '#0ab39c' : '#f06548' }};">
-                                            <span>Meta {{ $hayMeta ? number_format($metaMensual, 0, ',', '.') : '—' }}</span>
-                                            <span>{{ $hayMeta ? ($mre >= $metaMensual ? '+' . number_format($mre - $metaMensual, 1, ',', '.') : '-' . number_format($metaMensual - $mre, 1, ',', '.')) : '—' }}</span>
+                                        @php
+                                            $mre = (float)($metasAsesor[$m]['real'] ?? 0);
+                                            $metaMes = (float)($metasAsesor[$m]['meta'] ?? $metaMensual);
+                                            $hayMetaMes = $metaMes > 0;
+                                            $cumpleMes = $hayMetaMes && $mre >= $metaMes;
+                                            $bgMeta = !$hayMetaMes ? '#f1f3f5' : ($cumpleMes ? '#d1fae5' : '#fee2e2');
+                                            $colorMeta = !$hayMetaMes ? '#878a99' : ($cumpleMes ? '#0ab39c' : '#f06548');
+                                        @endphp
+                                        <div style="font-size:.67rem;font-weight:700;margin-bottom:4px;padding:3px 6px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;background:{{ $bgMeta }};color:{{ $colorMeta }};">
+                                            <span>Meta {{ $hayMetaMes ? number_format($metaMes, 0, ',', '.') : '—' }}</span>
+                                            <span>{{ $hayMetaMes ? ($mre >= $metaMes ? '+' . number_format($mre - $metaMes, 1, ',', '.') : '-' . number_format($metaMes - $mre, 1, ',', '.')) : '—' }}</span>
                                         </div>
                                     @endif
                                     @foreach($puntosRealesTipoSeries as $serie)

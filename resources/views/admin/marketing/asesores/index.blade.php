@@ -423,48 +423,104 @@ canvas.chart-canvas { width:100% !important; height:300px !important; }
     </div>
 </div>
 
-{{-- Cumplimiento de metas por asesor (puntos reales vs meta del cargo) --}}
+{{-- Cumplimiento de metas por asesor (inscritos + puntos vs meta del cargo) --}}
 @if(!empty($cumplimientoMetas))
 <div class="chart-card mb-3">
-    <div class="chart-card-title">
+    <div class="chart-card-title flex-wrap gap-2">
         <i class="ri-target-line"></i> Cumplimiento de Metas por Asesor — Gestión {{ $gestion }}
         <span class="text-muted ms-auto" style="font-size:.72rem; text-transform:none; letter-spacing:0;">
-            Puntos reales por mes vs meta del cargo
+            Inscritos y puntos por mes vs meta del cargo
         </span>
+        @can('asesores.gestionar')
+            <button type="button" class="btn btn-sm" id="btnEditarMetasCargos"
+                style="background:#eef1f8;color:#405189;border:1px solid #d6deeb;font-size:.72rem;font-weight:700;border-radius:8px;padding:.35rem .8rem;">
+                <i class="ri-edit-line"></i> Editar metas por cargo
+            </button>
+        @endcan
     </div>
     <div class="table-responsive">
         <table class="table table-sm align-middle mb-1" style="width:100%;">
             <thead>
                 <tr>
-                    <th style="min-width:180px;">Asesor</th>
-                    <th style="min-width:140px;">Cargo</th>
+                    <th style="min-width:175px;">Asesor</th>
+                    <th style="min-width:140px;">Cargo actual</th>
                     <th class="text-center" style="min-width:80px;">Meta/mes</th>
+                    <th class="text-center" style="min-width:85px;">Inscritos</th>
+                    <th class="text-center" style="min-width:85px;">Puntos</th>
+                    <th class="text-center" style="min-width:95px;">Cumplimiento</th>
                     @foreach(range(1, 12) as $m)
-                        <th class="text-center" style="min-width:74px;">{{ \Illuminate\Support\Str::limit($mesesNombres[$m - 1], 3, '') }}</th>
+                        <th class="text-center" style="min-width:82px;">{{ \Illuminate\Support\Str::limit($mesesNombres[$m - 1], 3, '') }}</th>
                     @endforeach
                 </tr>
             </thead>
             <tbody>
                 @foreach($cumplimientoMetas as $fila)
+                @php
+                    $pct = $fila['pct_cumplimiento'];
+                    $pctColor = $pct === null ? '#878a99' : ($pct >= 100 ? '#0ab39c' : ($pct >= 50 ? '#f7b84b' : '#f06548'));
+                @endphp
                 <tr>
-                    <td class="fw-semibold fs-12">{{ $fila['apellidos'] }}, {{ $fila['nombres'] }}</td>
-                    <td class="text-muted fs-11">{{ $fila['cargo_nombre'] }}</td>
+                    <td>
+                        <div class="fw-semibold fs-12">{{ $fila['apellidos'] }}, {{ $fila['nombres'] }}</div>
+                        <div class="text-muted" style="font-size:.64rem;">
+                            CI {{ $fila['ci'] }}
+                            @if($fila['estado_asesor'] !== 'Habilitado')
+                                · <span class="text-danger fw-bold">Deshabilitado</span>
+                            @endif
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge" style="background:#eef1f8;color:#405189;font-size:.65rem;font-weight:700;padding:.35em .65em;border-radius:7px;">
+                            {{ $fila['cargo_nombre'] }}
+                        </span>
+                        @if(count($fila['cargos_historicos']) > 1)
+                            <div class="text-muted" style="font-size:.62rem;margin-top:2px;" title="{{ implode(' · ', $fila['cargos_historicos']) }}">
+                                <i class="ri-history-line"></i> {{ count($fila['cargos_historicos']) }} cargos en el año
+                            </div>
+                        @endif
+                    </td>
                     <td class="text-center fw-bold fs-11">{{ $fila['meta'] > 0 ? number_format($fila['meta'], 0, ',', '.') : '—' }}</td>
-                    @foreach($fila['meses'] as $mm)
-                        @if($mm['estado'] === 'sin_meta')
-                            <td class="text-center text-muted fs-11">—</td>
-                        @elseif($mm['estado'] === 'cumplido')
-                            <td class="text-center">
-                                <div class="badge bg-soft-success text-success fs-10" style="font-size:.62rem!important; line-height:1.25;" title="Meta cumplida">
-                                    {{ number_format($mm['real'], 1, ',', '.') }}
-                                    <span class="d-block">+{{ number_format($mm['diff'], 1, ',', '.') }}</span>
-                                </div>
+                    <td class="text-center fs-11">
+                        <div class="fw-bold">{{ $fila['total_inscritos'] }}</div>
+                        <div class="text-muted" style="font-size:.62rem;">{{ $fila['total_inscritos_reales'] }} reales</div>
+                    </td>
+                    <td class="text-center fs-11">
+                        <div class="fw-bold">{{ number_format($fila['total_puntos'], 1, ',', '.') }}</div>
+                        <div class="text-muted" style="font-size:.62rem;">{{ number_format($fila['total_puntos_reales'], 1, ',', '.') }} reales</div>
+                    </td>
+                    <td class="text-center">
+                        @if($fila['meses_con_meta'] > 0)
+                            <span class="badge" style="background:{{ $pct >= 100 ? '#d1fae5' : ($pct >= 50 ? '#fef3c7' : '#fee2e2') }};color:{{ $pctColor }};font-size:.64rem;padding:.35em .6em;border-radius:7px;">
+                                {{ $fila['meses_cumplidos'] }}/{{ $fila['meses_con_meta'] }} meses
+                            </span>
+                            <div class="fw-bold mt-1" style="font-size:.8rem;color:{{ $pctColor }};">{{ $pct }}%</div>
+                        @else
+                            <span class="text-muted fs-11">Sin meta</span>
+                        @endif
+                    </td>
+                    @foreach($fila['meses'] as $m => $mm)
+                        @php
+                            $cambioCargo = $mm['cargo_id'] !== null
+                                && (int) $mm['cargo_id'] !== (int) ($fila['cargo_id'] ?? 0);
+                        @endphp
+                        @if($mm['estado'] === 'sin_datos')
+                            <td class="text-center text-muted" style="font-size:.66rem;">—</td>
+                        @elseif($mm['estado'] === 'sin_meta')
+                            <td class="text-center text-muted" style="font-size:.66rem;line-height:1.25;">
+                                <div>{{ $mm['inscritos'] }} ins</div>
+                                <div>{{ number_format($mm['real'], 1, ',', '.') }} pts</div>
                             </td>
                         @else
                             <td class="text-center">
-                                <div class="badge bg-soft-danger text-danger fs-10" style="font-size:.62rem!important; line-height:1.25;" title="No alcanzó la meta">
-                                    {{ number_format($mm['real'], 1, ',', '.') }}
-                                    <span class="d-block">-{{ number_format(abs($mm['diff']), 1, ',', '.') }}</span>
+                                <div class="badge {{ $mm['estado'] === 'cumplido' ? 'bg-soft-success text-success' : 'bg-soft-danger text-danger' }}"
+                                    style="font-size:.6rem!important;line-height:1.25;padding:3px 5px;white-space:normal;"
+                                    title="Cargo: {{ $mm['cargo_nombre'] }} · Meta: {{ number_format($mm['meta'], 1, ',', '.') }} pts · Inscritos: {{ $mm['inscritos'] }} ({{ $mm['inscritos_reales'] }} reales) · Puntos reales: {{ number_format($mm['puntos_reales'], 1, ',', '.') }}">
+                                    <span class="d-block">{{ $mm['inscritos'] }} ins</span>
+                                    <span class="d-block">{{ number_format($mm['real'], 1, ',', '.') }} pts</span>
+                                    <span class="d-block">{{ $mm['diff'] >= 0 ? '+' : '' }}{{ number_format($mm['diff'], 1, ',', '.') }}</span>
+                                    @if($cambioCargo)
+                                        <i class="ri-history-line" style="font-size:.62rem;" title="Cargo histórico: {{ $mm['cargo_nombre'] }}"></i>
+                                    @endif
                                 </div>
                             </td>
                         @endif
@@ -475,7 +531,10 @@ canvas.chart-canvas { width:100% !important; height:300px !important; }
         </table>
     </div>
     <small class="text-muted fs-11">
-        <i class="ri-information-line"></i> Verde: meta cumplida · Rojo: no alcanzó la meta. El segundo valor indica cuántos puntos le faltaron (-) o superó (+).
+        <i class="ri-information-line"></i>
+        Cada celda muestra inscritos, puntos y la diferencia contra la meta del cargo.
+        Verde: meta cumplida · Rojo: no alcanzada ·
+        <i class="ri-history-line"></i> mes con cargo histórico (el asesor cambió de cargo después).
     </small>
 </div>
 @endif
@@ -720,6 +779,79 @@ canvas.chart-canvas { width:100% !important; height:300px !important; }
 @endif
 </div>{{-- /mkt-page --}}
 @endsection
+
+@can('asesores.gestionar')
+{{-- Modal Editar metas por cargo --}}
+<div class="modal fade" id="modalMetasCargos" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border:0;border-radius:16px;overflow:hidden;box-shadow:0 30px 60px -15px rgba(0,0,0,.25);">
+            <div class="modal-header" style="background:linear-gradient(135deg,#405189 0%,#5e72b8 60%,#299cdb 100%);color:#fff;border:0;padding:1.1rem 1.5rem;">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:12px;font-size:1.25rem;color:#fff;">
+                        <i class="ri-target-line"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title mb-0" style="color:#fff;font-weight:700;">Metas por cargo</h5>
+                        <small style="color:rgba(255,255,255,.85);font-size:.78rem;">Puntos mensuales que debe alcanzar cada cargo</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:brightness(0) invert(1);opacity:.85;"></button>
+            </div>
+            <form id="formMetasCargos">
+                @csrf
+                <div class="modal-body" style="padding:1.25rem 1.5rem;background:#fafbfd;">
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="font-size:.68rem;text-transform:uppercase;letter-spacing:.4px;color:#6c757d;">Cargo</th>
+                                    <th style="font-size:.68rem;text-transform:uppercase;letter-spacing:.4px;color:#6c757d;width:190px;">Meta pts / mes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($cargosMetas as $c)
+                                    <tr data-cargo-id="{{ $c->id }}">
+                                        <td>
+                                            <div class="fw-semibold" style="color:#212529;">{{ $c->nombre }}</div>
+                                            @if(str_contains(mb_strtolower($c->nombre), 'gerente'))
+                                                <div class="text-muted" style="font-size:.66rem;">Gerencia de Marketing</div>
+                                            @elseif(str_contains(mb_strtolower($c->nombre), 'supervisor'))
+                                                <div class="text-muted" style="font-size:.66rem;">Supervisión de Marketing</div>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" step="0.01" min="0" class="form-control meta-input"
+                                                    value="{{ $c->metas_puntos !== null ? (float) $c->metas_puntos : '' }}"
+                                                    placeholder="Sin meta" style="border-radius:7px 0 0 7px;">
+                                                <span class="input-group-text" style="background:#f8f9fc;color:#878a99;border-radius:0 7px 7px 0;">pts</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="alert alert-light border mt-3 mb-0" style="font-size:.72rem;color:#6c757d;">
+                        <i class="ri-information-line"></i>
+                        La meta se compara contra los puntos de las inscripciones de cada mes. Al guardar se actualiza el historial de ese cargo;
+                        los meses en que un asesor tuvo otro cargo conservan la meta de ese otro cargo.
+                    </div>
+                </div>
+                <div class="modal-footer" style="background:#fff;border-top:1px solid #eef0f4;padding:1rem 1.5rem;">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                        <i class="ri-close-line align-bottom"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn" id="btnSaveMetasCargos"
+                        style="background:linear-gradient(135deg,#0ab39c 0%,#14b8a6 100%);border:0;color:#fff;font-weight:600;padding:.5rem 1.25rem;">
+                        <i class="ri-save-3-line align-bottom"></i> Guardar metas
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endcan
 
 @can('asesores.registrar')
 {{-- Modal Registrar Asesor --}}
@@ -1060,6 +1192,57 @@ document.addEventListener('DOMContentLoaded', function () {
             btn.innerHTML = '<i class="ri-save-3-line align-bottom"></i> Guardar';
         });
     });
+
+    // === Editar metas por cargo ===
+    const btnMetasCargos = document.getElementById('btnEditarMetasCargos');
+    if (btnMetasCargos) {
+        const modalMetasCargos = new bootstrap.Modal(document.getElementById('modalMetasCargos'));
+
+        btnMetasCargos.addEventListener('click', function () {
+            modalMetasCargos.show();
+        });
+
+        document.getElementById('formMetasCargos').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const btn = document.getElementById('btnSaveMetasCargos');
+            const original = btn.innerHTML;
+            const cargos = Array.from(this.querySelectorAll('tr[data-cargo-id]')).map(row => {
+                const valor = row.querySelector('.meta-input').value;
+                return {
+                    id: Number(row.dataset.cargoId),
+                    metas_puntos: valor === '' ? null : valor
+                };
+            });
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Guardando...';
+
+            fetch('{{ route("admin.marketing.cargos.metas") }}', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ cargos })
+            })
+            .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
+            .then(({ ok, data }) => {
+                if (ok && data.success) {
+                    modalMetasCargos.hide();
+                    location.reload();
+                } else {
+                    alert(data.message || 'No se pudieron guardar las metas.');
+                }
+            })
+            .catch(() => alert('Error al guardar las metas.'))
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = original;
+            });
+        });
+    }
 });
 </script>
 @endpush

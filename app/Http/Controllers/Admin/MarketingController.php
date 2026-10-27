@@ -597,30 +597,7 @@ class MarketingController extends Controller
         }
 
         // --- Puntos Reales por mes, desglosados por tipo de programa ---
-        $realesCond = "
-            (inscripciones.contado = 0
-             AND COALESCE((
-                 SELECT SUM(d.monto_bs)
-                 FROM modulos_participantes mp
-                 JOIN deudas d ON d.modulo_participante_id = mp.id
-                 WHERE mp.participante_id = inscripciones.participante_id AND mp.tipo = 'Matricula'
-             ), 0) >= (inscripciones.matricula - COALESCE(inscripciones.descuento_matricula, 0))
-             AND EXISTS (
-                 SELECT 1
-                 FROM modulos_participantes mp2
-                 JOIN deudas d2 ON d2.modulo_participante_id = mp2.id
-                 WHERE mp2.participante_id = inscripciones.participante_id AND mp2.tipo = 'Colegiatura' AND d2.monto_bs > 0
-             ))
-            OR
-            (inscripciones.contado = 1
-             AND (inscripciones.monto_programa - COALESCE(inscripciones.descuento_colegiatura, 0)) > 0
-             AND COALESCE((
-                 SELECT SUM(d3.monto_bs)
-                 FROM modulos_participantes mp3
-                 JOIN deudas d3 ON d3.modulo_participante_id = mp3.id
-                 WHERE mp3.participante_id = inscripciones.participante_id AND mp3.tipo = 'Colegiatura'
-             ), 0) >= (inscripciones.monto_programa - COALESCE(inscripciones.descuento_colegiatura, 0)) / (SELECT GREATEST(COUNT(*), 1) FROM modulos WHERE modulos.programa_id = inscripciones.programa_id))
-        ";
+        $realesCond = $this->condicionInscripcionReal();
 
         $puntosRealesPorTipoMesQ = DB::table('inscripciones')
             ->join('programas', 'inscripciones.programa_id', '=', 'programas.id')
@@ -1006,14 +983,23 @@ class MarketingController extends Controller
             '09' => 'Septiembre', '10' => 'Octubre', '11' => 'Noviembre', '12' => 'Diciembre',
         ];
 
+        // Fija el cargo/meta de cada asesor en el mes antes de comparar.
+        // Si falla el snapshot, la vista sigue funcionando con el cargo actual.
+        try {
+            $this->sincronizarMetasHistorial($gestion, $asesorId !== '' && $asesorId !== null ? (int) $asesorId : null, $realesCond);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
         $cumplimientoMetas = $this->metasCumplimiento($gestion, $tipo, $scopeTipo, $realesCond, $asesorId);
+        $cargosMetas = DB::table('cargos')->orderBy('id')->get();
 
         return view('admin.marketing.asesores.index', compact(
             'asesores', 'gestiones', 'gestion', 'asesorId', 'asesorActual',
             'mesesData', 'porPrograma', 'inscritosPorPrograma', 'resumen', 'meses', 'tipo',
             'puntosTipoSeries', 'inscritosTipoSeries', 'puntosRealesTipoSeries',
             'realesInscritosTipoSeries', 'noRealesInscritosTipoSeries',
-            'cumplimientoMetas'
+            'cumplimientoMetas', 'cargosMetas'
         ));
     }
 
@@ -1595,41 +1581,304 @@ class MarketingController extends Controller
         return view('admin.marketing.asesores.show', $viewData);
     }
 
-    private function metasCumplimiento($gestion, $tipo, $scopeTipo, $realesCond, $asesorId)
+    /**
+     * Condición SQL que determina si una inscripción es "real" (pagos al día).
+     * Se mantiene el alias "inscripciones" porque se reutiliza en distintas consultas.
+     */
+    private function condicionInscripcionReal(): string
     {
-        $realesPorMesQ = DB::table('inscripciones')
-            ->join('asesores as asr', 'asr.id', '=', 'inscripciones.asesor_id')
-            ->join('cargos as cg', 'cg.id', '=', 'asr.cargo_id')
-            ->join('programas', 'inscripciones.programa_id', '=', 'programas.id')
-            ->leftJoin('tipos', 'programas.tipo_id', '=', 'tipos.id')
-            ->whereYear('inscripciones.fecha_inscripcion', $gestion)
-            ->where('asr.estado', 'Habilitado')
-            ->whereNotNull('cg.id')
-            ->when($scopeTipo)
-            ->whereRaw("({$realesCond})")
+        return "
+            (inscripciones.contado = 0
+             AND COALESCE((
+                 SELECT SUM(d.monto_bs)
+                 FROM modulos_participantes mp
+                 JOIN deudas d ON d.modulo_participante_id = mp.id
+                 WHERE mp.participante_id = inscripciones.participante_id AND mp.tipo = 'Matricula'
+             ), 0) >= (inscripciones.matricula - COALESCE(inscripciones.descuento_matricula, 0))
+             AND EXISTS (
+                 SELECT 1
+                 FROM modulos_participantes mp2
+                 JOIN deudas d2 ON d2.modulo_participante_id = mp2.id
+                 WHERE mp2.participante_id = inscripciones.participante_id AND mp2.tipo = 'Colegiatura' AND d2.monto_bs > 0
+             ))
+            OR
+            (inscripciones.contado = 1
+             AND (inscripciones.monto_programa - COALESCE(inscripciones.descuento_colegiatura, 0)) > 0
+             AND COALESCE((
+                 SELECT SUM(d3.monto_bs)
+                 FROM modulos_participantes mp3
+                 JOIN deudas d3 ON d3.modulo_participante_id = mp3.id
+                 WHERE mp3.participante_id = inscripciones.participante_id AND mp3.tipo = 'Colegiatura'
+             ), 0) >= (inscripciones.monto_programa - COALESCE(inscripciones.descuento_colegiatura, 0)) / (SELECT GREATEST(COUNT(*), 1) FROM modulos WHERE modulos.programa_id = inscripciones.programa_id))
+        ";
+    }
+
+    /**
+     * Inscritos / puntos por asesor y mes para una gestión.
+     * Devuelve: [asesor_id => [mes => ['inscritos', 'inscritos_reales', 'puntos', 'puntos_reales']]]
+     */
+    private function valoresMensualesPorAsesor($gestion, string $realesCond, ?callable $scopeTipo = null, $asesorId = null): array
+    {
+        // MySQL con ONLY_FULL_GROUP_BY no permite usar la condición "real"
+        // dentro del SELECT agrupado, así que se calcula en dos consultas.
+        $base = function () use ($gestion, $scopeTipo, $asesorId) {
+            $query = DB::table('inscripciones')
+                ->join('programas', 'inscripciones.programa_id', '=', 'programas.id')
+                ->leftJoin('tipos', 'programas.tipo_id', '=', 'tipos.id')
+                ->whereYear('inscripciones.fecha_inscripcion', $gestion)
+                ->whereNotNull('inscripciones.asesor_id');
+
+            if ($scopeTipo !== null) {
+                $scopeTipo($query);
+            }
+
+            if ($asesorId !== '' && $asesorId !== null) {
+                $query->where('inscripciones.asesor_id', (int) $asesorId);
+            }
+
+            return $query;
+        };
+
+        $totales = $base()
             ->select(
-                'asr.id as asesor_id',
+                'inscripciones.asesor_id',
                 DB::raw('MONTH(inscripciones.fecha_inscripcion) as mes'),
+                DB::raw('COUNT(*) as inscritos'),
                 DB::raw('COALESCE(SUM(tipos.puntos), 0) as puntos')
             )
-            ->groupBy('asr.id', DB::raw('MONTH(inscripciones.fecha_inscripcion)'))
-            ->orderBy('asr.apellidos')
-            ->orderBy('asr.nombres')
+            ->groupBy('inscripciones.asesor_id', DB::raw('MONTH(inscripciones.fecha_inscripcion)'))
             ->get();
 
-        $realPorMes = [];
-        foreach ($realesPorMesQ as $f) {
-            $realPorMes[$f->asesor_id][(int) $f->mes] = (float) $f->puntos;
+        $reales = $base()
+            ->whereRaw("({$realesCond})")
+            ->select(
+                'inscripciones.asesor_id',
+                DB::raw('MONTH(inscripciones.fecha_inscripcion) as mes'),
+                DB::raw('COUNT(*) as inscritos_reales'),
+                DB::raw('COALESCE(SUM(tipos.puntos), 0) as puntos_reales')
+            )
+            ->groupBy('inscripciones.asesor_id', DB::raw('MONTH(inscripciones.fecha_inscripcion)'))
+            ->get();
+
+        $valores = [];
+        foreach ($totales as $f) {
+            $valores[(int) $f->asesor_id][(int) $f->mes] = [
+                'inscritos' => (int) $f->inscritos,
+                'inscritos_reales' => 0,
+                'puntos' => (float) $f->puntos,
+                'puntos_reales' => 0.0,
+            ];
         }
 
+        foreach ($reales as $f) {
+            $asesor = (int) $f->asesor_id;
+            $mes = (int) $f->mes;
+
+            if (!isset($valores[$asesor][$mes])) {
+                $valores[$asesor][$mes] = [
+                    'inscritos' => 0,
+                    'inscritos_reales' => 0,
+                    'puntos' => 0.0,
+                    'puntos_reales' => 0.0,
+                ];
+            }
+
+            $valores[$asesor][$mes]['inscritos_reales'] = (int) $f->inscritos_reales;
+            $valores[$asesor][$mes]['puntos_reales'] = (float) $f->puntos_reales;
+        }
+
+        return $valores;
+    }
+
+    /**
+     * Guarda/actualiza el snapshot mensual del cargo del asesor.
+     *
+     * El cargo y la meta se escriben únicamente al crear la fila. Si el asesor
+     * cambia de cargo, los meses ya registrados conservan el cargo histórico y
+     * los meses nuevos toman el cargo actual.
+     */
+    private function sincronizarMetasHistorial($gestion, $asesorId = null, ?string $realesCond = null): void
+    {
+        $realesCond = $realesCond ?? $this->condicionInscripcionReal();
+        $gestionInt = (int) $gestion;
+
+        $valores = $this->valoresMensualesPorAsesor($gestionInt, $realesCond, null, $asesorId);
+
+        $asesores = DB::table('asesores')
+            ->when($asesorId !== '' && $asesorId !== null, fn($q) => $q->where('id', (int) $asesorId))
+            ->whereNotNull('cargo_id')
+            ->get(['id', 'cargo_id', 'estado']);
+
+        if ($asesores->isEmpty()) {
+            return;
+        }
+
+        $cargos = DB::table('cargos')->get()->keyBy('id');
+
+        $anioActual = (int) now()->format('Y');
+        $mesActual = (int) now()->format('n');
+
+        if ($gestionInt < $anioActual) {
+            // Gestión cerrada: se guardan los 12 meses, pero solo de asesores con datos.
+            $mesesBase = range(1, 12);
+            $soloConDatos = true;
+        } elseif ($gestionInt === $anioActual) {
+            // Gestión en curso: se fija el cargo hasta el mes actual.
+            $mesesBase = range(1, $mesActual);
+            $soloConDatos = false;
+        } else {
+            // Gestión futura: solo se guardan meses que ya tengan datos.
+            $mesesBase = [];
+            $soloConDatos = true;
+        }
+
+        $rows = [];
+        $ahora = now();
+
+        foreach ($asesores as $a) {
+            $mesesConDatos = array_keys($valores[(int) $a->id] ?? []);
+
+            if ($soloConDatos && empty($mesesConDatos)) {
+                continue;
+            }
+
+            $meses = array_values(array_unique(array_merge($mesesBase, $mesesConDatos)));
+            sort($meses);
+
+            $cargo = $a->cargo_id ? ($cargos->get($a->cargo_id)) : null;
+            $meta = (float) ($cargo->metas_puntos ?? 0);
+            $cargoNombre = $cargo->nombre ?? null;
+
+            foreach ($meses as $m) {
+                $v = $valores[(int) $a->id][$m] ?? [
+                    'inscritos' => 0,
+                    'inscritos_reales' => 0,
+                    'puntos' => 0,
+                    'puntos_reales' => 0,
+                ];
+
+                $puntos = (float) $v['puntos'];
+                $estado = $meta > 0 ? ($puntos >= $meta ? 'cumplido' : 'no_cumplido') : 'sin_meta';
+
+                $rows[] = [
+                    'asesor_id' => (int) $a->id,
+                    'cargo_id' => $a->cargo_id,
+                    'cargo_nombre' => $cargoNombre,
+                    'gestion' => $gestionInt,
+                    'mes' => (int) $m,
+                    'meta_puntos' => $meta,
+                    'inscritos' => (int) $v['inscritos'],
+                    'inscritos_reales' => (int) $v['inscritos_reales'],
+                    'puntos' => $puntos,
+                    'puntos_reales' => (float) $v['puntos_reales'],
+                    'estado' => $estado,
+                    'created_at' => $ahora,
+                    'updated_at' => $ahora,
+                ];
+            }
+        }
+
+        if (empty($rows)) {
+            return;
+        }
+
+        foreach (array_chunk($rows, 500) as $chunk) {
+            DB::table('asesores_metas_historial')->upsert(
+                $chunk,
+                ['asesor_id', 'gestion', 'mes'],
+                ['inscritos', 'inscritos_reales', 'puntos', 'puntos_reales', 'estado', 'updated_at']
+            );
+        }
+    }
+
+    /**
+     * Antes de cambiar de cargo a un asesor, fija su cargo actual en todos los
+     * meses con datos para que el historial no se pierda.
+     */
+    private function sincronizarHistorialAsesor(int $asesorId): void
+    {
+        $gestiones = DB::table('inscripciones')
+            ->where('asesor_id', $asesorId)
+            ->selectRaw('DISTINCT YEAR(fecha_inscripcion) as gestion')
+            ->pluck('gestion')
+            ->map(fn($g) => (int) $g)
+            ->push((int) now()->format('Y'))
+            ->unique()
+            ->sort()
+            ->values();
+
+        foreach ($gestiones as $g) {
+            $this->sincronizarMetasHistorial($g, $asesorId);
+        }
+    }
+
+    /**
+     * Cuando se edita la meta/nombre de un cargo se refleja en todo su historial.
+     */
+    private function actualizarHistorialCargo(int $cargoId, string $nombre, ?float $meta): void
+    {
+        $meta = $meta ?? 0;
+        $metaSql = number_format($meta, 2, '.', '');
+
+        DB::table('asesores_metas_historial')
+            ->where('cargo_id', $cargoId)
+            ->update([
+                'cargo_nombre' => $nombre,
+                'meta_puntos' => $meta,
+                'estado' => DB::raw("CASE WHEN {$metaSql} > 0 AND puntos >= {$metaSql} THEN 'cumplido' WHEN {$metaSql} > 0 THEN 'no_cumplido' ELSE 'sin_meta' END"),
+                'updated_at' => now(),
+            ]);
+    }
+
+    private function metasCumplimiento($gestion, $tipo, $scopeTipo, $realesCond, $asesorId)
+    {
+        $valores = $this->valoresMensualesPorAsesor($gestion, $realesCond, $scopeTipo, $asesorId);
+
+        $historial = [];
+        $idsHistorialConDatos = [];
+
+        $histQuery = DB::table('asesores_metas_historial')
+            ->where('gestion', (int) $gestion)
+            ->when($asesorId !== '' && $asesorId !== null, fn($q) => $q->where('asesor_id', (int) $asesorId))
+            ->get();
+
+        foreach ($histQuery as $h) {
+            $historial[(int) $h->asesor_id][(int) $h->mes] = $h;
+
+            if ((int) $h->inscritos > 0 || (float) $h->puntos > 0) {
+                $idsHistorialConDatos[(int) $h->asesor_id] = true;
+            }
+        }
+
+        $idsValores = array_keys($valores);
+        $asesorFiltro = $asesorId !== '' && $asesorId !== null ? (int) $asesorId : null;
+
         $asesoresConCargo = DB::table('asesores as asr')
-            ->join('cargos as cg', 'cg.id', '=', 'asr.cargo_id')
-            ->where('asr.estado', 'Habilitado')
+            ->leftJoin('cargos as cg', 'cg.id', '=', 'asr.cargo_id')
+            ->where(function ($q) use ($idsHistorialConDatos, $idsValores, $asesorFiltro) {
+                // Asesores habilitados con cargo (aunque aún no tengan inscritos).
+                $q->where(function ($qq) {
+                    $qq->where('asr.estado', 'Habilitado')
+                       ->whereNotNull('asr.cargo_id');
+                });
+
+                // Deshabilitados o sin cargo actual, solo si tienen datos/historial.
+                if (!empty($idsValores)) {
+                    $q->orWhereIn('asr.id', $idsValores);
+                }
+                if (!empty($idsHistorialConDatos)) {
+                    $q->orWhereIn('asr.id', array_keys($idsHistorialConDatos));
+                }
+                if ($asesorFiltro !== null) {
+                    $q->orWhere('asr.id', $asesorFiltro);
+                }
+            })
+            ->orderByRaw('CASE WHEN cg.id IS NULL THEN 1 ELSE 0 END')
             ->orderBy('cg.id')
             ->orderBy('asr.apellidos')
             ->orderBy('asr.nombres')
             ->select(
-                'asr.id', 'asr.nombres', 'asr.apellidos', 'asr.ci',
+                'asr.id', 'asr.nombres', 'asr.apellidos', 'asr.ci', 'asr.estado',
                 'cg.id as cargo_id', 'cg.nombre as cargo_nombre', 'cg.metas_puntos'
             )
             ->get();
@@ -1639,25 +1888,94 @@ class MarketingController extends Controller
             if ($asesorId !== '' && $asesorId !== null && (int) $asesorId !== (int) $a->id) {
                 continue;
             }
-            $meta = (float) ($a->metas_puntos ?? 0);
+
+            $metaActual = (float) ($a->metas_puntos ?? 0);
             $meses = [];
+
+            $totalInscritos = 0;
+            $totalInscritosReales = 0;
+            $totalPuntos = 0;
+            $totalPuntosReales = 0;
+            $mesesConMeta = 0;
+            $mesesCumplidos = 0;
+            $cargosHistoricos = [];
+
+            if ($a->cargo_nombre) {
+                $cargosHistoricos[$a->cargo_nombre] = true;
+            }
+
             foreach (range(1, 12) as $m) {
-                $real = (float) ($realPorMes[$a->id][$m] ?? 0);
+                $h = $historial[(int) $a->id][$m] ?? null;
+                $v = $valores[(int) $a->id][$m] ?? null;
+
+                $cargoId = $h->cargo_id ?? $a->cargo_id;
+                $cargoNombre = $h->cargo_nombre ?? $a->cargo_nombre;
+                $meta = $h ? (float) $h->meta_puntos : $metaActual;
+
+                $inscritos = (int) ($v['inscritos'] ?? 0);
+                $inscritosReales = (int) ($v['inscritos_reales'] ?? 0);
+                $real = (float) ($v['puntos'] ?? 0);
+                $puntosReales = (float) ($v['puntos_reales'] ?? 0);
+
+                // Un mes es "vigente" si ya fue registrado en el historial o tiene datos.
+                // Los meses futuros no cuentan para el porcentaje de cumplimiento.
+                $mesVigente = $h !== null || $v !== null;
+
+                if (!$mesVigente) {
+                    $estado = 'sin_datos';
+                    $diff = null;
+                } else {
+                    $estado = $meta > 0 ? ($real >= $meta ? 'cumplido' : 'no_cumplido') : 'sin_meta';
+                    $diff = $meta > 0 ? $real - $meta : null;
+
+                    if ($meta > 0) {
+                        $mesesConMeta++;
+                        if ($estado === 'cumplido') {
+                            $mesesCumplidos++;
+                        }
+                    }
+                }
+
+                if ($h && $cargoNombre) {
+                    $cargosHistoricos[$cargoNombre] = true;
+                }
+
+                $totalInscritos += $inscritos;
+                $totalInscritosReales += $inscritosReales;
+                $totalPuntos += $real;
+                $totalPuntosReales += $puntosReales;
+
                 $meses[$m] = [
                     'real' => $real,
                     'meta' => $meta,
-                    'estado' => $meta > 0 ? ($real >= $meta ? 'cumplido' : 'falto') : 'sin_meta',
-                    'diff' => $meta > 0 ? $real - $meta : null,
+                    'inscritos' => $inscritos,
+                    'inscritos_reales' => $inscritosReales,
+                    'puntos_reales' => $puntosReales,
+                    'estado' => $estado,
+                    'diff' => $diff,
+                    'cargo_id' => $cargoId,
+                    'cargo_nombre' => $cargoNombre,
                 ];
             }
+
             $filas[] = [
                 'id' => $a->id,
                 'apellidos' => $a->apellidos,
                 'nombres' => $a->nombres,
                 'ci' => $a->ci,
-                'cargo_nombre' => $a->cargo_nombre,
-                'meta' => $meta,
+                'estado_asesor' => $a->estado,
+                'cargo_id' => $a->cargo_id,
+                'cargo_nombre' => $a->cargo_nombre ?? 'Sin cargo',
+                'meta' => $metaActual,
                 'meses' => $meses,
+                'total_inscritos' => $totalInscritos,
+                'total_inscritos_reales' => $totalInscritosReales,
+                'total_puntos' => $totalPuntos,
+                'total_puntos_reales' => $totalPuntosReales,
+                'meses_con_meta' => $mesesConMeta,
+                'meses_cumplidos' => $mesesCumplidos,
+                'pct_cumplimiento' => $mesesConMeta > 0 ? (int) round($mesesCumplidos / $mesesConMeta * 100) : null,
+                'cargos_historicos' => array_keys($cargosHistoricos),
             ];
         }
 
@@ -1726,6 +2044,21 @@ class MarketingController extends Controller
             'cargo_id' => 'nullable|integer|exists:cargos,id',
             'estado' => 'required|string|max:255',
         ]);
+
+        $cargoAnterior = $asesor->cargo_id !== null ? (int) $asesor->cargo_id : null;
+        $cargoNuevo = isset($validated['cargo_id']) && $validated['cargo_id'] !== null
+            ? (int) $validated['cargo_id']
+            : null;
+
+        // Si cambia de cargo, primero se congela el cargo anterior en el historial
+        // de todos los meses con datos. Los meses siguientes usarán el nuevo cargo.
+        if ($cargoAnterior !== $cargoNuevo) {
+            try {
+                $this->sincronizarHistorialAsesor((int) $id);
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
 
         DB::table('asesores')->where('id', $id)->update([
             'ci' => $validated['ci'],
@@ -1817,14 +2150,65 @@ class MarketingController extends Controller
             'metas_puntos' => 'nullable|numeric|min:0|max:9999999.99',
         ]);
 
+        $meta = filled($validated['metas_puntos'] ?? null) ? (float) $validated['metas_puntos'] : null;
+
         DB::table('cargos')->where('id', $id)->update([
             'nombre' => $validated['nombre'],
-            'metas_puntos' => filled($validated['metas_puntos'] ?? null) ? (float) $validated['metas_puntos'] : null,
+            'metas_puntos' => $meta,
         ]);
+
+        // La meta es por cargo: se replica en su historial para que la comparación
+        // de los meses ya registrados use el valor vigente del cargo.
+        try {
+            $this->actualizarHistorialCargo((int) $id, $validated['nombre'], $meta);
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return response()->json([
             'success' => true,
             'message' => 'Cargo actualizado correctamente',
+        ]);
+    }
+
+    /**
+     * Actualización masiva de metas desde la vista de cumplimiento de asesores.
+     */
+    public function updateMetasCargos(Request $request)
+    {
+        $validated = $request->validate([
+            'cargos' => 'required|array|min:1',
+            'cargos.*.id' => 'required|integer|exists:cargos,id',
+            'cargos.*.metas_puntos' => 'nullable|numeric|min:0|max:9999999.99',
+        ]);
+
+        $actualizados = 0;
+
+        foreach ($validated['cargos'] as $row) {
+            $cargo = DB::table('cargos')->where('id', (int) $row['id'])->first();
+            if (!$cargo) {
+                continue;
+            }
+
+            $meta = filled($row['metas_puntos'] ?? null) ? (float) $row['metas_puntos'] : null;
+
+            DB::table('cargos')->where('id', (int) $row['id'])->update([
+                'metas_puntos' => $meta,
+            ]);
+
+            try {
+                $this->actualizarHistorialCargo((int) $row['id'], $cargo->nombre, $meta);
+            } catch (\Throwable $e) {
+                report($e);
+            }
+
+            $actualizados++;
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Se actualizaron {$actualizados} cargo(s) correctamente.",
+            'actualizados' => $actualizados,
         ]);
     }
 

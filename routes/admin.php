@@ -315,6 +315,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::patch('/asesores/{id}/toggle-estado', [MarketingController::class, 'toggleAsesorEstado'])->middleware('permission:asesores.gestionar')->name('asesores.toggle-estado');
         Route::delete('/asesores/{id}', [MarketingController::class, 'deleteAsesor'])->middleware('permission:asesores.gestionar')->name('asesores.delete');
         Route::post('/cargos', [MarketingController::class, 'storeCargo'])->middleware('permission:asesores.registrar')->name('cargos.store');
+        Route::put('/cargos/metas', [MarketingController::class, 'updateMetasCargos'])->middleware('permission:asesores.gestionar')->name('cargos.metas');
         Route::put('/cargos/{id}', [MarketingController::class, 'updateCargo'])->middleware('permission:asesores.gestionar')->name('cargos.update');
         Route::delete('/cargos/{id}', [MarketingController::class, 'deleteCargo'])->middleware('permission:asesores.gestionar')->name('cargos.delete');
         Route::get('/programas/{id}/inscritos-reales', [MarketingController::class, 'programaInscritosReales'])->name('programas.inscritos-reales');
