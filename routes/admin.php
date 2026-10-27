@@ -64,7 +64,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
             Route::get('/modulo/{modulo}/asistencia-stats', [ProgramaController::class, 'asistenciaStats'])->name('asistencia-stats');
             Route::get('/notificaciones', [ProgramaController::class, 'notificaciones'])->name('notificaciones');
             Route::get('/modulo/{modulo}/notas-estado', [ProgramaController::class, 'notasEstadoModulo'])->name('modulo-notas-estado');
-            Route::get('/modulo/{modulo}/mensajes-whatsapp', [ProgramaController::class, 'mensajesWhatsApp'])->name('modulo-mensajes-whatsapp');
+            // Vista previa de mensajes de notas (con celulares): Super Admin o responsable del programa.
+            Route::get('/modulo/{modulo}/mensajes-whatsapp', [ProgramaController::class, 'mensajesWhatsApp'])->middleware('programa.acceso:responsable')->name('modulo-mensajes-whatsapp');
             Route::post('/modulo/{modulo}/whatsapp', [WhatsappEnvioController::class, 'enviarAcademico'])->middleware('programa.acceso:responsable')->name('modulo-whatsapp-enviar');
             // Aviso de inasistencia a los ausentes de una sesión (por Seguimiento ESAM, no wa.me).
             Route::post('/horario/{horario}/whatsapp-ausentes', [WhatsappEnvioController::class, 'enviarAusentes'])->middleware('programa.acceso:responsable')->name('horario-whatsapp-ausentes');

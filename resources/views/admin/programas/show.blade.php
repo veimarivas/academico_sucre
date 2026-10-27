@@ -8820,9 +8820,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             whatsappMensajes = data.mensajes;
-            var firma = data.firma ? '
-
-Atte: ' + data.firma : '';
+            var firma = data.firma ? '\n\nAtte: ' + data.firma : '';
             var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]; }); };
             var html = '';
             var hayBajas = false;

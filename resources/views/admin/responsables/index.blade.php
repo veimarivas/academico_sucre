@@ -1188,7 +1188,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                 '</div>';
                             }
                             var waBtn = '';
-                            if (m.desarrollo === 'Concluido' && m.con_nota_modulo > 0) {
+                            // Solo Super Admin o responsable del programa.
+                            if (m.puede_whatsapp && m.desarrollo === 'Concluido' && m.con_nota_modulo > 0) {
                                 waBtn = '<button class="btn btn-sm btn-icon btn-soft-success btn-whatsapp-masivo" data-modulo-id="' + m.id + '" data-modulo-nombre="' + escHtml(m.nombre) + '" title="Enviar mensajes por WhatsApp" style="width:22px;height:22px;font-size:.6rem;padding:0;border-radius:4px;margin-left:4px;">' +
                                     '<i class="ri-whatsapp-line"></i>' +
                                 '</button>';

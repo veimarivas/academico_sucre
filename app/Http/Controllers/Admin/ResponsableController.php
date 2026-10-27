@@ -327,6 +327,13 @@ class ResponsableController extends Controller
                 ->keyBy('modulo_id');
         }
 
+        // WhatsApp de notas: solo Super Admin o responsable del programa (quien mira).
+        $visor = auth()->user();
+        $puedeWa = [];
+        $puedeWhatsapp = function (int $programaId) use ($visor, &$puedeWa) {
+            return $puedeWa[$programaId] ??= (bool) $visor?->puedeWhatsappPrograma($programaId);
+        };
+
         $estadoNotasPorModulo = DB::table('modulos_participantes')
             ->whereIn('modulo_id', $moduloIds)
             ->select('modulo_id',
@@ -374,6 +381,7 @@ class ResponsableController extends Controller
                     'con_nota_modulo' => $enm ? (int) $enm->con_nota_modulo : 0,
                     'con_nota_nivelacion' => $enm ? (int) $enm->con_nota_nivelacion : 0,
                     'total_reprobados' => $enm ? (int) $enm->total_reprobados : 0,
+                    'puede_whatsapp' => $puedeWhatsapp((int) $m->programa_id),
                     'docente_id' => $m->docente_id,
                     'docente_nombres' => $m->docente_nombres,
                     'docente_apellidos' => $m->docente_apellidos,
