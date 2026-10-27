@@ -4899,7 +4899,9 @@
                                         <td class="sticky-col sticky-col-4 fw-medium text-dark" @if($bgBaja) style="background:{{ $bgBaja }} !important;" @endif>{{ $p->apellidos }}, {{ $p->nombres }}@if(($p->es_traspaso ?? 0) == 1) <span class="traspaso-badge"><i class="ri-swap-line"></i></span>@endif</td>
                                         <td class="fw-medium" @if($bgBaja) style="background:{{ $bgBaja }} !important;" @endif>
                                             @if($p->celular)
-                                                <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $p->celular) }}" target="_blank" class="text-success d-inline-flex align-items-center gap-1" title="Enviar WhatsApp">
+                                                @php $celWa = preg_replace('/[^0-9]/', '', $p->celular); if (strlen($celWa) === 8) { $celWa = '591'.$celWa; } @endphp
+                                                {{-- Abre la conversación en Seguimiento ESAM (queda registrada), no wa.me. --}}
+                                                <a href="{{ route('admin.seguimiento-esam', ['next' => '/conversations/'.$celWa]) }}" target="_blank" rel="noopener" class="text-success d-inline-flex align-items-center gap-1" title="Abrir la conversación en Seguimiento ESAM">
                                                     <i class="ri-whatsapp-line"></i> {{ $p->celular }}
                                                 </a>
                                             @else
@@ -8737,9 +8739,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    async function enviarWhatsappEsam(tipo, trigger) {
+    async function enviarWhatsappEsam(tipo, trigger, soloIds) {
         if (! whatsappModuloId) return;
-        var n = waSeleccionados().length;
+        var ids = soloIds || waSeleccionados();
+        var n = ids.length;
         if (n === 0) { showToast('Seleccioná al menos un participante.', 'warning'); return; }
         if (! confirm('¿Enviar por WhatsApp con Seguimiento ESAM a ' + n + ' participante(s) seleccionado(s)' +
             (tipo === 'aprobado' ? ' (solo aprobados)' : tipo === 'reprobado' ? ' (solo reprobados)' : '') + '?')) return;
@@ -8753,7 +8756,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     'X-Requested-With': 'XMLHttpRequest',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                 },
-                body: JSON.stringify({ tipo: tipo || 'all', participante_ids: waSeleccionados() }),
+                body: JSON.stringify({ tipo: tipo || 'all', participante_ids: ids }),
             });
             const data = await res.json().catch(function () { return {}; });
             if (res.ok && data.success) {
@@ -8772,6 +8775,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (trigger) trigger.disabled = false;
         }
     }
+
+    document.addEventListener('click', function (e) {
+        const uno = e.target.closest('#whatsapp-body .btn-wa-uno');
+        if (uno) enviarWhatsappEsam('all', uno, [uno.dataset.id]);
+    });
 
     document.addEventListener('click', function (e) {
         const btn = e.target.closest('.btn-whatsapp-masivo');
@@ -8813,9 +8821,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Activos con nota: marcados. Dados de baja: sin marcar. Sin nota: no se puede enviar.
                 var marcado = !baja && !sinNota;
                 var badgeClass = m.tipo === 'aprobado' ? 'bg-soft-success text-success' : (sinNota ? 'bg-light text-muted' : 'bg-soft-danger text-danger');
+                // Envío a una sola persona por Seguimiento ESAM (queda en su historial; ya no wa.me).
                 var waCell = (m.celular && m.texto)
-                    ? '<a href="https://wa.me/' + esc(m.celular) + '?text=' + encodeURIComponent(m.texto) + '" target="_blank" class="btn btn-sm ' + (baja ? 'btn-outline-secondary' : 'btn-success') + ' d-flex align-items-center gap-1" style="width:fit-content;margin:0 auto;">' +
-                        '<i class="ri-whatsapp-line"></i> Abrir WhatsApp</a>'
+                    ? '<button type="button" class="btn btn-sm ' + (baja ? 'btn-outline-secondary' : 'btn-success') + ' d-flex align-items-center gap-1 btn-wa-uno" data-id="' + esc(m.participante_id) + '" style="width:fit-content;margin:0 auto;">' +
+                        '<i class="ri-send-plane-fill"></i> Enviar</button>'
                     : '<span class="text-muted fs-11">' + (m.celular ? '—' : 'Sin celular') + '</span>';
                 html += '<tr class="' + (baja ? 'table-danger' : '') + (marcado ? '' : ' opacity-50') + '">' +
                     '<td class="text-center"><input type="checkbox" class="form-check-input wa-sel" value="' + esc(m.participante_id) + '"' +

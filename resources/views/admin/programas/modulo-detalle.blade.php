@@ -1574,9 +1574,11 @@
                         </div>
                     </div>
                     <button type="button" class="btn btn-success btn-sm d-inline-flex align-items-center gap-1" id="waAusentesEnviarTodos">
-                        <i class="ri-whatsapp-line"></i> Enviar a seleccionados
+                        <i class="ri-send-plane-fill"></i> Enviar por Seguimiento ESAM
                     </button>
                 </div>
+                <div class="alert alert-light border py-2 px-3 mb-3" style="font-size:.78rem;"><i class="ri-information-line"></i>
+                    Se envía desde tu línea de WhatsApp por Seguimiento ESAM, respetando el ritmo anti-baneo, y queda en el historial de cada participante.</div>
                 <div class="table-responsive" style="max-height:350px;overflow-y:auto;">
                     <table class="table table-bordered align-middle mb-0" style="font-size:.82rem;">
                         <thead class="table-light text-muted text-uppercase" style="font-size:.65rem;">
@@ -1588,7 +1590,7 @@
                                 </th>
                                 <th style="width:40px;" class="text-center">#</th>
                                 <th>Participante</th>
-                                <th style="width:120px;" class="text-center">WhatsApp</th>
+                                <th>Mensaje que se enviará</th>
                             </tr>
                         </thead>
                         <tbody id="waAusentesBody"></tbody>
@@ -1598,7 +1600,7 @@
             <div class="modal-footer" style="background:#fff;border-top:1px solid #eef0f4;padding:.75rem 1.25rem;">
                 <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal"><i class="ri-close-line"></i> Cerrar</button>
                 <button type="button" class="btn btn-success btn-sm d-inline-flex align-items-center gap-1" id="waAusentesEnviarFooter">
-                    <i class="ri-whatsapp-line"></i> Enviar a seleccionados
+                    <i class="ri-send-plane-fill"></i> Enviar por Seguimiento ESAM
                 </button>
             </div>
         </div>
@@ -1658,6 +1660,7 @@
 @endif
 
 @push('js')
+@include('admin.partials.whatsapp-lote-modal')
 <script src="{{ asset('backend/assets/libs/apexcharts/apexcharts.min.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -1721,10 +1724,12 @@ document.addEventListener('DOMContentLoaded', function () {
     // WhatsApp a ausentes: abrir modal con lista
     let waAusentesData = [];
     let waAusentesSesionInfo = '';
+    let waAusentesHorarioId = null;
 
     document.querySelectorAll('.btn-whatsapp-ausentes').forEach(function (btn) {
         btn.addEventListener('click', function () {
             const horarioId = this.dataset.horarioId;
+            waAusentesHorarioId = horarioId;
             waAusentesSesionInfo = this.dataset.fecha + ' · ' + this.dataset.hora;
             const btnEl = this;
             btnEl.disabled = true;
@@ -1771,42 +1776,54 @@ document.addEventListener('DOMContentLoaded', function () {
                 '\n\nPor favor, comuníquese con su responsable para justificar su falta.' +
                 '\n\nÁrea Académica ESAM Sucre Central\n' +
                 'Enviado por: ' + ADMIN_NOMBRE;
-            const waLink = 'https://wa.me/' + p.celular + '?text=' + encodeURIComponent(mensajeIndiv);
             html += '<tr>' +
                 '<td class="text-center"><div class="form-check"><input class="form-check-input wa-ausente-check" type="checkbox" checked data-idx="' + i + '"></div></td>' +
                 '<td class="text-center text-muted fw-bold">' + (i + 1) + '</td>' +
-                '<td><div class="fw-semibold">' + escHtml(p.apellidos) + ', ' + escHtml(p.nombres) + '</div><small class="text-muted">CI: ' + escHtml(p.ci) + ' · ' + p.celular + '</small></td>' +
-                '<td class="text-center"><a href="' + waLink + '" target="_blank" class="btn btn-sm btn-success d-inline-flex align-items-center gap-1" style="width:fit-content;margin:0 auto;"><i class="ri-whatsapp-line"></i> Enviar</a></td>' +
+                '<td><div class="fw-semibold">' + escHtml(p.apellidos) + ', ' + escHtml(p.nombres) + '</div><small class="text-muted">CI: ' + escHtml(p.ci) + ' · ' + escHtml(p.celular) + '</small></td>' +
+                '<td style="font-size:.74rem;white-space:pre-line;color:#495057;">' + escHtml(mensajeIndiv) + '</td>' +
             '</tr>';
         });
         tbody.innerHTML = html;
         new bootstrap.Modal(document.getElementById('modalWhatsAppAusentes')).show();
     }
 
-    function waAusentesEnviarSeleccionados() {
+    async function waAusentesEnviarSeleccionados() {
         const checks = document.querySelectorAll('.wa-ausente-check:checked');
         if (!checks.length) {
             showToast('Selecciona al menos un participante', 'warning');
             return;
         }
-        checks.forEach(function (ch, i) {
-            const idx = parseInt(ch.dataset.idx);
-            const p = waAusentesData[idx];
-            if (!p) return;
-            const mensaje = 'Estimado/a ' + p.apellidos + ', ' + p.nombres +
-                ', registró inasistencia en la sesión del ' + waAusentesSesionInfo +
-                ' del programa ' + PROGRAMA_NOMBRE +
-                ', módulo ' + MODULO_NOMBRE + '.' +
-                '\n\nPor favor, comuníquese con su responsable para justificar su falta.' +
-                '\n\nÁrea Académica ESAM Sucre Central\n' +
-                'Enviado por: ' + ADMIN_NOMBRE;
-            const waLink = 'https://wa.me/' + p.celular + '?text=' + encodeURIComponent(mensaje);
-            setTimeout(function () {
-                window.open(waLink, '_blank');
-            }, i * 500);
+        const ids = [];
+        checks.forEach(function (ch) {
+            const p = waAusentesData[parseInt(ch.dataset.idx)];
+            if (p) ids.push(p.id);
         });
-        bootstrap.Modal.getInstance(document.getElementById('modalWhatsAppAusentes')).hide();
-        showToast('Abriendo WhatsApp para ' + checks.length + ' participante(s)', 'success');
+        if (!confirm('¿Enviar el aviso de inasistencia a ' + ids.length + ' participante(s)?\n\nSale desde tu línea de WhatsApp por Seguimiento ESAM y queda registrado en el historial de cada participante.')) return;
+        const btns = [document.getElementById('waAusentesEnviarTodos'), document.getElementById('waAusentesEnviarFooter')];
+        btns.forEach(function (b) { b.disabled = true; });
+        try {
+            const res = await fetch(@json(url('admin/programas/horario')) + '/' + waAusentesHorarioId + '/whatsapp-ausentes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrfToken },
+                body: JSON.stringify({ participante_ids: ids }),
+            });
+            const data = await res.json().catch(function () { return {}; });
+            if (res.ok && data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('modalWhatsAppAusentes')).hide();
+                const extra = data.sin_telefono > 0 ? ' · sin teléfono: ' + data.sin_telefono : '';
+                if (data.batch_id && window.EsamLote) {
+                    EsamLote.abrir(data.batch_id, 'Inasistencia · Lote #' + data.batch_id + ' · ' + data.total + ' mensaje(s)' + extra);
+                } else {
+                    showToast('Aviso encolado para ' + data.total + ' participante(s)' + extra, 'success');
+                }
+            } else {
+                showToast(data.message || 'No se pudo enviar el aviso.', 'danger');
+            }
+        } catch (err) {
+            showToast('Error de conexión: ' + err.message, 'danger');
+        } finally {
+            btns.forEach(function (b) { b.disabled = false; });
+        }
     }
 
     document.getElementById('waAusentesEnviarTodos').addEventListener('click', waAusentesEnviarSeleccionados);

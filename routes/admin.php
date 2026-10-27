@@ -66,6 +66,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
             Route::get('/modulo/{modulo}/notas-estado', [ProgramaController::class, 'notasEstadoModulo'])->name('modulo-notas-estado');
             Route::get('/modulo/{modulo}/mensajes-whatsapp', [ProgramaController::class, 'mensajesWhatsApp'])->name('modulo-mensajes-whatsapp');
             Route::post('/modulo/{modulo}/whatsapp', [WhatsappEnvioController::class, 'enviarAcademico'])->middleware('programa.acceso:responsable')->name('modulo-whatsapp-enviar');
+            // Aviso de inasistencia a los ausentes de una sesión (por Seguimiento ESAM, no wa.me).
+            Route::post('/horario/{horario}/whatsapp-ausentes', [WhatsappEnvioController::class, 'enviarAusentes'])->middleware('programa.acceso:responsable')->name('horario-whatsapp-ausentes');
             Route::get('/modulo/{modulo}/detalle', [ProgramaController::class, 'moduloDetalle'])->name('modulo-detalle');
             Route::get('/modulo/{modulo}/pdf', [ProgramaController::class, 'moduloPdf'])->name('modulo-pdf');
             Route::get('/modulo/{modulo}/pdf-nivelacion', [ProgramaController::class, 'moduloPdfNivelacion'])->name('modulo-pdf-nivelacion');
@@ -168,8 +170,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         ->middleware('whatsapp.autorizado')->name('seguimiento-esam.estado');
 
     // === Progreso de lote (Seguimiento ESAM) ===
+    // El controlador autoriza: permisos de envío o haber pedido ese lote.
     Route::get('/whatsapp/lote/{batch}', [WhatsappLoteController::class, 'show'])
-        ->middleware('permission:whatsapp.admin|contable.cobrar|programas.editar|programas.modulos.estado')
         ->name('whatsapp.lote');
 
     // === Eliminar pago (ruta fuera del prefix programas para mantener URL /admin/pagos/{pago}) ===

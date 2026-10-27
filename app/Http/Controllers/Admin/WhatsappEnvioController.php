@@ -255,6 +255,134 @@ class WhatsappEnvioController extends Controller
         ]);
     }
 
+    /**
+     * Aviso de inasistencia a los ausentes de una sesión, por Seguimiento ESAM
+     * (desde la línea de quien envía, con anti-baneo). Antes se abría wa.me en
+     * el teléfono del usuario y el envío no quedaba registrado en ningún lado:
+     * ahora queda en el historial de la persona (tipo «asistencia»).
+     */
+    public function enviarAusentes(Request $request, $horarioId): JsonResponse
+    {
+        $validated = $request->validate([
+            'participante_ids' => 'required|array|min:1|max:500',
+            'participante_ids.*' => 'integer',
+            'dry_run' => 'nullable|boolean',
+        ]);
+
+        $horario = DB::table('horarios')->where('id', $horarioId)->first();
+        $modulo = $horario ? DB::table('modulos')->where('id', $horario->modulo_id)->first() : null;
+        $programa = $modulo ? DB::table('programas')->where('id', $modulo->programa_id)->first() : null;
+
+        if (! $horario || ! $modulo || ! $programa) {
+            return response()->json(['success' => false, 'message' => 'Sesión no encontrada.'], 404);
+        }
+
+        $client = app(SeguimientoEsamClient::class);
+
+        if (! $client->enabled()) {
+            return response()->json(['success' => false, 'message' => 'La integración con Seguimiento ESAM no está configurada.'], 422);
+        }
+
+        [$account, $accountError] = SenderAccount::resolve();
+
+        if ($accountError) {
+            return response()->json(['success' => false, 'message' => $accountError], 403);
+        }
+
+        // Solo los que figuran como «Ausente» en esa sesión (y no están dados de baja).
+        $ausentes = DB::table('asistencias as a')
+            ->join('participantes as p', 'p.id', '=', 'a.participante_id')
+            ->leftJoin('inscripciones as i', function ($j) use ($programa) {
+                $j->on('i.participante_id', '=', 'p.id')->where('i.programa_id', '=', $programa->id);
+            })
+            ->where('a.horario_id', $horario->id)
+            ->where('a.asistio', 'Ausente')
+            ->whereIn('p.id', $validated['participante_ids'])
+            ->select('p.id', 'p.nombres', 'p.apellidos', 'p.celular', 'i.id as inscripcion_id',
+                'i.estado', 'i.baja_operativa', 'i.baja_academica', 'i.baja_contable')
+            ->get()
+            ->unique('id');
+
+        $fecha = $horario->fecha_desarrollo ? Carbon::parse($horario->fecha_desarrollo)->format('d/m/Y') : '';
+        $hora = trim(substr((string) $horario->hora_inicio, 0, 5).($horario->hora_fin ? ' - '.substr((string) $horario->hora_fin, 0, 5) : ''));
+        $sesion = trim($fecha.($hora !== '' ? ' · '.$hora : ''));
+        $enviaNombre = auth()->user()->fullname ?? auth()->user()->username ?? 'Área Académica';
+
+        $items = [];
+        $logRows = [];
+        $sinTelefono = 0;
+        $bajas = 0;
+
+        foreach ($ausentes as $p) {
+            if (\App\Support\BajaInscripcion::es($p)) {
+                $bajas++;
+
+                continue;
+            }
+
+            $chatId = $this->chatId($p->celular);
+
+            if (! $chatId) {
+                $sinTelefono++;
+
+                continue;
+            }
+
+            $nombre = $p->apellidos.', '.$p->nombres;
+            $items[] = [
+                'chat_id' => $chatId,
+                'contact_name' => $nombre,
+                'external_ref' => 'asistencia:'.$horario->id.':'.$p->id,
+                'body_override' => 'Estimado/a '.$nombre.', registró inasistencia en la sesión del '.$sesion
+                    .' del programa '.$programa->nombre.', módulo '.$modulo->nombre.'.'
+                    ."\n\nPor favor, comuníquese con su responsable para justificar su falta."
+                    ."\n\nÁrea Académica ESAM Sucre Central\nEnviado por: ".$enviaNombre,
+            ];
+            $logRows[] = ['inscripcione_id' => (int) ($p->inscripcion_id ?? 0), 'persona' => $nombre];
+        }
+
+        if ($items === []) {
+            return response()->json([
+                'success' => false,
+                'message' => $sinTelefono > 0
+                    ? 'Ninguno de los ausentes seleccionados tiene un celular válido.'
+                    : ($bajas > 0
+                        ? 'Los ausentes seleccionados están dados de baja: no se les envía el aviso.'
+                        : 'Ninguno de los seleccionados figura como ausente en esta sesión.'),
+            ], 422);
+        }
+
+        $dryRun = (bool) ($validated['dry_run'] ?? false);
+        $nombreLote = 'Inasistencia — '.$modulo->nombre.' — '.$sesion;
+        $meta = [
+            'area' => 'academico',
+            'tipo' => 'asistencia',
+            'programa_id' => $programa->id,
+            'programa' => $programa->nombre,
+            'gestion' => $programa->gestion ?? null,
+            'modulo' => $modulo->nombre,
+            'sesion' => $sesion,
+        ];
+
+        try {
+            $result = $client->sendBatch($nombreLote, $items, 'academico', null, $dryRun, null, $account, $meta);
+        } catch (\Throwable $e) {
+            return $this->errorEsam($e);
+        }
+
+        if (! $dryRun) {
+            $this->registrarMensajes($logRows, 'whatsapp_asistencia', $result['batch_id'] ?? null, $nombreLote);
+        }
+
+        return response()->json([
+            'success' => true,
+            'batch_id' => $result['batch_id'] ?? null,
+            'total' => count($items),
+            'sin_telefono' => $sinTelefono,
+            'dry_run' => $dryRun,
+        ]);
+    }
+
     private function registrarMensajes(array $rows, string $tipo, ?int $batchId, string $nombre): void
     {
         if ($rows === []) {

@@ -1009,7 +1009,7 @@
                 </div>
                 <div id="whatsapp-content" style="display:none;">
                     <div class="p-2 border-bottom bg-light d-flex gap-2 flex-wrap align-items-center" id="whatsapp-actions">
-                        <span class="fw-semibold text-dark fs-12 me-1"><i class="ri-whatsapp-line"></i> Envío masivo:</span>
+                        <span class="fw-semibold text-dark fs-12 me-1"><i class="ri-whatsapp-line"></i> Envío por Seguimiento ESAM:</span>
                         <button class="btn btn-sm btn-success" id="btn-wa-todos"><i class="ri-whatsapp-line"></i> Todos</button>
                         <button class="btn btn-sm btn-outline-success" id="btn-wa-aprobados"><i class="ri-checkbox-circle-line"></i> Aprobados</button>
                         <button class="btn btn-sm btn-outline-danger" id="btn-wa-reprobados"><i class="ri-close-circle-line"></i> Reprobados</button>
@@ -1021,7 +1021,7 @@
                                     <th style="width:40px" class="text-center">#</th>
                                     <th>Participante</th>
                                     <th>Mensaje</th>
-                                    <th style="width:130px" class="text-center">WhatsApp</th>
+                                    <th style="width:130px" class="text-center">Enviar</th>
                                 </tr>
                             </thead>
                             <tbody id="whatsapp-body"></tbody>
@@ -1037,6 +1037,7 @@
 </div>
 
 @push('js')
+@include('admin.partials.whatsapp-lote-modal')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const list = document.getElementById('resp-list');
@@ -1709,23 +1710,45 @@ document.addEventListener('DOMContentLoaded', function () {
     let whatsappMensajes = [];
     let whatsappModuloNombre = '';
 
-    function abrirWhatsAppEnLote(mensajes) {
-        mensajes.forEach(function (m, i) {
-            var waLink = 'https://wa.me/' + m.celular + '?text=' + encodeURIComponent(m.texto);
-            setTimeout(function () {
-                window.open(waLink, '_blank');
-            }, i * 300);
-        });
-        var count = mensajes.length;
-        var toastEl = document.createElement('div');
-        toastEl.className = 'toast align-items-center text-white border-0';
-        toastEl.setAttribute('role','alert'); toastEl.setAttribute('aria-live','assertive'); toastEl.setAttribute('aria-atomic','true');
-        toastEl.style.background = '#0abf53';
-        toastEl.innerHTML = '<div class="d-flex"><div class="toast-body fs-12 fw-medium">Abriendo ' + count + ' enlace' + (count !== 1 ? 's' : '') + ' de WhatsApp...</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>';
-        document.body.appendChild(toastEl);
-        var t = new bootstrap.Toast(toastEl, { delay: 4000 });
-        t.show();
-        toastEl.addEventListener('hidden.bs.toast', function () { toastEl.remove(); });
+    let whatsappModuloId = null;
+
+    // Envío por Seguimiento ESAM (desde la línea del responsable, con anti-baneo):
+    // queda registrado en el historial de cada participante. Antes se abría un
+    // enlace wa.me por persona y el envío no quedaba en ningún lado.
+    async function enviarNotasEsam(mensajes, tipo, trigger) {
+        var ids = mensajes.filter(function (m) { return m.celular && m.texto && m.participante_id; })
+            .map(function (m) { return m.participante_id; });
+        if (!whatsappModuloId || !ids.length) {
+            alert('No hay participantes con celular y mensaje para enviar.');
+            return;
+        }
+        if (!confirm('¿Enviar la nota por WhatsApp a ' + ids.length + ' participante(s)?\n\nSale desde tu línea por Seguimiento ESAM y queda en el historial de cada participante.')) return;
+        if (trigger) trigger.disabled = true;
+        try {
+            const res = await fetch('{{ url("admin/programas/modulo") }}/' + whatsappModuloId + '/whatsapp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                },
+                body: JSON.stringify({ tipo: tipo || 'all', participante_ids: ids }),
+            });
+            const data = await res.json().catch(function () { return {}; });
+            if (res.ok && data.success) {
+                var extra = data.sin_telefono > 0 ? ' · sin teléfono: ' + data.sin_telefono : '';
+                if (data.batch_id && window.EsamLote) {
+                    EsamLote.abrir(data.batch_id, 'Notas — Lote #' + data.batch_id + ' · ' + data.total + ' mensaje(s)' + extra);
+                } else {
+                    alert('Encolados ' + data.total + ' mensaje(s)' + extra + '.');
+                }
+            } else {
+                alert(data.message || 'No se pudo enviar.');
+            }
+        } catch (err) {
+            alert('Error: ' + err.message);
+        } finally {
+            if (trigger) trigger.disabled = false;
+        }
     }
 
     document.addEventListener('click', function (e) {
@@ -1734,6 +1757,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const moduloId = btn.dataset.moduloId;
         const moduloNombre = btn.dataset.moduloNombre;
+        whatsappModuloId = moduloId;
 
         document.getElementById('modalWhatsAppTitle').textContent = 'WhatsApp - ' + moduloNombre;
         document.getElementById('whatsapp-loading').style.display = 'block';
@@ -1758,7 +1782,6 @@ document.addEventListener('DOMContentLoaded', function () {
             whatsappMensajes = data.mensajes;
             var html = '';
             data.mensajes.forEach(function (m, i) {
-                var waLink = 'https://wa.me/' + m.celular + '?text=' + encodeURIComponent(m.texto);
                 var badgeClass = m.tipo === 'aprobado' ? 'bg-soft-success text-success' : 'bg-soft-danger text-danger';
                 html += '<tr>' +
                     '<td class="text-center text-muted fw-bold">' + (i + 1) + '</td>' +
@@ -1767,9 +1790,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         '<span class="badge ' + badgeClass + ' fs-10 me-1">' + m.tipo + '</span> ' + m.texto +
                     '</td>' +
                     '<td class="text-center">' +
-                        '<a href="' + waLink + '" target="_blank" class="btn btn-sm btn-success d-flex align-items-center gap-1" style="width:fit-content;margin:0 auto;">' +
-                            '<i class="ri-whatsapp-line"></i> Abrir WhatsApp' +
-                        '</a>' +
+                        (m.celular && m.texto
+                            ? '<button type="button" class="btn btn-sm btn-success d-flex align-items-center gap-1 btn-wa-uno" data-idx="' + i + '" style="width:fit-content;margin:0 auto;">' +
+                                '<i class="ri-send-plane-fill"></i> Enviar</button>'
+                            : '<span class="text-muted fs-11">Sin celular</span>') +
                     '</td>' +
                 '</tr>';
             });
@@ -1784,15 +1808,23 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     document.getElementById('btn-wa-todos')?.addEventListener('click', function () {
-        abrirWhatsAppEnLote(whatsappMensajes);
+        enviarNotasEsam(whatsappMensajes.filter(function (m) { return m.tipo !== 'sin_nota' && !m.baja; }), 'all', this);
     });
 
     document.getElementById('btn-wa-aprobados')?.addEventListener('click', function () {
-        abrirWhatsAppEnLote(whatsappMensajes.filter(function (m) { return m.tipo === 'aprobado'; }));
+        enviarNotasEsam(whatsappMensajes.filter(function (m) { return m.tipo === 'aprobado' && !m.baja; }), 'aprobado', this);
     });
 
     document.getElementById('btn-wa-reprobados')?.addEventListener('click', function () {
-        abrirWhatsAppEnLote(whatsappMensajes.filter(function (m) { return m.tipo === 'reprobado'; }));
+        enviarNotasEsam(whatsappMensajes.filter(function (m) { return m.tipo === 'reprobado' && !m.baja; }), 'reprobado', this);
+    });
+
+    // Envío a una sola persona (también por Seguimiento ESAM).
+    document.getElementById('whatsapp-body')?.addEventListener('click', function (e) {
+        var b = e.target.closest('.btn-wa-uno');
+        if (!b) return;
+        var m = whatsappMensajes[parseInt(b.dataset.idx)];
+        if (m) enviarNotasEsam([m], 'all', b);
     });
 });
 </script>
