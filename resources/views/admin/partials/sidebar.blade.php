@@ -274,8 +274,8 @@
                 </li>
                 @endif
 
-                {{-- ============ MARKETING (sin asesores) ============ --}}
-                @if(auth()->user()?->hasAnyRole(['Super Admin', 'Contabilidad', 'Gerencia Marketing', 'Supervisor de Marketing']))
+                {{-- ============ MARKETING (los asesores solo ven sus prospectos) ============ --}}
+                @if(auth()->user()?->hasAnyRole(['Super Admin', 'Contabilidad', 'Gerencia Marketing', 'Supervisor de Marketing', 'Asesor de Marketing']))
                 <li class="menu-title"><span>Marketing</span></li>
 
                 <li class="nav-item">
@@ -286,6 +286,15 @@
                     </a>
                     <div class="collapse menu-dropdown {{ $isGroupOpen('sidebarMarketing') ? 'show' : '' }}" id="sidebarMarketing">
                         <ul class="nav nav-sm flex-column">
+                            @if(auth()->user()?->hasAnyRole(['Super Admin', 'Gerencia Marketing', 'Supervisor de Marketing', 'Asesor de Marketing']))
+                            <li class="nav-item">
+                                <a href="{{ route('admin.marketing.prospectos') }}" class="nav-link {{ $isActive('admin.marketing.prospectos') }}">
+                                    <i class="ri-user-star-line"></i> Prospectos y WhatsApp
+                                </a>
+                            </li>
+                            @endif
+                            {{-- El resto de Marketing no es para los asesores (solo ven sus prospectos). --}}
+                            @if(auth()->user()?->hasAnyRole(['Super Admin', 'Contabilidad', 'Gerencia Marketing', 'Supervisor de Marketing']))
                             <li class="nav-item">
                                 <a href="{{ route('admin.marketing.estadisticas') }}" class="nav-link {{ $isActive('admin.marketing.estadisticas') }}">
                                     <i class="ri-bar-chart-2-line"></i> Estadísticas Generales
@@ -321,6 +330,7 @@
         <i class="ri-building-2-line"></i> Programas otras sedes
     </a>
 </li>
+                            @endif
                             @if(auth()->user()?->hasAnyRole(['Super Admin', 'Contabilidad']))
                             <li class="nav-item">
                                 <a href="{{ route('admin.marketing.publicidad.index') }}" class="nav-link {{ $isActive('admin.marketing.publicidad.*') }}">

@@ -35,7 +35,7 @@
 window.EsamLote = (function () {
     var modal = null;
     var timer = null;
-    var base = @json(url('admin/whatsapp/lote'));
+    var base = @json($loteBase ?? url('admin/whatsapp/lote'));
 
     function el(id) { return document.getElementById(id); }
 

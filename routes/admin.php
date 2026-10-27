@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\DocenteController;
 use App\Http\Controllers\Admin\FolioController;
 use App\Http\Controllers\Admin\MarketingController;
 use App\Http\Controllers\Admin\MarketingOtrasSedesController;
+use App\Http\Controllers\Admin\MarketingProspectoController;
 use App\Http\Controllers\Admin\MasterclassController;
 use App\Http\Controllers\Admin\NotificacionController;
 use App\Http\Controllers\Admin\ParticipanteController;
@@ -285,6 +286,19 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('/profile/ofertas-data', [ProfileAdminController::class, 'ofertasData'])->name('profile.ofertas-data');
     Route::get('/profile/inscripciones-data', [ProfileAdminController::class, 'inscripcionesData'])->name('profile.inscripciones-data');
     Route::post('/profile/publicidad/autogestion', [ProfileAdminController::class, 'storeGastoAutogestion'])->name('profile.publicidad.autogestion.store');
+
+    // === Prospectos de marketing (asesores incluidos; cada asesor ve los suyos) ===
+    Route::prefix('marketing/prospectos')->name('marketing.prospectos')
+        ->middleware('role:Super Admin|Gerencia Marketing|Supervisor de Marketing|Asesor de Marketing')->group(function () {
+            Route::get('/', [MarketingProspectoController::class, 'index'])->name('');
+            Route::post('/', [MarketingProspectoController::class, 'store'])->name('.store');
+            Route::post('/enviar', [MarketingProspectoController::class, 'enviar'])->name('.enviar');
+            Route::get('/lote/{batch}', [MarketingProspectoController::class, 'lote'])->whereNumber('batch')->name('.lote');
+            Route::put('/{id}', [MarketingProspectoController::class, 'update'])->whereNumber('id')->name('.update');
+            Route::patch('/{id}/estado', [MarketingProspectoController::class, 'updateEstado'])->whereNumber('id')->name('.estado');
+            Route::post('/{id}/sincronizar', [MarketingProspectoController::class, 'sincronizarUno'])->whereNumber('id')->name('.sincronizar');
+            Route::delete('/{id}', [MarketingProspectoController::class, 'destroy'])->whereNumber('id')->name('.destroy');
+        });
 
     // === Marketing (Super Admin, Contabilidad, Gerencia/Supervisor Marketing) ===
     Route::prefix('marketing')->name('marketing.')->middleware('role:Super Admin|Contabilidad|Gerencia Marketing|Supervisor de Marketing')->group(function () {

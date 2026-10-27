@@ -170,6 +170,23 @@ class SeguimientoEsamClient
         }
     }
 
+    /**
+     * Prospecto de marketing → nota de seguimiento del asesor en Seguimiento ESAM
+     * (área Marketing de /notes). Idempotente por referencia: crea o actualiza.
+     *
+     * @param  array{account: string, phone: string, name?: ?string, programa?: ?string, programa_id?: ?int, estado?: ?string, nota?: ?string}  $data
+     */
+    public function upsertProspect(string $ref, array $data): array
+    {
+        return $this->unwrap($this->request()->put('/api/v1/prospects/'.rawurlencode($ref), $data));
+    }
+
+    /** El prospecto se eliminó: su seguimiento pasa a la papelera de Notas. */
+    public function deleteProspect(string $ref): array
+    {
+        return $this->unwrap($this->request()->delete('/api/v1/prospects/'.rawurlencode($ref)));
+    }
+
     public function batchStatus(int $batchId): array
     {
         return $this->unwrap($this->request()->get("/api/v1/batches/{$batchId}"));
