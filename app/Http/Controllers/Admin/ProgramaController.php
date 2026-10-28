@@ -3668,7 +3668,7 @@ class ProgramaController extends Controller
             'tiene_nivelacion' => $data['tiene_nivelacion'],
             'mensajes' => $data['mensajes'],
             // Firma que Seguimiento ESAM agrega al final de cada mensaje.
-            'firma' => trim((string) (auth()->user()->fullname ?: auth()->user()->username ?: '')),
+            'firma' => \App\Support\FirmaWhatsapp::para(auth()->user(), 'academico'),
         ]);
     }
 

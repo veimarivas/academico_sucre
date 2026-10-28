@@ -1671,6 +1671,8 @@ document.addEventListener('DOMContentLoaded', function () {
     var PROGRAMA_NOMBRE = @json($programa->nombre);
     var MODULO_NOMBRE = @json($modulo->nombre);
     var ADMIN_NOMBRE = @json(Auth::user()->fullname ?? Auth::user()->username ?? "Administrador");
+    // Firma que Seguimiento ESAM agrega al final del aviso: «Nombre - Área».
+    var FIRMA_WA = @json(\App\Support\FirmaWhatsapp::para(Auth::user(), 'academico'));
     var PUEDE_GESTIONAR_MODULO = @json($puedeGestionarModulo);
     var PUEDE_WHATSAPP_PROGRAMA = @json($puedeWhatsappPrograma);
 
@@ -1775,7 +1777,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 ', módulo ' + MODULO_NOMBRE + '.' +
                 '\n\nPor favor, comuníquese con su responsable para justificar su falta.' +
                 '\n\nÁrea Académica ESAM Sucre Central' +
-                '\n\nAtte: ' + ADMIN_NOMBRE;
+                '\n\nAtte: ' + FIRMA_WA;
             html += '<tr>' +
                 '<td class="text-center"><div class="form-check"><input class="form-check-input wa-ausente-check" type="checkbox" checked data-idx="' + i + '"></div></td>' +
                 '<td class="text-center text-muted fw-bold">' + (i + 1) + '</td>' +

@@ -78,6 +78,12 @@ class SeguimientoEsamClient
 
         if ($account) {
             $payload['account'] = $account;
+            // Número de WhatsApp de esa cuenta: Seguimiento ESAM envía SOLO desde
+            // la línea de ese número (nunca desde la de otra área).
+            $numero = $this->numeroDe($account);
+            if ($numero !== null) {
+                $payload['account_phone'] = $numero;
+            }
         }
 
         // Quién pidió el envío (se ve en el detalle del lote en Seguimiento ESAM).
@@ -92,9 +98,9 @@ class SeguimientoEsamClient
             $payload['meta'] = $meta;
         }
 
-        // Firma «Atte: nombre completo» al final de cada mensaje (la agrega
+        // Firma «Atte: nombre completo - área» al final de cada mensaje (la agrega
         // Seguimiento ESAM). Los envíos automáticos no tienen usuario: sin firma.
-        $firma = trim((string) ($solicita?->fullname ?: $solicita?->username ?: ''));
+        $firma = \App\Support\FirmaWhatsapp::para($solicita, $meta['area'] ?? null);
         if ($firma !== '' && ! array_key_exists('signature', $options)) {
             $payload['signature'] = $firma;
         } elseif (! empty($options['signature'])) {
@@ -187,6 +193,14 @@ class SeguimientoEsamClient
      */
     public function upsertProspect(string $ref, array $data): array
     {
+        // El seguimiento va a la línea del número del asesor dueño del prospecto.
+        if (! empty($data['account']) && empty($data['account_phone'])) {
+            $numero = $this->numeroDe((string) $data['account']);
+            if ($numero !== null) {
+                $data['account_phone'] = $numero;
+            }
+        }
+
         return $this->unwrap($this->request()->put('/api/v1/prospects/'.rawurlencode($ref), $data));
     }
 
@@ -209,6 +223,14 @@ class SeguimientoEsamClient
     public function numero(): array
     {
         return $this->unwrap($this->request()->get('/api/v1/config/numero'));
+    }
+
+    /** Número de WhatsApp registrado del usuario de cronogramas (cuenta). */
+    private function numeroDe(string $account): ?string
+    {
+        $numero = trim((string) User::query()->whereKey($account)->value('whatsapp_numero'));
+
+        return $numero !== '' ? $numero : null;
     }
 
     private function unwrap(Response $response): array
