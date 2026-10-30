@@ -24,7 +24,12 @@ class WhatsappEnvioController extends Controller
             'dias' => 'nullable|integer|min:1|max:180',
             'participante_id' => 'nullable|integer',
             'dry_run' => 'nullable|boolean',
+            'qr_id' => 'nullable|integer',
+            'qr_datos' => 'nullable|boolean',
         ]);
+
+        // QR de pago (solo vigente; se valida antes de armar el envío).
+        $qr = \App\Support\PagosQr::elegido($validated['qr_id'] ?? null);
 
         $client = app(SeguimientoEsamClient::class);
 
@@ -60,8 +65,24 @@ class WhatsappEnvioController extends Controller
             'gestion' => $data['programa']->gestion ?? null,
         ];
 
+        // Con QR: la imagen va como adjunto (el mensaje de cobranza queda de pie) y,
+        // si se pidió, los datos de la cuenta al final del mensaje.
+        $media = null;
+        if ($qr) {
+            $media = \App\Support\PagosQr::adjunto($qr);
+            $meta['qr_id'] = $qr->id;
+            $meta['qr'] = $qr->nombre.' · '.$qr->banco;
+            if ($request->boolean('qr_datos')) {
+                $cuenta = \App\Support\PagosQr::textoCuenta($qr);
+                foreach ($data['items'] as &$item) {
+                    $item['variables']['cierre'] = trim(($item['variables']['cierre'] ?? '')."\n\n".$cuenta);
+                }
+                unset($item);
+            }
+        }
+
         try {
-            $result = $client->sendBatch($nombre, $data['items'], 'cobranza', null, $dryRun, null, $account, $meta);
+            $result = $client->sendBatch($nombre, $data['items'], 'cobranza', null, $dryRun, $media, $account, $meta);
         } catch (\Throwable $e) {
             return $this->errorEsam($e);
         }

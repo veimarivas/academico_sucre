@@ -217,6 +217,24 @@
                     <span class="wa-help m-0">se reemplaza por el nombre de cada programa.</span>
                 </div>
                 <div class="mt-3">
+                    <label class="wa-label" for="qrSel">QR de pago (opcional)</label>
+                    @if($qrs->isEmpty())
+                        <div class="wa-help m-0">No hay QR vigentes para adjuntar.</div>
+                    @else
+                        <div class="d-flex align-items-center gap-2">
+                            <select id="qrSel" class="wa-input" style="flex:1">
+                                <option value="">Sin QR</option>
+                                @foreach($qrs as $q)
+                                    <option value="{{ $q->id }}" data-img="{{ $q->imagen_url }}">{{ $q->nombre }} · {{ $q->banco }} (vence {{ \Carbon\Carbon::parse($q->fecha_vencimiento)->format('d/m/Y') }})</option>
+                                @endforeach
+                            </select>
+                            <a id="qrThumb" href="#" target="_blank" rel="noopener" hidden style="width:46px;height:46px;border:1px solid #e3e6ea;border-radius:8px;overflow:hidden;background:#fff;flex-shrink:0"><img alt="QR" style="width:100%;height:100%;object-fit:contain"></a>
+                        </div>
+                        <label class="d-inline-flex align-items-center gap-1 mt-1 wa-help"><input type="checkbox" id="qrDatos" class="form-check-input m-0" checked disabled> Incluir datos de la cuenta en el mensaje</label>
+                        <div class="wa-help m-0">Solo se listan los QR vigentes. Con QR no se adjunta otro archivo.</div>
+                    @endif
+                </div>
+                <div class="mt-3">
                     <label class="wa-label" for="archivo">Adjuntar imagen / audio / video / PDF</label>
                     <input type="file" id="archivo" class="wa-input" accept="image/*,audio/*,video/*,application/pdf">
                 </div>
@@ -362,13 +380,29 @@
         actualizarSel();
     });
 
+    // QR elegido: miniatura y opción de datos de la cuenta.
+    (function () {
+        const qrSel = document.getElementById('qrSel');
+        if (!qrSel) return;
+        qrSel.addEventListener('change', function () {
+            const opt = this.options[this.selectedIndex];
+            const thumb = document.getElementById('qrThumb');
+            thumb.hidden = !this.value;
+            if (this.value) { thumb.href = opt.dataset.img; thumb.querySelector('img').src = opt.dataset.img; }
+            document.getElementById('qrDatos').disabled = !this.value;
+        });
+    })();
+
     async function enviar(btn) {
         const sel = seleccionados();
         if (!sel.length) return;
         const texto = document.getElementById('texto').value.trim();
         const archivo = document.getElementById('archivo').files[0];
-        if (!texto && !archivo) { alert('Escribí un mensaje o adjuntá un archivo.'); return; }
-        if (!confirm('¿Enviar el mensaje a ' + sel.length + ' grupo(s) de WhatsApp?')) return;
+        const qrSel = document.getElementById('qrSel');
+        const qrId = qrSel ? qrSel.value : '';
+        if (qrId && archivo) { alert('Elegí el QR o un archivo: cada mensaje lleva un solo adjunto.'); return; }
+        if (!texto && !archivo && !qrId) { alert('Escribí un mensaje o adjuntá un archivo.'); return; }
+        if (!confirm('¿Enviar el mensaje a ' + sel.length + ' grupo(s) de WhatsApp?' + (qrId ? '\n\nSe adjunta el QR: ' + qrSel.options[qrSel.selectedIndex].text : ''))) return;
 
         const original = btn.innerHTML;
         btn.disabled = true;
@@ -378,6 +412,10 @@
         fd.append('text', texto);
         sel.forEach(r => fd.append('programas[]', r.dataset.id));
         if (archivo) fd.append('file', archivo);
+        if (qrId) {
+            fd.append('qr_id', qrId);
+            fd.append('qr_datos', document.getElementById('qrDatos').checked ? '1' : '0');
+        }
         try {
             const res = await fetch('{{ route('admin.programas.whatsapp.grupos-enviar') }}', {
                 method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF }, body: fd,

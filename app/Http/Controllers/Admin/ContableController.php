@@ -293,6 +293,8 @@ class ContableController extends Controller
             'programasFiltro' => $programasFiltro,
             'totales' => $totales,
             'porPrograma' => $porPrograma,
+            // QR de pago vigentes para adjuntar en los mensajes.
+            'qrs' => \App\Support\PagosQr::vigentes(),
         ]);
     }
 

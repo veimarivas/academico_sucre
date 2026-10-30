@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\MarketingOtrasSedesController;
 use App\Http\Controllers\Admin\MarketingProspectoController;
 use App\Http\Controllers\Admin\MasterclassController;
 use App\Http\Controllers\Admin\NotificacionController;
+use App\Http\Controllers\Admin\PagoQrController;
 use App\Http\Controllers\Admin\ParticipanteController;
 use App\Http\Controllers\Admin\ProfileAdminController;
 use App\Http\Controllers\Admin\ProgramaController;
@@ -249,6 +250,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('/seguimiento-diario', [SeguimientoDiarioController::class, 'index'])->middleware('role:Super Admin|Responsable Académico')->name('seguimiento-diario.index');
     Route::get('/control-responsables', [ControlResponsablesController::class, 'index'])->middleware('role:Super Admin|Responsable Académico')->name('control-responsables.index');
 
+    // Imagen de un QR de pago (disco privado): la ven quienes eligen el QR al enviar.
+    Route::get('/pagos-qr/{id}/imagen', [PagoQrController::class, 'imagen'])->whereNumber('id')->name('pagos-qr.imagen');
+
     // === Contable (solo rol Contabilidad + Super Admin) ===
     Route::prefix('contable')->name('contable.')->middleware('role:Super Admin|Contabilidad')->group(function () {
         Route::get('/seguimiento', [ContableController::class, 'seguimiento'])->name('seguimiento');
@@ -256,6 +260,12 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::get('/asignaciones', [ContableController::class, 'asignaciones'])->name('asignaciones');
         Route::get('/cuotas-vencidas', [ContableController::class, 'cuotasVencidas'])->name('cuotas-vencidas');
         Route::get('/cuotas-proximas', [ContableController::class, 'cuotasProximas'])->name('cuotas-proximas');
+        // QR de pago y cuentas bancarias (para adjuntar en los mensajes masivos).
+        Route::get('/qr', [PagoQrController::class, 'index'])->name('qr.index');
+        Route::post('/qr', [PagoQrController::class, 'store'])->name('qr.store');
+        Route::post('/qr/{id}', [PagoQrController::class, 'update'])->whereNumber('id')->name('qr.update');
+        Route::patch('/qr/{id}/activo', [PagoQrController::class, 'toggle'])->whereNumber('id')->name('qr.toggle');
+        Route::delete('/qr/{id}', [PagoQrController::class, 'destroy'])->whereNumber('id')->name('qr.destroy');
         Route::get('/programa/{programa}/fechas', [ContableController::class, 'getFechasPrograma'])->name('fechas-get');
         Route::post('/programa/{programa}/fechas', [ContableController::class, 'saveFechasPrograma'])->middleware('permission:contable.asignaciones.definir')->name('fechas-save');
         Route::post('/whatsapp/enviar', [WhatsappEnvioController::class, 'enviarContable'])->middleware('permission:contable.cobrar')->name('whatsapp.enviar');

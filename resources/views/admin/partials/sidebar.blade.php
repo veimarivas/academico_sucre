@@ -205,6 +205,13 @@
                                     <i class="ri-time-line"></i> Próximas Cuotas
                                 </a>
                             </li>
+                            @if(auth()->user()?->hasAnyRole(['Super Admin', 'Contabilidad']))
+                            <li class="nav-item">
+                                <a href="{{ route('admin.contable.qr.index') }}" class="nav-link {{ $isActive('admin.contable.qr.*') }}">
+                                    <i class="ri-qr-code-line"></i> QR y cuentas bancarias
+                                </a>
+                            </li>
+                            @endif
                             <li class="menu-subtitle">Verificación</li>
                             <li class="nav-item">
                                 <a href="{{ route('admin.comprobantes-pago.index') }}" class="nav-link {{ $isActive('admin.comprobantes-pago.*') }}">

@@ -399,6 +399,22 @@
 [data-layout-mode="dark"] .baja-hint { background:#3a1d20; border-color:#6b2a2a; color:#f19a9a; }
 .bm-part-item.bm-baja { background:#fff1f1; }
 .bm-part-item.bm-baja .pi-nm { color:#b42318; }
+
+/* QR de pago para los mensajes */
+.qr-bar { display:flex; align-items:center; gap:.85rem; background:#fff; border:1px solid #e1e9f6; border-left:4px solid #405189; border-radius:14px; padding:.75rem 1rem; margin-bottom:1rem; box-shadow:0 10px 26px -22px rgba(64,81,137,.6); }
+[data-layout-mode="dark"] .qr-bar { background:#1d2125; border-color:#2a2f34; }
+.qr-bar-ic { width:42px; height:42px; border-radius:12px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; font-size:1.3rem; color:#405189; background:#eef1f8; }
+.qr-bar-main { flex:1; min-width:0; }
+.qr-bar-l { display:block; font-size:.68rem; font-weight:800; text-transform:uppercase; letter-spacing:.45px; color:#6c757d; margin-bottom:.3rem; }
+.qr-bar-row { display:flex; flex-wrap:wrap; align-items:center; gap:.6rem; }
+.qr-bar-row .form-select { max-width:420px; flex:1 1 260px; border-radius:10px; }
+.qr-bar-chk { display:inline-flex; align-items:center; gap:.35rem; font-size:.8rem; font-weight:600; color:#495057; margin:0; white-space:nowrap; }
+.qr-bar-help { font-size:.72rem; color:#6b7280; margin-top:.3rem; }
+.qr-bar-none { font-size:.82rem; color:#b54708; }
+.qr-bar-thumb { width:64px; height:64px; flex-shrink:0; border-radius:10px; border:1px solid #e3e6ea; overflow:hidden; background:#fff; }
+.qr-bar-thumb img { width:100%; height:100%; object-fit:contain; }
+.bm-qr-info { font-size:.8rem; padding:.45rem .7rem; border-radius:10px; background:#eef1f8; color:#405189; margin-bottom:.75rem; }
+@media (max-width: 575.98px) { .qr-bar { flex-wrap:wrap; } .qr-bar-thumb { order:3; } }
 </style>
 @endpush
 
@@ -532,6 +548,32 @@
         </p>
     </div>
 @else
+
+{{-- QR de pago para adjuntar en los mensajes (solo vigentes) --}}
+<div class="qr-bar">
+    <div class="qr-bar-ic"><i class="ri-qr-code-line"></i></div>
+    <div class="qr-bar-main">
+        <label class="qr-bar-l" for="qrSel">QR de pago para los mensajes</label>
+        @if($qrs->isEmpty())
+            <div class="qr-bar-none">No hay QR vigentes.
+                @if(auth()->user()->hasAnyRole(['Super Admin', 'Contabilidad']))<a href="{{ route('admin.contable.qr.index') }}">Registrá uno en «QR y cuentas bancarias»</a>.@endif
+            </div>
+        @else
+            <div class="qr-bar-row">
+                <select id="qrSel" class="form-select form-select-sm">
+                    <option value="">Sin QR (solo el mensaje)</option>
+                    @foreach($qrs as $q)
+                        <option value="{{ $q->id }}" data-img="{{ $q->imagen_url }}" data-banco="{{ $q->banco }}"
+                            data-vence="{{ \Carbon\Carbon::parse($q->fecha_vencimiento)->format('d/m/Y') }}">{{ $q->nombre }} · {{ $q->banco }}{{ $q->estado === 'por_vencer' ? ' (vence '.\Carbon\Carbon::parse($q->fecha_vencimiento)->format('d/m').')' : '' }}</option>
+                    @endforeach
+                </select>
+                <label class="qr-bar-chk"><input type="checkbox" id="qrDatos" class="form-check-input" checked> Incluir datos de la cuenta</label>
+            </div>
+            <div class="qr-bar-help" id="qrHelp">Se adjunta la imagen del QR y el recordatorio va como texto de la imagen. Solo se listan los QR vigentes.</div>
+        @endif
+    </div>
+    <a class="qr-bar-thumb" id="qrThumb" href="#" target="_blank" rel="noopener" hidden title="Ver el QR"><img alt="QR elegido"></a>
+</div>
 
 {{-- Toolbar: colapsar/expandir + búsqueda --}}
 @if(count($porPrograma) > 1)
@@ -708,6 +750,7 @@
                     </div>
                 </div>
 
+                <div class="bm-qr-info" id="bmQrInfo"></div>
                 <div class="bm-msg-box">
                     <label class="mb-1"><i class="ri-message-2-line"></i> Plantilla del mensaje</label>
                     <textarea id="bmTemplate"></textarea>
@@ -794,9 +837,45 @@ document.addEventListener('DOMContentLoaded', function () {
                '💰 *Total adeudado: {total}*\n\n' + cierre;
     }
 
+    // QR de pago elegido (vacío = sin QR).
+    function qrElegido() {
+        const sel = document.getElementById('qrSel');
+        return sel ? sel.value : '';
+    }
+    function qrNombre() {
+        const sel = document.getElementById('qrSel');
+        return sel && sel.value ? sel.options[sel.selectedIndex].text : '';
+    }
+    const qrSel = document.getElementById('qrSel');
+    if (qrSel) {
+        qrSel.addEventListener('change', function () {
+            const opt = this.options[this.selectedIndex];
+            const thumb = document.getElementById('qrThumb');
+            const datos = document.getElementById('qrDatos');
+            if (this.value) {
+                thumb.href = opt.dataset.img;
+                thumb.querySelector('img').src = opt.dataset.img;
+                thumb.hidden = false;
+                document.getElementById('qrHelp').textContent = 'Se adjunta el QR «' + opt.text + '» (vence ' + opt.dataset.vence + '). El recordatorio va como texto de la imagen.';
+            } else {
+                thumb.hidden = true;
+                document.getElementById('qrHelp').textContent = 'Se adjunta la imagen del QR y el recordatorio va como texto de la imagen. Solo se listan los QR vigentes.';
+            }
+            if (datos) datos.disabled = !this.value;
+            const bm = document.getElementById('bmQrInfo');
+            if (bm) bm.innerHTML = qrResumen();
+        });
+        qrSel.dispatchEvent(new Event('change'));
+    }
+    function qrResumen() {
+        return qrElegido()
+            ? '<i class="ri-qr-code-line"></i> Con QR: <b>' + qrNombre().replace(/[<>&]/g, '') + '</b>' + ((document.getElementById('qrDatos') || {}).checked ? ' + datos de la cuenta' : '')
+            : '<i class="ri-image-line"></i> Sin QR: solo el mensaje.';
+    }
+
     // Envía por la API de Seguimiento ESAM (sin abrir pestañas).
     async function enviarEsam(programaId, dias, modo, participanteId, trigger, reenviar) {
-        if (!reenviar && !confirm('¿Enviar por WhatsApp con Seguimiento ESAM desde tu línea?')) return;
+        if (!reenviar && !confirm('¿Enviar por WhatsApp con Seguimiento ESAM desde tu línea?' + (qrElegido() ? '\n\nSe adjunta el QR: ' + qrNombre() : ''))) return;
         if (trigger) trigger.classList.add('is-loading');
         try {
             const res = await fetch('{{ route('admin.contable.whatsapp.enviar') }}', {
@@ -812,6 +891,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     dias: dias,
                     participante_id: participanteId || null,
                     reenviar: !!reenviar,
+                    qr_id: qrElegido() || null,
+                    qr_datos: !!(document.getElementById('qrDatos') || {}).checked,
                 }),
             });
             const data = await res.json().catch(function () { return {}; });
@@ -862,6 +943,7 @@ document.addEventListener('DOMContentLoaded', function () {
             bulkSentIds = new Set();
             document.getElementById('bmSubtitle').textContent = bulkData.programa + ' (' + bulkData.codigo + ')';
             document.getElementById('bmTemplate').value = buildBulkTemplate();
+            document.getElementById('bmQrInfo').innerHTML = qrResumen();
             renderBulkList();
             modalBulk.show();
         });

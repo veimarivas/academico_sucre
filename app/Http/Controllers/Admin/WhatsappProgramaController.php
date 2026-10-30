@@ -75,7 +75,10 @@ class WhatsappProgramaController extends Controller
         $error = app(SeguimientoEsamClient::class)->enabled() ? null : 'La integración con Seguimiento ESAM no está configurada.';
         $puedeGestionarGrupo = $user->can('whatsapp.admin');
 
-        return view('admin.programas.whatsapp-grupos', compact('programas', 'estados', 'error', 'puedeGestionarGrupo'));
+        // QR de pago vigentes para adjuntar en el mensaje a los grupos.
+        $qrs = \App\Support\PagosQr::vigentes();
+
+        return view('admin.programas.whatsapp-grupos', compact('programas', 'estados', 'error', 'puedeGestionarGrupo', 'qrs'));
     }
 
     /** Envía el mismo mensaje (y media) a los grupos de los programas elegidos, en un solo lote. */
@@ -86,9 +89,17 @@ class WhatsappProgramaController extends Controller
             'programas.*' => 'integer',
             'text' => 'nullable|string|max:4096',
             'file' => 'nullable|file|max:51200',
+            'qr_id' => 'nullable|integer',
+            'qr_datos' => 'nullable|boolean',
         ]);
 
-        if (blank($validated['text'] ?? null) && ! $request->hasFile('file')) {
+        // QR de pago (solo vigente). Un mensaje lleva un solo adjunto.
+        $qr = \App\Support\PagosQr::elegido($validated['qr_id'] ?? null);
+        if ($qr && $request->hasFile('file')) {
+            return response()->json(['success' => false, 'message' => 'Elegí el QR o un archivo: cada mensaje lleva un solo adjunto.'], 422);
+        }
+
+        if (blank($validated['text'] ?? null) && ! $request->hasFile('file') && ! $qr) {
             return response()->json(['success' => false, 'message' => 'Escribí un mensaje o adjuntá un archivo.'], 422);
         }
 
@@ -114,8 +125,12 @@ class WhatsappProgramaController extends Controller
         }
 
         $stamp = now()->format('YmdHis');
-        $items = $conGrupo->map(function ($p) use ($validated, $stamp) {
+        $cuenta = $qr && $request->boolean('qr_datos') ? \App\Support\PagosQr::textoCuenta($qr) : '';
+        $items = $conGrupo->map(function ($p) use ($validated, $stamp, $cuenta) {
             $body = str_replace(['{{programa}}', '{programa}'], [$p->nombre, $p->nombre], (string) ($validated['text'] ?? ''));
+            if ($cuenta !== '') {
+                $body = trim($body."\n\n".$cuenta);
+            }
 
             return [
                 'chat_id' => $p->whatsapp_grupo_id,
@@ -126,6 +141,10 @@ class WhatsappProgramaController extends Controller
         })->values()->all();
 
         $meta = ['area' => $user->whatsapp_area ?: 'general', 'tipo' => 'grupos', 'programas' => $conGrupo->pluck('id')->values()->all()];
+        if ($qr) {
+            $meta['qr_id'] = $qr->id;
+            $meta['qr'] = $qr->nombre.' · '.$qr->banco;
+        }
 
         try {
             $result = $client->sendBatch(
@@ -134,7 +153,7 @@ class WhatsappProgramaController extends Controller
                 null,
                 null,
                 false,
-                $this->mediaPayload($request->file('file')),
+                $qr ? \App\Support\PagosQr::adjunto($qr) : $this->mediaPayload($request->file('file')),
                 $account,
                 $meta,
             );
